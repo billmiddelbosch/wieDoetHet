@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About"
+  },
+  "home": {
+    "title": "Who Does It",
+    "welcome": "Welcome to Who Does It"
+  },
+  "about": {
+    "title": "About us"
+  }
+}

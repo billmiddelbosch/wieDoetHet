@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "Over"
+  },
+  "home": {
+    "title": "Wie Doet Het",
+    "welcome": "Welkom bij Wie Doet Het"
+  },
+  "about": {
+    "title": "Over ons"
+  }
+}
