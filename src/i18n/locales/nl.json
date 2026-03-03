@@ -1,13 +1,160 @@
 {
   "nav": {
     "home": "Home",
-    "about": "Over"
+    "about": "Over",
+    "login": "Inloggen",
+    "register": "Registreren",
+    "logout": "Uitloggen",
+    "dashboard": "Mijn groepen"
   },
-  "home": {
-    "title": "Wie Doet Het",
-    "welcome": "Welkom bij Wie Doet Het"
+  "theme": {
+    "switchDark": "Schakel naar donkere modus",
+    "switchLight": "Schakel naar lichte modus"
   },
-  "about": {
-    "title": "Over ons"
+  "common": {
+    "back": "Terug",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "confirm": "Bevestigen",
+    "dismiss": "Sluiten",
+    "loadError": "Fout bij laden"
+  },
+  "landing": {
+    "badge": "Gratis & geen account nodig",
+    "headline": "Wie pakt",
+    "headlineAccent": "welke taak?",
+    "subheadline": "Maak een takenlijst, deel de link via WhatsApp en laat iedereen zelf kiezen wat zij doen. Simpel, snel en overzichtelijk.",
+    "cta": "Maak een groep aan",
+    "ctaSecondary": "Account aanmaken",
+    "howTitle": "Zo werkt het",
+    "step1": "Maak een groep",
+    "step1Desc": "Geef je groep een naam en voeg de taken toe die verdeeld moeten worden.",
+    "step2": "Voeg taken toe",
+    "step2Desc": "Beschrijf elke taak en stel optioneel een maximum aantal deelnemers in.",
+    "step3": "Deel de link",
+    "step3Desc": "Stuur de link via WhatsApp. Iedereen klikt, pakt een taak — klaar!",
+    "featuresTitle": "Waarom wieDoetHet?",
+    "feat1": "Geen account nodig",
+    "feat1Desc": "Deelnemers kunnen taken claimen met alleen een naam. Geen registratie vereist.",
+    "feat2": "WhatsApp-vriendelijk",
+    "feat2Desc": "Deel de link direct vanuit de app via WhatsApp. Eén tik en iedereen is binnen.",
+    "feat3": "Wie pakt wat",
+    "feat3Desc": "Bekijk in één oogopslag wie welke taak heeft gepakt. Geen dubbele toewijzingen.",
+    "feat4": "Jij bepaalt wie ziet wat",
+    "feat4Desc": "Kies zelf wie de scorekaart mag bekijken — alleen jij, of iedereen.",
+    "ctaBlockTitle": "Klaar om te beginnen?",
+    "ctaBlockDesc": "Maak je eerste groep in minder dan een minuut. Geen account nodig.",
+    "installHint": "Voeg wieDoetHet toe aan je beginscherm voor snelle toegang!",
+    "install": "Installeren"
+  },
+  "auth": {
+    "loginTitle": "Welkom terug",
+    "loginSubtitle": "Log in op je account",
+    "loginCta": "Inloggen",
+    "loginFailed": "E-mail of wachtwoord is onjuist.",
+    "noAccount": "Nog geen account?",
+    "registerLink": "Registreren",
+    "hasAccount": "Al een account?",
+    "loginLink": "Inloggen",
+    "registerTitle": "Account aanmaken",
+    "registerSubtitle": "Registreer om je groepen te beheren",
+    "registerCta": "Account aanmaken",
+    "registerFailed": "Registratie mislukt. Probeer opnieuw.",
+    "nameLabel": "Jouw naam",
+    "namePlaceholder": "Jan de Vries",
+    "nameRequired": "Naam is verplicht",
+    "emailLabel": "E-mailadres",
+    "emailPlaceholder": "jan@example.nl",
+    "emailRequired": "E-mailadres is verplicht",
+    "emailInvalid": "Voer een geldig e-mailadres in",
+    "passwordLabel": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequired": "Wachtwoord is verplicht",
+    "passwordMin": "Wachtwoord moet minimaal 8 tekens bevatten",
+    "passwordHint": "Minimaal 8 tekens",
+    "passwordConfirmLabel": "Wachtwoord bevestigen",
+    "passwordConfirmPlaceholder": "••••••••",
+    "passwordMismatch": "Wachtwoorden komen niet overeen"
+  },
+  "anon": {
+    "title": "Hoe heet je?",
+    "description": "Vul je naam in zodat anderen weten wie welke taak pakt.",
+    "nameLabel": "Jouw naam",
+    "namePlaceholder": "Jan de Vries",
+    "nameRequired": "Vul je naam in om door te gaan",
+    "continue": "Doorgaan"
+  },
+  "dashboard": {
+    "title": "Mijn groepen",
+    "subtitle": "Alle groepen waar jij initiator van bent",
+    "emptyTitle": "Nog geen groepen",
+    "emptyDesc": "Maak je eerste groep aan en deel de link met je groep."
+  },
+  "groups": {
+    "new": "Nieuwe groep",
+    "createFirst": "Maak eerste groep",
+    "createTitle": "Nieuwe groep aanmaken",
+    "createSubtitle": "Vul de details in en maak je takenlijst klaar.",
+    "createCta": "Groep aanmaken",
+    "settingsTitle": "Groepsinstellingen",
+    "savedSuccess": "Instellingen opgeslagen!",
+    "nameLabel": "Naam van de groep",
+    "namePlaceholder": "Bijv. Sinterklaas 2026",
+    "nameRequired": "Groepsnaam is verplicht",
+    "temporaryLabel": "Tijdelijke groep",
+    "temporaryDesc": "Tijdelijke groepen zijn gekoppeld aan een specifiek evenement.",
+    "eventDateLabel": "Datum van het evenement",
+    "dateRequired": "Vul een datum in voor een tijdelijke groep",
+    "requireClaimLabel": "Iedereen moet minimaal één taak kiezen",
+    "requireClaimDesc": "Deelnemers kunnen niet afsluiten zonder taak te claimen.",
+    "visibilityLabel": "Wie mag de scorekaart zien?",
+    "visibility": {
+      "all": "Iedereen met de link",
+      "initiator": "Alleen ik (initiator)"
+    },
+    "visibilityDesc": {
+      "all": "Alle deelnemers kunnen zien wie wat heeft gepakt.",
+      "initiator": "Alleen jij kunt de scorekaart bekijken."
+    },
+    "by": "door",
+    "unknownInitiator": "Onbekend",
+    "temporary": "Tijdelijk",
+    "share": "Delen",
+    "shareTitle": "Groep delen",
+    "scorecard": "Scorekaart",
+    "settings": "Instellingen",
+    "dangerZone": "Gevarenzone",
+    "deleteWarning": "Dit verwijdert de groep en alle bijbehorende taken en claims permanent.",
+    "deleteGroup": "Groep verwijderen",
+    "deleteTitle": "Groep verwijderen?",
+    "deleteMessage": "Weet je zeker dat je deze groep wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+  },
+  "tasks": {
+    "addTask": "Taak toevoegen",
+    "addFirst": "Voeg eerste taak toe",
+    "editTask": "Taak bewerken",
+    "titleLabel": "Taaknaam",
+    "titlePlaceholder": "Bijv. Boodschappen doen",
+    "titleRequired": "Taaknaam is verplicht",
+    "descriptionLabel": "Omschrijving (optioneel)",
+    "descriptionPlaceholder": "Geef meer details over de taak...",
+    "limitCapacity": "Maximaal aantal deelnemers instellen",
+    "limitCapacityHint": "Laat leeg voor onbeperkt",
+    "maxCapacityLabel": "Maximaal aantal",
+    "maxCapacityHint": "Hoeveel personen kunnen deze taak claimen?",
+    "capacityMin": "Minimum is 1 deelnemer",
+    "emptyInitiator": "Nog geen taken",
+    "emptyInitiatorDesc": "Voeg je eerste taak toe zodat deelnemers kunnen kiezen.",
+    "emptyMember": "Geen taken beschikbaar",
+    "emptyMemberDesc": "De initiator heeft nog geen taken toegevoegd.",
+    "deleteTitle": "Taak verwijderen?",
+    "deleteMessage": "Weet je zeker dat je deze taak wilt verwijderen? Claims worden ook verwijderd.",
+    "claimFailed": "Claimen mislukt. Probeer opnieuw."
+  },
+  "scorecard": {
+    "title": "Scorekaart",
+    "refresh": "Vernieuwen",
+    "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt."
   }
 }
