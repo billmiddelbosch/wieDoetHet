@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/groups",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"name\":\"Buurtbarbecue 2026\",\"requireTaskSelection\":true,\"scorecardVisibility\":\"all\",\"scorecardViewerIds\":[],\"reminderAt\":\"2026-03-10T10:00:00Z\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/groups",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

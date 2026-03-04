@@ -1,0 +1,601 @@
+openapi: "3.0.1"
+
+info:
+  title: wieDoetHet API
+  description: >
+    Backend API for the wieDoetHet task-assignment platform.
+    Authentication is handled inside each Lambda function via Bearer JWT.
+    Anonymous users (share-link access) do not need a token.
+  version: "1.0"
+
+servers:
+  - url: https://trca8esu3j.execute-api.eu-west-2.amazonaws.com/production
+    description: Production
+
+components:
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: string
+      required:
+        - id
+        - name
+        - email
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        pictureUrl:
+          type: string
+        shareToken:
+          type: string
+        initiatorId:
+          type: string
+        requireTaskSelection:
+          type: boolean
+        scorecardVisibility:
+          type: string
+          enum:
+            - all
+            - selected
+            - initiator
+        scorecardViewerIds:
+          type: array
+          items:
+            type: string
+        reminderAt:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - shareToken
+        - initiatorId
+        - requireTaskSelection
+        - scorecardVisibility
+        - createdAt
+
+    GroupInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        pictureUrl:
+          type: string
+        requireTaskSelection:
+          type: boolean
+        scorecardVisibility:
+          type: string
+          enum:
+            - all
+            - selected
+            - initiator
+        scorecardViewerIds:
+          type: array
+          items:
+            type: string
+        reminderAt:
+          type: string
+      required:
+        - name
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        groupId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        maxClaims:
+          type: integer
+          minimum: 1
+        order:
+          type: integer
+      required:
+        - id
+        - groupId
+        - title
+        - maxClaims
+        - order
+
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        maxClaims:
+          type: integer
+          minimum: 1
+      required:
+        - title
+
+    Claim:
+      type: object
+      properties:
+        id:
+          type: string
+        groupId:
+          type: string
+        taskId:
+          type: string
+        userId:
+          type: string
+        anonymousName:
+          type: string
+        sessionId:
+          type: string
+        claimedAt:
+          type: string
+      required:
+        - id
+        - groupId
+        - taskId
+        - claimedAt
+
+    ScorecardEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        groupId:
+          type: string
+        taskId:
+          type: string
+        userId:
+          type: string
+        anonymousName:
+          type: string
+        sessionId:
+          type: string
+        claimedAt:
+          type: string
+        taskTitle:
+          type: string
+        claimedByName:
+          type: string
+      required:
+        - id
+        - groupId
+        - taskId
+        - claimedAt
+        - taskTitle
+        - claimedByName
+
+    ClaimInput:
+      type: object
+      properties:
+        anonymousName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        sessionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+        - token
+        - user
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+paths:
+
+  /auth/login:
+    post:
+      summary: Log in with email and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Login successful
+        "401":
+          description: Invalid credentials
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-auth/invocations"
+        passthroughBehavior: when_no_match
+
+  /auth/register:
+    post:
+      summary: Create a new account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+              required:
+                - name
+                - email
+                - password
+      responses:
+        "201":
+          description: Account created
+        "409":
+          description: Email already in use
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-auth/invocations"
+        passthroughBehavior: when_no_match
+
+  /auth/me:
+    get:
+      summary: Get the currently authenticated user
+      operationId: getMe
+      responses:
+        "200":
+          description: Current user
+        "401":
+          description: Not authenticated
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-auth/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups:
+    get:
+      summary: List groups where the authenticated user is initiator
+      operationId: listGroups
+      responses:
+        "200":
+          description: Array of groups
+        "401":
+          description: Not authenticated
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+    post:
+      summary: Create a new group
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        "201":
+          description: Group created
+        "401":
+          description: Not authenticated
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/share/{shareToken}:
+    get:
+      summary: Resolve a public share token to a group
+      operationId: getGroupByShareToken
+      parameters:
+        - name: shareToken
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Group details
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/{groupId}:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get a single group by ID
+      operationId: getGroup
+      responses:
+        "200":
+          description: Group details
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+    patch:
+      summary: Update group settings
+      operationId: updateGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        "200":
+          description: Updated group
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+    delete:
+      summary: Delete a group
+      operationId: deleteGroup
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-groups/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/{groupId}/tasks:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: List all tasks in a group
+      operationId: listTasks
+      responses:
+        "200":
+          description: Array of tasks
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-tasks/invocations"
+        passthroughBehavior: when_no_match
+
+    post:
+      summary: Create a new task in a group
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+      responses:
+        "201":
+          description: Task created
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-tasks/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/{groupId}/tasks/{taskId}:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      summary: Update a task
+      operationId: updateTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+      responses:
+        "200":
+          description: Updated task
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+        "404":
+          description: Task not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-tasks/invocations"
+        passthroughBehavior: when_no_match
+
+    delete:
+      summary: Delete a task
+      operationId: deleteTask
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not the initiator
+        "404":
+          description: Task not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-tasks/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/{groupId}/tasks/{taskId}/claim:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      summary: Claim a task
+      operationId: claimTask
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimInput'
+      responses:
+        "201":
+          description: Task claimed
+        "404":
+          description: Task not found
+        "409":
+          description: Task is already at full capacity
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-claims/invocations"
+        passthroughBehavior: when_no_match
+
+    delete:
+      summary: Unclaim a task
+      operationId: unclaimTask
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+      responses:
+        "204":
+          description: Claim removed
+        "404":
+          description: Claim not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-claims/invocations"
+        passthroughBehavior: when_no_match
+
+  /groups/{groupId}/claims:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get the scorecard for a group
+      operationId: listClaims
+      responses:
+        "200":
+          description: Array of scorecard entries
+        "403":
+          description: Not allowed to view scorecard
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-claims/invocations"
+        passthroughBehavior: when_no_match

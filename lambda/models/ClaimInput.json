@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "ClaimInput",
+  "description": "Request body for POST /groups/{groupId}/tasks/{taskId}/claim (anonymous users only — authenticated users send an empty body)",
+  "type": "object",
+  "properties": {
+    "anonymousName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Display name shown in the scorecard for anonymous claimants"
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Stable browser session ID so the user can later unclaim their task"
+    }
+  },
+  "additionalProperties": false
+}

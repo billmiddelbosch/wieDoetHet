@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "TaskInput",
+  "description": "Request body for POST /groups/{groupId}/tasks and PATCH /groups/{groupId}/tasks/{taskId}",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 1000
+    },
+    "maxClaims": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    }
+  },
+  "required": ["title"],
+  "additionalProperties": false
+}

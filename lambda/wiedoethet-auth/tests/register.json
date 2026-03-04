@@ -1,0 +1,16 @@
+{
+  "httpMethod": "POST",
+  "path": "/auth/register",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"name\":\"Nieuw Gebruiker\",\"email\":\"nieuw@wiedoehet.nl\",\"password\":\"geheim123\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/auth/register",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

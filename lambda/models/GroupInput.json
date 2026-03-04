@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "GroupInput",
+  "description": "Request body for POST /groups and PATCH /groups/{id}",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "pictureUrl": {
+      "type": ["string", "null"],
+      "maxLength": 2048
+    },
+    "requireTaskSelection": {
+      "type": "boolean"
+    },
+    "scorecardVisibility": {
+      "type": "string",
+      "enum": ["all", "selected", "initiator"]
+    },
+    "scorecardViewerIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 500
+    },
+    "reminderAt": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}
