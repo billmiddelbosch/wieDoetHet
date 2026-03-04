@@ -1,0 +1,18 @@
+{
+  "httpMethod": "GET",
+  "path": "/groups/share/tok-bbq-2026",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": null,
+  "pathParameters": {
+    "shareToken": "tok-bbq-2026"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/groups/share/tok-bbq-2026",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

@@ -1,0 +1,18 @@
+{
+  "httpMethod": "GET",
+  "path": "/groups/REPLACE_WITH_GROUP_ID/claims",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": null,
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

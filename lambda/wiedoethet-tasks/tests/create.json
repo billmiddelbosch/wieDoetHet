@@ -1,0 +1,19 @@
+{
+  "httpMethod": "POST",
+  "path": "/groups/REPLACE_WITH_GROUP_ID/tasks",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"title\":\"Vlees & worsten regelen\",\"description\":\"Ca. 20 personen. Budget €60.\",\"maxClaims\":2}",
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/groups/REPLACE_WITH_GROUP_ID/tasks",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

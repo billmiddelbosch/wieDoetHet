@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/groups/REPLACE_WITH_GROUP_ID",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"name\":\"Buurtbarbecue 2026 (bijgewerkt)\",\"scorecardVisibility\":\"selected\",\"scorecardViewerIds\":[\"user-2\"],\"reminderAt\":\"2026-03-12T09:00:00Z\"}",
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "path": "/groups/REPLACE_WITH_GROUP_ID",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}
