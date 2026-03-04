@@ -24,7 +24,10 @@ export function useClaims() {
   }
 
   async function unclaimTask(groupId, taskId) {
-    await apiClient.delete(`/groups/${groupId}/tasks/${taskId}/claim`)
+    const body = !authStore.isAuthenticated && authStore.anonymousUser?.sessionId
+      ? { data: { sessionId: authStore.anonymousUser.sessionId } }
+      : {}
+    await apiClient.delete(`/groups/${groupId}/tasks/${taskId}/claim`, body)
     taskStore.removeClaim(
       taskId,
       authStore.isAuthenticated ? authStore.user?.id : authStore.anonymousUser?.sessionId
