@@ -1,0 +1,18 @@
+{
+  "httpMethod": "POST",
+  "path": "/groups/REPLACE_WITH_GROUP_ID/tasks/REPLACE_WITH_TASK_ID/claim",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"anonymousName\":\"Klaas Bakker\",\"sessionId\":\"anon-session-abc123\"}",
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID",
+    "taskId": "REPLACE_WITH_TASK_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

@@ -1,0 +1,17 @@
+{
+  "httpMethod": "GET",
+  "path": "/auth/me",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": null,
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/auth/me",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

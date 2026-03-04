@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WdhDynamoDBTableAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ],
+      "Resource": "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main"
+    },
+    {
+      "Sid": "WdhDynamoDBIndexAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Query"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI1",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI2"
+      ]
+    }
+  ]
+}

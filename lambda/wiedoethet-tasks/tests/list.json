@@ -1,0 +1,18 @@
+{
+  "httpMethod": "GET",
+  "path": "/groups/REPLACE_WITH_GROUP_ID/tasks",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": null,
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/groups/REPLACE_WITH_GROUP_ID/tasks",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}
