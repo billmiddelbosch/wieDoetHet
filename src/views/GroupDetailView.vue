@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroupStore } from '@/stores/group'
@@ -24,7 +24,7 @@ const router = useRouter()
 const groupStore = useGroupStore()
 const authStore = useAuthStore()
 const { fetchGroup, loading: groupLoading, error: groupError } = useGroups()
-const { tasks, fetchTasks, createTask, updateTask, deleteTask, loading: taskLoading } = useTasks()
+const { tasks, fetchTasks, createTask, updateTask, deleteTask, clearTasks, loading: taskLoading } = useTasks()
 const { claimTask, unclaimTask } = useClaims()
 
 const group = computed(() => groupStore.currentGroup)
@@ -48,10 +48,16 @@ const taskSaveLoading = ref(false)
 const deleteLoading = ref(false)
 const claimError = ref('')
 
-onMounted(async () => {
-  await fetchGroup(route.params.id)
-  await fetchTasks(route.params.id)
-})
+async function loadGroup(id) {
+  if (groupStore.currentGroup?.id !== id) {
+    await fetchGroup(id)
+  }
+  await fetchTasks(id)
+}
+
+onMounted(() => loadGroup(route.params.id))
+onUnmounted(() => { clearTasks(); groupStore.setCurrentGroup(null) })
+watch(() => route.params.id, (id) => { if (id) loadGroup(id) })
 
 function onAddTask() {
   editingTask.value = null

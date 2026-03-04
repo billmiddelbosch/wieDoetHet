@@ -12,7 +12,7 @@
 import { randomUUID } from 'node:crypto'
 import { ok, created, noContent, unauthorized, forbidden, notFound, conflict, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { verifyJwt } from '../shared/jwt.js'
-import { getItem, putItem, deleteItem, queryByPk, queryGsi1 } from '../shared/db.js'
+import { getItem, putItem, deleteItem, queryByPk, queryGsi1, keys } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -96,21 +96,24 @@ async function listClaims(event) {
 
   const claims = await queryGsi1(`GCLAIM#${groupId}`)
 
-  // Enrich each claim with the task title (batch-resolve unique taskIds)
+  // Batch-resolve unique taskIds and userIds in parallel
   const taskIds = [...new Set(claims.map((c) => c.taskId))]
-  const taskMap = {}
-  await Promise.all(
-    taskIds.map(async (tid) => {
-      const taskItems = await queryByPk(`GROUP#${groupId}`, 'TASK#')
-      const task = taskItems.find((t) => t.id === tid)
-      if (task) taskMap[tid] = task.title
-    })
+  const userIds = [...new Set(claims.map((c) => c.userId).filter(Boolean))]
+
+  const [taskItems, userRecords] = await Promise.all([
+    queryByPk(`GROUP#${groupId}`, 'TASK#'),
+    Promise.all(userIds.map((uid) => getItem(`USER#${uid}`, 'PROFILE'))),
+  ])
+
+  const taskMap = Object.fromEntries(taskItems.map((t) => [t.id, t.title]))
+  const userMap = Object.fromEntries(
+    userRecords.filter(Boolean).map((u) => [u.id, u.name])
   )
 
   const enriched = claims.map((c) => ({
     ...stripKeys(c),
     taskTitle: taskMap[c.taskId] ?? '?',
-    claimedByName: c.userId ? `Gebruiker ${c.userId}` : c.anonymousName ?? 'Anoniem',
+    claimedByName: c.userId ? (userMap[c.userId] ?? 'Onbekend') : c.anonymousName ?? 'Anoniem',
   }))
 
   return ok(enriched)

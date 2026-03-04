@@ -28,7 +28,7 @@ export const useTaskStore = defineStore('task', () => {
     if (!task.claims) task.claims = []
     task.claims.push(claim)
     task.claimCount = task.claims.length
-    task.isFull = task.maxCapacity !== null && task.claimCount >= task.maxCapacity
+    task.isFull = !!task.maxClaims && task.claimCount >= task.maxClaims
     task.isClaimedByMe = true
   }
 
@@ -39,7 +39,7 @@ export const useTaskStore = defineStore('task', () => {
       (c) => c.userId !== userIdOrSessionId && c.sessionId !== userIdOrSessionId
     )
     task.claimCount = task.claims.length
-    task.isFull = task.maxCapacity !== null && task.claimCount >= task.maxCapacity
+    task.isFull = !!task.maxClaims && task.claimCount >= task.maxClaims
     task.isClaimedByMe = false
   }
 
@@ -50,7 +50,7 @@ function enrichTask(task) {
   const authStore = useAuthStore()
   const claims = task.claims ?? []
   const claimCount = claims.length
-  const isFull = task.maxCapacity !== null && claimCount >= task.maxCapacity
+  const isFull = !!task.maxClaims && claimCount >= task.maxClaims
   const isClaimedByMe = claims.some(
     (c) =>
       (authStore.user && c.userId === authStore.user.id) ||

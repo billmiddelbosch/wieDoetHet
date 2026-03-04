@@ -39,8 +39,21 @@ export function useClaims() {
     error.value = null
     try {
       const { data } = await apiClient.get(`/groups/${groupId}/claims`)
-      scorecard.value = data
-      return data
+      // Group flat claims into rows by participant for ScorecardTable
+      const rowMap = {}
+      for (const claim of data) {
+        const key = claim.userId ?? claim.sessionId ?? claim.anonymousName ?? 'anon'
+        if (!rowMap[key]) {
+          rowMap[key] = {
+            participantId: key,
+            participantName: claim.claimedByName ?? claim.anonymousName ?? 'Anoniem',
+            tasks: [],
+          }
+        }
+        rowMap[key].tasks.push({ taskId: claim.taskId })
+      }
+      scorecard.value = Object.values(rowMap)
+      return scorecard.value
     } catch (err) {
       error.value = err?.response?.data?.message ?? err.message
       return []

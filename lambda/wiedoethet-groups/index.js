@@ -15,7 +15,7 @@
 import { randomUUID } from 'node:crypto'
 import { ok, created, noContent, unauthorized, forbidden, notFound, badRequest, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { verifyJwt } from '../shared/jwt.js'
-import { getItem, putItem, deleteItem, queryGsi1, queryGsi2, keys } from '../shared/db.js'
+import { getItem, putItem, deleteItem, queryByPk, queryGsi1, queryGsi2, keys } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -30,7 +30,8 @@ async function listGroups(event) {
     .map(stripKeys)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
-  return ok(groups)
+  const enriched = await Promise.all(groups.map((g) => enrichGroup(g)))
+  return ok(enriched)
 }
 
 async function createGroup(event) {
@@ -86,7 +87,7 @@ async function getGroup(event) {
   if (!group) return notFound('Groep niet gevonden')
   if (group.initiatorId !== user.sub) return forbidden()
 
-  return ok(stripKeys(group))
+  return ok(await enrichGroup(stripKeys(group)))
 }
 
 async function updateGroup(event) {
@@ -127,6 +128,15 @@ async function deleteGroup(event) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function enrichGroup(group) {
+  const [tasks, claims] = await Promise.all([
+    queryByPk(`GROUP#${group.id}`, 'TASK#'),
+    queryGsi1(`GCLAIM#${group.id}`),
+  ])
+  const uniqueClaimers = new Set(claims.map((c) => c.userId ?? c.sessionId))
+  return { ...group, taskCount: tasks.length, memberCount: uniqueClaimers.size }
+}
 
 function stripKeys(item) {
   const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, ...rest } = item

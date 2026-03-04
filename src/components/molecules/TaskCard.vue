@@ -13,9 +13,7 @@ const props = defineProps({
 
 defineEmits(['claim', 'unclaim', 'edit', 'delete'])
 
-const isFull = computed(
-  () => props.task.maxCapacity !== null && props.task.claimCount >= props.task.maxCapacity
-)
+const isFull = computed(() => props.task.isFull)
 
 const statusVariant = computed(() => {
   if (props.task.isClaimedByMe) return 'success'

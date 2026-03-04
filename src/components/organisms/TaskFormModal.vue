@@ -20,7 +20,7 @@ const emit = defineEmits(['save', 'close'])
 const title = ref('')
 const description = ref('')
 const hasCapacity = ref(false)
-const maxCapacity = ref(2)
+const maxClaims = ref(2)
 const errors = ref({})
 
 watch(
@@ -29,8 +29,8 @@ watch(
     if (val) {
       title.value = props.task?.title ?? ''
       description.value = props.task?.description ?? ''
-      hasCapacity.value = props.task?.maxCapacity != null
-      maxCapacity.value = props.task?.maxCapacity ?? 2
+      hasCapacity.value = !!props.task?.maxClaims
+      maxClaims.value = props.task?.maxClaims ?? 2
       errors.value = {}
     }
   }
@@ -39,8 +39,8 @@ watch(
 function validate() {
   errors.value = {}
   if (!title.value.trim()) errors.value.title = t('tasks.titleRequired')
-  if (hasCapacity.value && (!maxCapacity.value || maxCapacity.value < 1))
-    errors.value.maxCapacity = t('tasks.capacityMin')
+  if (hasCapacity.value && (!maxClaims.value || maxClaims.value < 1))
+    errors.value.maxClaims = t('tasks.capacityMin')
   return Object.keys(errors.value).length === 0
 }
 
@@ -49,7 +49,7 @@ function submit() {
   emit('save', {
     title: title.value.trim(),
     description: description.value.trim() || null,
-    maxCapacity: hasCapacity.value ? Number(maxCapacity.value) : null,
+    maxClaims: hasCapacity.value ? Number(maxClaims.value) : null,
   })
 }
 </script>
@@ -85,10 +85,10 @@ function submit() {
       <BaseInput
         v-if="hasCapacity"
         id="task-capacity"
-        v-model="maxCapacity"
+        v-model="maxClaims"
         type="number"
         :label="t('tasks.maxCapacityLabel')"
-        :error="errors.maxCapacity"
+        :error="errors.maxClaims"
         :hint="t('tasks.maxCapacityHint')"
       />
     </div>

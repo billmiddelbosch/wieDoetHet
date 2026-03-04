@@ -1,13 +1,16 @@
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import apiClient from '@/lib/axios'
 import { useTaskStore } from '@/stores/task'
 
 export function useTasks() {
   const taskStore = useTaskStore()
+  const { tasks } = storeToRefs(taskStore)
   const loading = ref(false)
   const error = ref(null)
 
   async function fetchTasks(groupId) {
+    taskStore.setTasks([])
     loading.value = true
     error.value = null
     try {
@@ -61,13 +64,18 @@ export function useTasks() {
     }
   }
 
+  function clearTasks() {
+    taskStore.setTasks([])
+  }
+
   return {
-    tasks: taskStore.tasks,
+    tasks,
     loading,
     error,
     fetchTasks,
     createTask,
     updateTask,
     deleteTask,
+    clearTasks,
   }
 }

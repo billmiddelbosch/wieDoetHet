@@ -23,7 +23,14 @@ async function listTasks(event) {
   const items = await queryByPk(`GROUP#${groupId}`, 'TASK#')
   const tasks = items.map(stripKeys).sort((a, b) => a.order - b.order)
 
-  return ok(tasks)
+  const tasksWithClaims = await Promise.all(
+    tasks.map(async (task) => {
+      const claimItems = await queryByPk(`TASK#${task.id}`, 'CLAIM#')
+      return { ...task, claims: claimItems.map(stripKeys) }
+    })
+  )
+
+  return ok(tasksWithClaims)
 }
 
 async function createTask(event) {
@@ -76,7 +83,7 @@ async function updateTask(event) {
     ...task,
     title: body.title?.trim() ?? task.title,
     description: 'description' in body ? body.description : task.description,
-    maxClaims: body.maxClaims ?? task.maxClaims,
+    maxClaims: 'maxClaims' in body ? body.maxClaims : task.maxClaims,
   }
 
   await putItem(updated)

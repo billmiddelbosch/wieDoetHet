@@ -1,9 +1,11 @@
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import apiClient from '@/lib/axios'
 import { useGroupStore } from '@/stores/group'
 
 export function useGroups() {
   const groupStore = useGroupStore()
+  const { groups, currentGroup } = storeToRefs(groupStore)
   const loading = ref(false)
   const error = ref(null)
 
@@ -90,8 +92,8 @@ export function useGroups() {
   }
 
   return {
-    groups: groupStore.groups,
-    currentGroup: groupStore.currentGroup,
+    groups,
+    currentGroup,
     loading,
     error,
     fetchGroups,
