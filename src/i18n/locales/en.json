@@ -65,7 +65,7 @@
     "namePlaceholder": "John Smith",
     "nameRequired": "Name is required",
     "emailLabel": "Email address",
-    "emailPlaceholder": "john@example.com",
+    "emailPlaceholder": "john{'@'}example.com",
     "emailRequired": "Email address is required",
     "emailInvalid": "Enter a valid email address",
     "passwordLabel": "Password",

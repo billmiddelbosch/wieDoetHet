@@ -65,7 +65,7 @@
     "namePlaceholder": "Jan de Vries",
     "nameRequired": "Naam is verplicht",
     "emailLabel": "E-mailadres",
-    "emailPlaceholder": "jan@example.nl",
+    "emailPlaceholder": "jan{'@'}example.nl",
     "emailRequired": "E-mailadres is verplicht",
     "emailInvalid": "Voer een geldig e-mailadres in",
     "passwordLabel": "Wachtwoord",
