@@ -1,0 +1,16 @@
+{
+  "httpMethod": "POST",
+  "path": "/auth/login",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"email\":\"test@wiedoehet.nl\",\"password\":\"test1234\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/auth/login",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

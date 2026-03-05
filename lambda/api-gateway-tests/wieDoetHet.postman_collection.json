@@ -1,0 +1,511 @@
+{
+  "info": {
+    "name": "wieDoetHet API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full API test suite for wieDoetHet. Run requests in order: register → login → create group → create task → claim."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://eicwh88y07.execute-api.eu-west-2.amazonaws.com/development",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT — auto-filled by Register or Login"
+    },
+    {
+      "key": "groupId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-filled by Create Group"
+    },
+    {
+      "key": "shareToken",
+      "value": "",
+      "type": "string",
+      "description": "Auto-filled by Create Group"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-filled by Create Task"
+    },
+    {
+      "key": "anonymousSessionId",
+      "value": "sess_anon_test_001",
+      "type": "string",
+      "description": "Fixed session ID used for anonymous claim tests"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  pm.test('token present', () => pm.expect(body.token).to.be.a('string'));",
+                  "  pm.test('user.id present', () => pm.expect(body.user.id).to.be.a('string'));",
+                  "  console.log('Token saved:', body.token);",
+                  "} else {",
+                  "  pm.test('Expected 201', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('token present', () => pm.expect(body.token).to.be.a('string'));",
+                  "  console.log('Token saved:', body.token);",
+                  "} else {",
+                  "  pm.test('Expected 200', () => pm.response.to.have.status(200));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('user.email present', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.email).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Create Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('groupId', body.id);",
+                  "  pm.collectionVariables.set('shareToken', body.shareToken);",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  pm.test('group.id present', () => pm.expect(body.id).to.be.a('string'));",
+                  "  pm.test('shareToken present', () => pm.expect(body.shareToken).to.be.a('string'));",
+                  "  console.log('groupId saved:', body.id);",
+                  "  console.log('shareToken saved:', body.shareToken);",
+                  "} else {",
+                  "  pm.test('Expected 201', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sprint 1 Taken\",\n  \"description\": \"Alle taken voor sprint 1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups", "host": ["{{baseUrl}}"], "path": ["groups"] }
+          }
+        },
+        {
+          "name": "List Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups", "host": ["{{baseUrl}}"], "path": ["groups"] }
+          }
+        },
+        {
+          "name": "Get Group by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('group.id matches', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.id).to.equal(pm.collectionVariables.get('groupId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}"] }
+          }
+        },
+        {
+          "name": "Get Group by Share Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('group present', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/groups/share/{{shareToken}}", "host": ["{{baseUrl}}"], "path": ["groups", "share", "{{shareToken}}"] }
+          }
+        },
+        {
+          "name": "Update Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('name updated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.name).to.equal('Sprint 1 Taken (bijgewerkt)');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sprint 1 Taken (bijgewerkt)\",\n  \"description\": \"Bijgewerkte omschrijving voor sprint 1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}"] }
+          }
+        },
+        {
+          "name": "Delete Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('taskId', body.id);",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  pm.test('task.id present', () => pm.expect(body.id).to.be.a('string'));",
+                  "  console.log('taskId saved:', body.id);",
+                  "} else {",
+                  "  pm.test('Expected 201', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Frontend login pagina bouwen\",\n  \"description\": \"Maak de login pagina met validatie en foutmeldingen\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks"] }
+          }
+        },
+        {
+          "name": "List Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks"] }
+          }
+        },
+        {
+          "name": "Update Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('title updated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.title).to.include('bijgewerkt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Frontend login pagina bouwen (bijgewerkt)\",\n  \"description\": \"Maak de login pagina met validatie, foutmeldingen en wachtwoord tonen\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}"] }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Claims",
+      "item": [
+        {
+          "name": "Claim Task (authenticated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('claim.taskId matches', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.taskId).to.equal(pm.collectionVariables.get('taskId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}/claim", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}", "claim"] }
+          }
+        },
+        {
+          "name": "Unclaim Task (authenticated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}/claim", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}", "claim"] }
+          }
+        },
+        {
+          "name": "Claim Task (anonymous)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('anonymousName present', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.anonymousName).to.equal('Anonieme Gebruiker');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"anonymousName\": \"Anonieme Gebruiker\",\n  \"sessionId\": \"{{anonymousSessionId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}/claim", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}", "claim"] }
+          }
+        },
+        {
+          "name": "Unclaim Task (anonymous)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{anonymousSessionId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/tasks/{{taskId}}/claim", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "tasks", "{{taskId}}", "claim"] }
+          }
+        },
+        {
+          "name": "Get Claims / Scorecard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/claims", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "claims"] }
+          }
+        }
+      ]
+    }
+  ]
+}

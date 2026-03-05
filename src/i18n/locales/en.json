@@ -1,13 +1,160 @@
 {
   "nav": {
     "home": "Home",
-    "about": "About"
+    "about": "About",
+    "login": "Log in",
+    "register": "Register",
+    "logout": "Log out",
+    "dashboard": "My groups"
   },
-  "home": {
-    "title": "Who Does It",
-    "welcome": "Welcome to Who Does It"
+  "theme": {
+    "switchDark": "Switch to dark mode",
+    "switchLight": "Switch to light mode"
   },
-  "about": {
-    "title": "About us"
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "loadError": "Error loading"
+  },
+  "landing": {
+    "badge": "Free & no account required",
+    "headline": "Who does",
+    "headlineAccent": "which task?",
+    "subheadline": "Create a task list, share the link via WhatsApp and let everyone choose what they do. Simple, fast and transparent.",
+    "cta": "Create a group",
+    "ctaSecondary": "Create an account",
+    "howTitle": "How it works",
+    "step1": "Create a group",
+    "step1Desc": "Give your group a name and add the tasks that need to be distributed.",
+    "step2": "Add tasks",
+    "step2Desc": "Describe each task and optionally set a maximum number of participants.",
+    "step3": "Share the link",
+    "step3Desc": "Send the link via WhatsApp. Everyone clicks, grabs a task — done!",
+    "featuresTitle": "Why wieDoetHet?",
+    "feat1": "No account needed",
+    "feat1Desc": "Participants can claim tasks with just a name. No registration required.",
+    "feat2": "WhatsApp-friendly",
+    "feat2Desc": "Share the link directly from the app via WhatsApp. One tap and everyone is in.",
+    "feat3": "See who does what",
+    "feat3Desc": "See at a glance who has grabbed which task. No double assignments.",
+    "feat4": "You decide who sees what",
+    "feat4Desc": "Choose who can view the scorecard — just you, or everyone.",
+    "ctaBlockTitle": "Ready to get started?",
+    "ctaBlockDesc": "Create your first group in less than a minute. No account needed.",
+    "installHint": "Add wieDoetHet to your home screen for quick access!",
+    "install": "Install"
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Log in to your account",
+    "loginCta": "Log in",
+    "loginFailed": "Email or password is incorrect.",
+    "noAccount": "Don't have an account?",
+    "registerLink": "Register",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Log in",
+    "registerTitle": "Create an account",
+    "registerSubtitle": "Register to manage your groups",
+    "registerCta": "Create account",
+    "registerFailed": "Registration failed. Please try again.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "John Smith",
+    "nameRequired": "Name is required",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "john{'@'}example.com",
+    "emailRequired": "Email address is required",
+    "emailInvalid": "Enter a valid email address",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordHint": "At least 8 characters",
+    "passwordConfirmLabel": "Confirm password",
+    "passwordConfirmPlaceholder": "••••••••",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "anon": {
+    "title": "What's your name?",
+    "description": "Enter your name so others know who grabbed which task.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "John Smith",
+    "nameRequired": "Enter your name to continue",
+    "continue": "Continue"
+  },
+  "dashboard": {
+    "title": "My groups",
+    "subtitle": "All groups where you are the initiator",
+    "emptyTitle": "No groups yet",
+    "emptyDesc": "Create your first group and share the link with your group."
+  },
+  "groups": {
+    "new": "New group",
+    "createFirst": "Create first group",
+    "createTitle": "Create new group",
+    "createSubtitle": "Fill in the details and get your task list ready.",
+    "createCta": "Create group",
+    "settingsTitle": "Group settings",
+    "savedSuccess": "Settings saved!",
+    "nameLabel": "Group name",
+    "namePlaceholder": "E.g. Birthday party 2026",
+    "nameRequired": "Group name is required",
+    "temporaryLabel": "Temporary group",
+    "temporaryDesc": "Temporary groups are linked to a specific event.",
+    "eventDateLabel": "Event date",
+    "dateRequired": "Enter a date for a temporary group",
+    "requireClaimLabel": "Everyone must claim at least one task",
+    "requireClaimDesc": "Participants cannot close without claiming a task.",
+    "visibilityLabel": "Who can see the scorecard?",
+    "visibility": {
+      "all": "Everyone with the link",
+      "initiator": "Only me (initiator)"
+    },
+    "visibilityDesc": {
+      "all": "All participants can see who grabbed what.",
+      "initiator": "Only you can view the scorecard."
+    },
+    "by": "by",
+    "unknownInitiator": "Unknown",
+    "temporary": "Temporary",
+    "share": "Share",
+    "shareTitle": "Share group",
+    "scorecard": "Scorecard",
+    "settings": "Settings",
+    "dangerZone": "Danger zone",
+    "deleteWarning": "This permanently deletes the group and all its tasks and claims.",
+    "deleteGroup": "Delete group",
+    "deleteTitle": "Delete group?",
+    "deleteMessage": "Are you sure you want to delete this group? This cannot be undone."
+  },
+  "tasks": {
+    "addTask": "Add task",
+    "addFirst": "Add first task",
+    "editTask": "Edit task",
+    "titleLabel": "Task name",
+    "titlePlaceholder": "E.g. Buy groceries",
+    "titleRequired": "Task name is required",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Give more details about the task...",
+    "limitCapacity": "Set maximum number of participants",
+    "limitCapacityHint": "Leave empty for unlimited",
+    "maxCapacityLabel": "Maximum number",
+    "maxCapacityHint": "How many people can claim this task?",
+    "capacityMin": "Minimum is 1 participant",
+    "emptyInitiator": "No tasks yet",
+    "emptyInitiatorDesc": "Add your first task so participants can choose.",
+    "emptyMember": "No tasks available",
+    "emptyMemberDesc": "The initiator hasn't added any tasks yet.",
+    "deleteTitle": "Delete task?",
+    "deleteMessage": "Are you sure you want to delete this task? Claims will also be deleted.",
+    "claimFailed": "Claiming failed. Please try again."
+  },
+  "scorecard": {
+    "title": "Scorecard",
+    "refresh": "Refresh",
+    "notVisible": "The scorecard is not visible to you. The initiator has restricted access."
   }
 }

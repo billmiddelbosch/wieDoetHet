@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/groups/REPLACE_WITH_GROUP_ID/tasks/REPLACE_WITH_TASK_ID",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"title\":\"Vlees & worsten (bijgewerkt)\",\"maxClaims\":3}",
+  "pathParameters": {
+    "groupId": "REPLACE_WITH_GROUP_ID",
+    "taskId": "REPLACE_WITH_TASK_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}
