@@ -32,7 +32,7 @@ export const ddb = DynamoDBDocumentClient.from(client, {
   marshallOptions: { removeUndefinedValues: true },
 })
 
-export const TABLE = process.env.TABLE_NAME ?? 'wdh-main'
+const table = () => process.env.TABLE_NAME ?? 'wdh-main'
 
 // ─── Key builders ────────────────────────────────────────────────────────────
 
@@ -55,22 +55,22 @@ export const keys = {
 // ─── Generic helpers ─────────────────────────────────────────────────────────
 
 export async function getItem(pk, sk) {
-  const { Item } = await ddb.send(new GetCommand({ TableName: TABLE, Key: { PK: pk, SK: sk } }))
+  const { Item } = await ddb.send(new GetCommand({ TableName: table(), Key: { PK: pk, SK: sk } }))
   return Item ?? null
 }
 
 export async function putItem(item) {
-  await ddb.send(new PutCommand({ TableName: TABLE, Item: item }))
+  await ddb.send(new PutCommand({ TableName: table(), Item: item }))
   return item
 }
 
 export async function deleteItem(pk, sk) {
-  await ddb.send(new DeleteCommand({ TableName: TABLE, Key: { PK: pk, SK: sk } }))
+  await ddb.send(new DeleteCommand({ TableName: table(), Key: { PK: pk, SK: sk } }))
 }
 
 export async function queryByPk(pk, skPrefix = null, indexName = null) {
   const params = {
-    TableName: TABLE,
+    TableName: table(),
     KeyConditionExpression: skPrefix
       ? 'PK = :pk AND begins_with(SK, :prefix)'
       : 'PK = :pk',
@@ -89,7 +89,7 @@ export async function queryByPk(pk, skPrefix = null, indexName = null) {
 
 export async function queryGsi1(gsi1pk, gsi1skPrefix = null) {
   const params = {
-    TableName: TABLE,
+    TableName: table(),
     IndexName: 'GSI1',
     KeyConditionExpression: gsi1skPrefix
       ? 'GSI1PK = :pk AND begins_with(GSI1SK, :prefix)'
@@ -104,7 +104,7 @@ export async function queryGsi1(gsi1pk, gsi1skPrefix = null) {
 
 export async function queryGsi2(gsi2pk, gsi2skPrefix = null) {
   const params = {
-    TableName: TABLE,
+    TableName: table(),
     IndexName: 'GSI2',
     KeyConditionExpression: gsi2skPrefix
       ? 'GSI2PK = :pk AND begins_with(GSI2SK, :prefix)'
