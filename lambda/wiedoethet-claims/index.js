@@ -33,7 +33,7 @@ async function claimTask(event) {
 
   // Check capacity
   const existingClaims = await queryByPk(`TASK#${taskId}`, 'CLAIM#')
-  if (existingClaims.length >= (task.maxClaims ?? 1)) return conflict('Taak is al vol')
+  if (task.maxClaims !== null && existingClaims.length >= task.maxClaims) return conflict('Taak is al vol')
 
   // Prevent duplicate claim by same user/session
   const alreadyClaimed = existingClaims.some((c) =>

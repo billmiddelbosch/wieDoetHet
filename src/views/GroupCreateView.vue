@@ -108,7 +108,7 @@ async function submit() {
               class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
               :class="
                 scorecardVisibility === opt
-                  ? 'border-brand-500 bg-brand-50'
+                  ? 'border-brand-500 bg-brand-500/10'
                   : 'border-[var(--border-default)] hover:border-[var(--border-strong)]'
               "
             >

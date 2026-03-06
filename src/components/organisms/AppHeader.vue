@@ -25,7 +25,7 @@ function logout() {
   <header
     class="sticky top-0 z-40 bg-[var(--bg-surface)] border-b border-[var(--border-default)] backdrop-blur-sm"
   >
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 shrink-0">
         <div class="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center">
@@ -43,7 +43,7 @@ function logout() {
             />
           </svg>
         </div>
-        <span class="font-bold text-[var(--text-primary)] text-base">wieDoetHet</span>
+        <span class="hidden sm:inline font-bold text-[var(--text-primary)] text-base">wieDoetHet</span>
       </RouterLink>
 
       <!-- Right side -->

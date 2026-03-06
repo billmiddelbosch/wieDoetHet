@@ -141,7 +141,7 @@ export const handlers = [
       groupId: params.groupId,
       title: body.title,
       description: body.description ?? null,
-      maxClaims: body.maxClaims ?? 1,
+      maxClaims: body.maxClaims !== undefined ? body.maxClaims : 1,
       order: db.tasks.filter((t) => t.groupId === params.groupId).length,
     }
     db.tasks.push(task)
@@ -175,7 +175,7 @@ export const handlers = [
     if (!task) return HttpResponse.json({ message: 'Taak niet gevonden' }, { status: 404 })
 
     const existing = db.claims.filter((c) => c.taskId === params.taskId)
-    if (existing.length >= (task.maxClaims ?? 1)) {
+    if (task.maxClaims !== null && existing.length >= task.maxClaims) {
       return HttpResponse.json({ message: 'Taak is al vol' }, { status: 409 })
     }
 
