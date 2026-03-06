@@ -127,6 +127,7 @@ function requireAuth(event) {
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export const handler = async (event) => {
+  process.env.TABLE_NAME = event.stageVariables?.tableName ?? process.env.TABLE_NAME ?? 'wdh-main'
   try {
     const method = event.httpMethod
     const path = event.path?.replace(/\/$/, '')
