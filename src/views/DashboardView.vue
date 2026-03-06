@@ -8,6 +8,7 @@ import GroupCard from '@/components/molecules/GroupCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseEmptyState from '@/components/ui/BaseEmptyState.vue'
+import BaseAddButton from '@/components/ui/BaseAddButton.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -25,23 +26,9 @@ function openGroup(group) {
 
 <template>
   <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-2xl font-bold text-[var(--text-primary)]">{{ t('dashboard.title') }}</h1>
-        <p class="text-sm text-[var(--text-secondary)] mt-0.5">{{ t('dashboard.subtitle') }}</p>
-      </div>
-      <BaseButton variant="primary" @click="router.push('/groups/new')">
-        <svg
-          class="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-        {{ t('groups.new') }}
-      </BaseButton>
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-[var(--text-primary)]">{{ t('dashboard.title') }}</h1>
+      <p class="text-sm text-[var(--text-secondary)] mt-0.5">{{ t('dashboard.subtitle') }}</p>
     </div>
 
     <div v-if="loading" class="flex justify-center py-20">
@@ -66,6 +53,9 @@ function openGroup(group) {
       </BaseEmptyState>
 
       <div v-else class="flex flex-col gap-4">
+        <BaseAddButton @click="router.push('/groups/new')">
+          + {{ t('groups.new') }}
+        </BaseAddButton>
         <GroupCard v-for="group in groups" :key="group.id" :group="group" @click="openGroup" />
       </div>
     </template>
