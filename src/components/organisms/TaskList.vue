@@ -4,6 +4,7 @@ import TaskCard from '@/components/molecules/TaskCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseEmptyState from '@/components/ui/BaseEmptyState.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseAddButton from '@/components/ui/BaseAddButton.vue'
 
 const { t } = useI18n()
 
@@ -53,14 +54,9 @@ defineEmits(['add-task', 'edit-task', 'delete-task', 'claim', 'unclaim'])
       />
 
       <!-- Add task button (initiator) -->
-      <button
-        v-if="isInitiator"
-        type="button"
-        class="w-full border-2 border-dashed border-[var(--border-default)] rounded-[1rem] py-4 text-sm font-medium text-[var(--text-secondary)] hover:border-brand-400 hover:text-brand-500 transition-colors duration-150"
-        @click="$emit('add-task')"
-      >
+      <BaseAddButton v-if="isInitiator" @click="$emit('add-task')">
         + {{ t('tasks.addTask') }}
-      </button>
+      </BaseAddButton>
     </template>
   </div>
 </template>
