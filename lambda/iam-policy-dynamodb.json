@@ -10,7 +10,10 @@
         "dynamodb:DeleteItem",
         "dynamodb:Query"
       ],
-      "Resource": "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main"
+      "Resource": [
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev"
+      ]
     },
     {
       "Sid": "WdhDynamoDBIndexAccess",
@@ -20,7 +23,9 @@
       ],
       "Resource": [
         "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI1",
-        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI2"
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI2",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI1",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI2"
       ]
     }
   ]
