@@ -20,27 +20,25 @@ defineProps({
       <span
         class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full"
         :class="
-          participants.filter((p) => p.claimed).length >= (maxClaims ?? participants.length) &&
+          maxClaims !== null &&
+          participants.filter((p) => p.claimed).length >= maxClaims &&
           participants.length > 0
             ? 'bg-success-100 text-success-700'
             : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)]'
         "
       >
-        {{ participants.filter((p) => p.claimed).length }}/{{ maxClaims ?? participants.length }}
+        {{ participants.filter((p) => p.claimed).length }}/{{ maxClaims ?? '∞' }}
       </span>
     </div>
 
-    <!-- Participant list -->
-    <ul class="flex flex-col gap-1.5">
+    <!-- Participant list (claimants only) -->
+    <ul v-if="participants.some((p) => p.claimed)" class="flex flex-col gap-1.5">
       <li
-        v-for="participant in participants"
+        v-for="participant in participants.filter((p) => p.claimed)"
         :key="participant.name"
         class="flex items-center gap-2.5 text-sm"
       >
-        <span
-          v-if="participant.claimed"
-          class="shrink-0 h-5 w-5 rounded-full bg-success-100 flex items-center justify-center"
-        >
+        <span class="shrink-0 h-5 w-5 rounded-full bg-success-100 flex items-center justify-center">
           <svg
             class="h-3 w-3 text-success-600"
             viewBox="0 0 24 24"
@@ -51,17 +49,10 @@ defineProps({
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </span>
-        <span
-          v-else
-          class="shrink-0 h-5 w-5 rounded-full bg-[var(--bg-subtle)] flex items-center justify-center text-[var(--text-tertiary)] text-xs leading-none"
-        >
-          &mdash;
-        </span>
         <BaseAvatar :name="participant.name" size="xs" />
-        <span :class="participant.claimed ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'">
-          {{ participant.name }}
-        </span>
+        <span class="text-[var(--text-primary)]">{{ participant.name }}</span>
       </li>
     </ul>
+    <p v-else class="text-xs text-[var(--text-tertiary)]">Nog niemand geclaimd</p>
   </div>
 </template>

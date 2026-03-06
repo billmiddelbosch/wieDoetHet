@@ -1,10 +1,12 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 defineProps({
   group: { type: Object, required: true },
@@ -16,6 +18,18 @@ defineEmits(['share', 'settings', 'scorecard'])
 
 <template>
   <div class="bg-[var(--bg-surface)] border-b border-[var(--border-default)] px-4 sm:px-6 py-5">
+    <div class="max-w-2xl mx-auto">
+      <button
+        type="button"
+        class="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition-colors"
+        @click="router.push('/')"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        {{ t('common.back') }}
+      </button>
+    </div>
     <div class="max-w-2xl mx-auto flex items-start gap-4">
       <BaseAvatar :src="group.pictureUrl" :name="group.name" size="xl" />
       <div class="flex-1 min-w-0">
