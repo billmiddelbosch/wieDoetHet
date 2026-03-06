@@ -56,7 +56,7 @@ async function createTask(event) {
     groupId,
     title: body.title.trim(),
     description: body.description ?? null,
-    maxClaims: body.maxClaims ?? 1,
+    maxClaims: 'maxClaims' in body ? body.maxClaims : 1,
     order,
   }
 
