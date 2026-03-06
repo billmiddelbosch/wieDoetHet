@@ -1,7 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import TaskCard from '@/components/molecules/TaskCard.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseEmptyState from '@/components/ui/BaseEmptyState.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseAddButton from '@/components/ui/BaseAddButton.vue'
@@ -30,17 +29,16 @@ defineEmits(['add-task', 'edit-task', 'delete-task', 'claim', 'unclaim'])
       <BaseEmptyState
         :title="isInitiator ? t('tasks.emptyInitiator') : t('tasks.emptyMember')"
         :description="isInitiator ? t('tasks.emptyInitiatorDesc') : t('tasks.emptyMemberDesc')"
-      >
-        <template v-if="isInitiator" #actions>
-          <BaseButton variant="primary" @click="$emit('add-task')">
-            {{ t('tasks.addFirst') }}
-          </BaseButton>
-        </template>
-      </BaseEmptyState>
+      />
     </template>
 
+    <!-- Add task button (always visible for initiator) -->
+    <BaseAddButton v-if="!loading && isInitiator" @click="$emit('add-task')">
+      + {{ t('tasks.addTask') }}
+    </BaseAddButton>
+
     <!-- Task cards -->
-    <template v-else>
+    <template v-if="tasks.length > 0">
       <TaskCard
         v-for="task in tasks"
         :key="task.id"
@@ -52,11 +50,6 @@ defineEmits(['add-task', 'edit-task', 'delete-task', 'claim', 'unclaim'])
         @edit="$emit('edit-task', task)"
         @delete="$emit('delete-task', task.id)"
       />
-
-      <!-- Add task button (initiator) -->
-      <BaseAddButton v-if="isInitiator" @click="$emit('add-task')">
-        + {{ t('tasks.addTask') }}
-      </BaseAddButton>
     </template>
   </div>
 </template>
