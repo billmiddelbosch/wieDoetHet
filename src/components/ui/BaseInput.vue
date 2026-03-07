@@ -1,4 +1,6 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
+
 defineProps({
   modelValue: { type: String, default: '' },
   label: { type: String, default: '' },
@@ -21,6 +23,7 @@ defineEmits(['update:modelValue'])
       <span v-if="required" class="text-danger-500 ml-0.5">*</span>
     </label>
     <input
+      v-bind="$attrs"
       :id="id"
       :type="type"
       :value="modelValue"

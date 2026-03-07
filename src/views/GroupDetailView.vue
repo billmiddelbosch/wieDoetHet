@@ -207,7 +207,7 @@ async function onAnonSubmit(anonName) {
       size="sm"
       @close="showSharePanel = false"
     >
-      <ShareLinkPanel v-if="group" :share-url="shareUrl" :group-name="group.name" />
+      <ShareLinkPanel v-if="group" :share-url="shareUrl" :group-name="group.name" :group-id="group.id" :tasks="tasks" />
     </BaseModal>
   </div>
 </template>

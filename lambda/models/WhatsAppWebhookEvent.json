@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "WhatsAppWebhookEvent",
+  "description": "Incoming webhook payload from Meta for POST /webhook/whatsapp. Only interactive message replies (button_reply / list_reply) result in a claim being created.",
+  "type": "object",
+  "required": ["entry"],
+  "properties": {
+    "object": {
+      "type": "string",
+      "description": "Always 'whatsapp_business_account'."
+    },
+    "entry": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string" },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "messaging_product": { "type": "string" },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "display_phone_number": { "type": "string" },
+                        "phone_number_id": { "type": "string" }
+                      }
+                    },
+                    "contacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "wa_id": {
+                            "type": "string",
+                            "description": "Sender phone number in E.164 format without +"
+                          },
+                          "profile": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "WhatsApp display name — stored as anonymousName on the claim."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Sender phone number — used as sessionId for deduplication."
+                          },
+                          "id": { "type": "string" },
+                          "timestamp": { "type": "string" },
+                          "type": {
+                            "type": "string",
+                            "description": "Only 'interactive' messages are processed."
+                          },
+                          "interactive": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": ["button_reply", "list_reply"]
+                              },
+                              "button_reply": {
+                                "type": "object",
+                                "description": "Present when type is button_reply.",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "Format: {groupId}:{taskId}"
+                                  },
+                                  "title": { "type": "string" }
+                                }
+                              },
+                              "list_reply": {
+                                "type": "object",
+                                "description": "Present when type is list_reply.",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "Format: {groupId}:{taskId}"
+                                  },
+                                  "title": { "type": "string" },
+                                  "description": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

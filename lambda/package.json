@@ -14,8 +14,9 @@
     "bundle:auth":   "esbuild wiedoethet-auth/index.js   --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-auth/index.js   --format=cjs",
     "bundle:groups": "esbuild wiedoethet-groups/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-groups/index.js --format=cjs",
     "bundle:tasks":  "esbuild wiedoethet-tasks/index.js  --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-tasks/index.js  --format=cjs",
-    "bundle:claims": "esbuild wiedoethet-claims/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-claims/index.js --format=cjs",
-    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims"
+    "bundle:claims":    "esbuild wiedoethet-claims/index.js    --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-claims/index.js    --format=cjs",
+    "bundle:whatsapp":  "esbuild wiedoethet-whatsapp/index.js  --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-whatsapp/index.js  --format=cjs",
+    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims && npm run bundle:whatsapp"
   },
   "devDependencies": {
     "esbuild": "^0.27.3"

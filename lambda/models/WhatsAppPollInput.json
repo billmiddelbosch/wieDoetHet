@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "WhatsAppPollInput",
+  "description": "Request body for POST /groups/{groupId}/whatsapp-poll",
+  "type": "object",
+  "required": ["to", "tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "to": {
+      "type": "string",
+      "description": "Recipient phone number in E.164 format without leading + (e.g. 31612345678)",
+      "minLength": 10,
+      "maxLength": 15,
+      "pattern": "^[0-9]+$"
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Tasks to include in the poll. Max 10 (3 or fewer sends buttons, 4-10 sends a list).",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "description": "Truncated to 20 chars for button messages, 24 chars for list messages.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": ["string", "null"],
+            "description": "Shown as row description in list messages. Truncated to 72 chars.",
+            "maxLength": 1000
+          }
+        }
+      }
+    }
+  }
+}

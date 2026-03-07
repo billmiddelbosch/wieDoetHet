@@ -1,24 +1,45 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseAlert from '@/components/ui/BaseAlert.vue'
+import { useWhatsApp } from '@/composables/useWhatsApp.js'
 
 const props = defineProps({
   shareUrl: { type: String, required: true },
   groupName: { type: String, required: true },
+  groupId: { type: String, default: null },
+  tasks: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['copied', 'whatsapp'])
 
 const copied = ref(false)
+const phone = ref('')
+
+const supportsContactPicker = typeof navigator !== 'undefined' && 'contacts' in navigator
+
+async function pickContact() {
+  try {
+    const [contact] = await navigator.contacts.select(['tel'], { multiple: false })
+    if (contact?.tel?.[0]) phone.value = contact.tel[0]
+  } catch {
+    // dismissed or unsupported
+  }
+}
+
+const { loading: pollLoading, error: pollError, sent: pollSent, sendPoll } = useWhatsApp()
+
+const taskCount = computed(() => props.tasks.length)
+const tooManyTasks = computed(() => taskCount.value > 10)
+const pollType = computed(() => taskCount.value <= 3 ? 'knoppen' : 'keuzelijst')
 
 async function copyLink() {
   try {
     await navigator.clipboard.writeText(props.shareUrl)
     copied.value = true
     emit('copied')
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
+    setTimeout(() => { copied.value = false }, 2000)
   } catch {
     // Fallback: select input
   }
@@ -30,6 +51,20 @@ function openWhatsApp() {
   )
   window.open(`https://wa.me/?text=${text}`, '_blank')
   emit('whatsapp')
+}
+
+// Normalise to E.164 without '+': strip spaces/dashes, replace leading 0 with country code
+function normalisePhone(raw) {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('0')) return '31' + digits.slice(1)
+  return digits
+}
+
+async function submitPoll() {
+  if (!phone.value.trim()) return
+  const to = normalisePhone(phone.value)
+  const tasks = props.tasks.map((t) => ({ id: t.id, title: t.title, description: t.description }))
+  await sendPoll(props.groupId, to, tasks)
 }
 </script>
 
@@ -60,7 +95,7 @@ function openWhatsApp() {
       </button>
     </div>
 
-    <!-- WhatsApp button -->
+    <!-- WhatsApp link share -->
     <BaseButton variant="whatsapp" full @click="openWhatsApp">
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
         <path
@@ -69,5 +104,59 @@ function openWhatsApp() {
       </svg>
       Stuur via WhatsApp
     </BaseButton>
+
+    <!-- WhatsApp poll (only when groupId + tasks available) -->
+    <template v-if="groupId && taskCount > 0">
+      <div class="border-t border-[var(--border-default)] pt-3 flex flex-col gap-3">
+        <p class="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+          Verstuur als WhatsApp poll
+        </p>
+
+        <!-- Too many tasks warning -->
+        <BaseAlert v-if="tooManyTasks" variant="warning">
+          Te veel taken ({{ taskCount }}). Splits de groep in twee groepen om een poll te sturen.
+        </BaseAlert>
+
+        <BaseAlert v-else-if="pollSent" variant="success">
+          Poll verstuurd! Deelnemers kunnen direct een taak kiezen.
+        </BaseAlert>
+
+        <template v-else>
+          <p class="text-xs text-[var(--text-tertiary)]">
+            Stuurt een {{ pollType }} bericht ({{ taskCount }} {{ taskCount === 1 ? 'taak' : 'taken' }}).
+            Deelnemers claimen direct vanuit WhatsApp.
+          </p>
+
+          <div class="flex gap-2 items-end">
+            <BaseInput
+              id="poll-phone"
+              v-model="phone"
+              type="tel"
+              placeholder="06 12 34 56 78"
+              autocomplete="tel"
+              class="flex-1"
+              @keydown.enter="submitPoll"
+            />
+            <!-- Contact Picker API — Android Chrome only -->
+            <button
+              v-if="supportsContactPicker"
+              type="button"
+              class="shrink-0 p-2.5 rounded-[0.625rem] border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-brand-400 hover:text-brand-500 transition-colors"
+              aria-label="Kies uit adresboek"
+              @click="pickContact"
+            >
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+            <BaseButton variant="whatsapp" size="sm" :loading="pollLoading" @click="submitPoll">
+              Stuur
+            </BaseButton>
+          </div>
+
+          <BaseAlert v-if="pollError" variant="danger">{{ pollError }}</BaseAlert>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
