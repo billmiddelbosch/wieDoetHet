@@ -156,5 +156,17 @@
     "title": "Scorekaart",
     "refresh": "Vernieuwen",
     "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt."
+  },
+  "profile": {
+    "title": "Mijn profiel",
+    "nameLabel": "Naam",
+    "emailLabel": "E-mailadres",
+    "phoneLabel": "WhatsApp-nummer",
+    "phonePlaceholder": "+31612345678",
+    "phoneHint": "Voer je nummer in E.164-formaat in, bijv. +31612345678. Dit nummer wordt gebruikt voor herinneringen.",
+    "phoneInvalid": "Voer een geldig nummer in E.164-formaat in (bijv. +31612345678)",
+    "whatsappNotice": "WhatsApp-verificatie wordt binnenkort toegevoegd. Sla je nummer alvast op zodat je automatisch herinneringen ontvangt zodra dit beschikbaar is.",
+    "savedSuccess": "Profiel opgeslagen!",
+    "saveFailed": "Opslaan mislukt. Probeer opnieuw."
   }
 }

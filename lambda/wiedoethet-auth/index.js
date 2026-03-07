@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto'
 import { ok, created, unauthorized, conflict, badRequest, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { signJwt, verifyJwt } from '../shared/jwt.js'
 import { hashPassword, verifyPassword } from '../shared/password.js'
-import { getItem, putItem, queryGsi1 } from '../shared/db.js'
+import { getItem, putItem, updateItem, queryGsi1 } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -73,6 +73,23 @@ async function me(event) {
   return ok(safeUser(user))
 }
 
+async function updateProfile(event) {
+  const jwtPayload = requireAuth(event)
+  if (!jwtPayload) return unauthorized()
+
+  const { phoneNumber } = parseBody(event)
+
+  if (phoneNumber !== null && phoneNumber !== undefined) {
+    if (typeof phoneNumber !== 'string' || !/^\+[1-9]\d{7,14}$/.test(phoneNumber)) {
+      return badRequest('Voer een geldig telefoonnummer in E.164-formaat in (bijv. +31612345678)')
+    }
+  }
+
+  await updateItem(`USER#${jwtPayload.sub}`, 'PROFILE', { phoneNumber: phoneNumber ?? null })
+  const user = await getItem(`USER#${jwtPayload.sub}`, 'PROFILE')
+  return ok(safeUser(user))
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function safeUser(u) {
@@ -101,9 +118,10 @@ export const handler = async (event) => {
 
     if (method === 'OPTIONS') return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type,Authorization', 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS' }, body: '' }
 
-    if (method === 'POST' && path === '/auth/login')    return await login(event)
-    if (method === 'POST' && path === '/auth/register') return await register(event)
-    if (method === 'GET'  && path === '/auth/me')       return await me(event)
+    if (method === 'POST'  && path === '/auth/login')    return await login(event)
+    if (method === 'POST'  && path === '/auth/register') return await register(event)
+    if (method === 'GET'   && path === '/auth/me')       return await me(event)
+    if (method === 'PATCH' && path === '/auth/profile')  return await updateProfile(event)
 
     return { statusCode: 404, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Route niet gevonden' }) }
   } catch (err) {

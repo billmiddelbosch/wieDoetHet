@@ -156,5 +156,17 @@
     "title": "Scorecard",
     "refresh": "Refresh",
     "notVisible": "The scorecard is not visible to you. The initiator has restricted access."
+  },
+  "profile": {
+    "title": "My profile",
+    "nameLabel": "Name",
+    "emailLabel": "Email address",
+    "phoneLabel": "WhatsApp number",
+    "phonePlaceholder": "+31612345678",
+    "phoneHint": "Enter your number in E.164 format, e.g. +31612345678. This number will be used for reminders.",
+    "phoneInvalid": "Enter a valid number in E.164 format (e.g. +31612345678)",
+    "whatsappNotice": "WhatsApp verification will be added soon. Save your number now so you automatically receive reminders once this is available.",
+    "savedSuccess": "Profile saved!",
+    "saveFailed": "Save failed. Please try again."
   }
 }
