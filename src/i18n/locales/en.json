@@ -83,11 +83,14 @@
     "phoneStepBenefit3": "The app on your home screen: one tap and you're in",
     "phoneStepCta": "Save number & install app",
     "phoneStepSkip": "Skip, I'll add it later",
+    "pickContact": "Choose from contacts",
     "iosInstallTitle": "Add app to home screen",
-    "iosInstallIntro": "Tap the button below to open Safari's share menu.",
-    "iosInstallCta": "Open share menu",
-    "iosInstallHint": "Then tap 'Add to Home Screen' in the menu that appears.",
-    "iosInstallDone": "Do it later, go to dashboard"
+    "iosInstallIntro": "Follow these two steps in Safari to add the app to your home screen:",
+    "iosInstallStep1": "Tap the share icon in the Safari toolbar at the bottom",
+    "iosInstallShareLabel": "Share button in Safari",
+    "iosInstallStep2": "Scroll down and tap 'Add to Home Screen'",
+    "iosInstallAddLabel": "Add to Home Screen",
+    "iosInstallDone": "Done, go to dashboard"
   },
   "anon": {
     "title": "What's your name?",

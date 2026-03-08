@@ -11,7 +11,7 @@ import BaseAlert from '@/components/ui/BaseAlert.vue'
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
-const { updateProfile } = useAuth()
+const { fetchMe, updateProfile } = useAuth()
 
 const user = computed(() => authStore.user)
 
@@ -21,7 +21,8 @@ const error = ref(null)
 const saveSuccess = ref(false)
 const phoneError = ref('')
 
-onMounted(() => {
+onMounted(async () => {
+  if (!user.value) await fetchMe()
   phoneNumber.value = user.value?.phoneNumber ?? ''
 })
 
@@ -97,6 +98,7 @@ async function submit() {
             :placeholder="t('profile.phonePlaceholder')"
             :error="phoneError"
             type="tel"
+            autocomplete="tel"
           />
           <p class="text-xs text-[var(--text-secondary)]">{{ t('profile.phoneHint') }}</p>
         </div>

@@ -16,6 +16,11 @@ describe('Navigation & routing', () => {
     cy.url().should('include', '/login')
   })
 
+  it('redirects unauthenticated user from /profile to /login', () => {
+    cy.visit('/profile')
+    cy.url().should('include', '/login')
+  })
+
   it('redirects unauthenticated user from /groups/new to /login', () => {
     cy.visit('/groups/new')
     cy.url().should('include', '/login')
