@@ -84,10 +84,10 @@
     "phoneStepCta": "Save number & install app",
     "phoneStepSkip": "Skip, I'll add it later",
     "iosInstallTitle": "Add app to home screen",
-    "iosInstallIntro": "On iPhone, installing works through the Safari browser. Follow these two steps:",
-    "iosInstallStep1": "Tap the share icon at the bottom of Safari",
-    "iosInstallStep2": "Scroll down and tap 'Add to Home Screen'",
-    "iosInstallDone": "Done, go to dashboard"
+    "iosInstallIntro": "Tap the button below to open Safari's share menu.",
+    "iosInstallCta": "Open share menu",
+    "iosInstallHint": "Then tap 'Add to Home Screen' in the menu that appears.",
+    "iosInstallDone": "Do it later, go to dashboard"
   },
   "anon": {
     "title": "What's your name?",

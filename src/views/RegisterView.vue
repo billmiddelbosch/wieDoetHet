@@ -65,14 +65,31 @@ async function submitPhone() {
   phoneLoading.value = true
   try {
     if (phoneNumber.value) await updateProfile({ phoneNumber: phoneNumber.value })
-    if (isIos() && !isStandalone()) {
-      showIosSheet.value = true
-      return
-    }
-    await installApp()
   } finally {
     phoneLoading.value = false
-    if (!showIosSheet.value) router.push('/dashboard')
+  }
+
+  if (isIos()) {
+    if (isStandalone()) {
+      // Already running inside the PWA — navigate within the app
+      router.push('/dashboard')
+    } else {
+      // Safari on iOS — show manual install instructions
+      showIosSheet.value = true
+    }
+    return
+  }
+
+  // Android / Chrome — trigger native install prompt, then go to dashboard
+  await installApp()
+  router.push('/dashboard')
+}
+
+async function openShareSheet() {
+  try {
+    await navigator.share({ title: 'wieDoetHet', url: window.location.origin })
+  } catch {
+    // User cancelled or share not supported — do nothing
   }
 }
 </script>
@@ -202,27 +219,32 @@ async function submitPhone() {
     <div class="flex flex-col gap-5">
       <p class="text-sm text-[var(--text-secondary)]">{{ t('auth.iosInstallIntro') }}</p>
 
-      <!-- Step 1 -->
-      <div class="flex items-start gap-3">
-        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">1</div>
-        <div class="flex flex-col gap-1">
-          <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep1') }}</p>
+      <!-- Primary CTA: open share sheet -->
+      <BaseButton variant="primary" size="lg" full @click="openShareSheet">
+        <span class="flex items-center justify-center gap-2">
           <!-- iOS share icon -->
-          <svg class="w-6 h-6 text-[#007AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
           </svg>
-        </div>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="flex items-start gap-3">
-        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">2</div>
-        <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep2') }}</p>
-      </div>
-
-      <BaseButton variant="primary" size="lg" full @click="router.push('/dashboard')">
-        {{ t('auth.iosInstallDone') }}
+          {{ t('auth.iosInstallCta') }}
+        </span>
       </BaseButton>
+
+      <!-- Hint: what to do in the share sheet -->
+      <div class="flex items-start gap-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-default)] px-4 py-3">
+        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--text-secondary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/>
+        </svg>
+        <p class="text-xs text-[var(--text-secondary)]">{{ t('auth.iosInstallHint') }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center"
+        @click="router.push('/dashboard')"
+      >
+        {{ t('auth.iosInstallDone') }}
+      </button>
     </div>
   </BaseModal>
 </template>

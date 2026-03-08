@@ -84,10 +84,10 @@
     "phoneStepCta": "Nummer opslaan & app installeren",
     "phoneStepSkip": "Overslaan, ik voeg het later toe",
     "iosInstallTitle": "Voeg app toe aan beginscherm",
-    "iosInstallIntro": "Op iPhone werkt installeren via de Safari-browser. Volg deze twee stappen:",
-    "iosInstallStep1": "Tik op het deel-icoon onderin Safari",
-    "iosInstallStep2": "Scroll naar beneden en tik op 'Zet op beginscherm'",
-    "iosInstallDone": "Klaar, ga naar dashboard"
+    "iosInstallIntro": "Tik op de knop hieronder om het deelmenu van Safari te openen.",
+    "iosInstallCta": "Open deel-menu",
+    "iosInstallHint": "Kies vervolgens 'Zet op beginscherm' in het menu dat verschijnt.",
+    "iosInstallDone": "Later doen, ga naar dashboard"
   },
   "anon": {
     "title": "Hoe heet je?",
