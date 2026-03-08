@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { usePwaInstall } from '@/composables/usePwaInstall'
+import { trackEvent } from '@/lib/analytics'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
@@ -60,6 +61,7 @@ async function submit() {
   serverError.value = ''
   try {
     await register(name.value.trim(), email.value, password.value)
+    trackEvent('profile_added')
     step.value = 2
   } catch (err) {
     serverError.value = err?.response?.data?.message ?? t('auth.registerFailed')

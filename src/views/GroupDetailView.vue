@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useGroups } from '@/composables/useGroups'
 import { useTasks } from '@/composables/useTasks'
 import { useClaims } from '@/composables/useClaims'
+import { trackEvent } from '@/lib/analytics'
 import GroupHeader from '@/components/organisms/GroupHeader.vue'
 import TaskList from '@/components/organisms/TaskList.vue'
 import TaskFormModal from '@/components/organisms/TaskFormModal.vue'
@@ -104,6 +105,11 @@ async function onClaim(taskId) {
   claimingTaskId.value = taskId
   try {
     await claimTask(route.params.id, taskId)
+    trackEvent('task_claimed', {
+      group_id: route.params.id,
+      task_id: taskId,
+      is_anonymous: !authStore.isAuthenticated,
+    })
   } catch (err) {
     claimError.value = err?.message ?? t('tasks.claimFailed')
   } finally {
