@@ -142,7 +142,6 @@ This backlog captures all possible future features beyond the current MVP. Items
 | # | Feature | Effort | Notes |
 |---|---|---|---|
 | INT-05 | **Tikkie integration** | M | Initiator connects their Tikkie account and can send payment requests directly from a group. Supports splitting costs across members (e.g. shared groceries or entrance fees). Tikkie links are generated via the ABN AMRO Tikkie API and can be sent to members via WhatsApp or the share link. Related to T-12 (per-task claim action). |
-| INT-06 | **Google Analytics** | S | Integrate Google Analytics 4 (gtag.js) to track page views, group creation, task claims, and share events. Enables data-driven decisions on user growth and feature adoption. |
 | INT-01 | **Google Calendar event link** | S | Link a task group to a Google Calendar event; show event details in GroupHeader. |
 | INT-04 | **iCal export** | S | Export the event date as an .ics file so members can add it to their calendar. |
 | INT-03 | **Slack notification** | M | Post a message to a Slack channel when a task is claimed or when the list is complete. |
