@@ -75,7 +75,22 @@
     "passwordHint": "Minimaal 8 tekens",
     "passwordConfirmLabel": "Wachtwoord bevestigen",
     "passwordConfirmPlaceholder": "••••••••",
-    "passwordMismatch": "Wachtwoorden komen niet overeen"
+    "passwordMismatch": "Wachtwoorden komen niet overeen",
+    "phoneStepTitle": "Bijna klaar!",
+    "phoneStepSubtitle": "Voeg je WhatsApp-nummer toe en installeer de app — dan hoef je nooit meer zelf te checken.",
+    "phoneStepBenefit1": "Ontvang een WhatsApp-bericht als een taak nog niet geclaimd is",
+    "phoneStepBenefit2": "Krijg een pushmelding zodra iemand een taak oppakt — direct op je scherm",
+    "phoneStepBenefit3": "De app op je beginscherm: één tik en je bent er",
+    "phoneStepCta": "Nummer opslaan & app installeren",
+    "phoneStepSkip": "Overslaan, ik voeg het later toe",
+    "pickContact": "Kies uit contacten",
+    "iosInstallTitle": "Voeg app toe aan beginscherm",
+    "iosInstallIntro": "Volg deze twee stappen in Safari om de app op je beginscherm te zetten:",
+    "iosInstallStep1": "Tik op het deel-icoon onderin de Safari-balk",
+    "iosInstallShareLabel": "Deel-knop in Safari",
+    "iosInstallStep2": "Scroll naar beneden en tik op 'Zet op beginscherm'",
+    "iosInstallAddLabel": "Zet op beginscherm",
+    "iosInstallDone": "Klaar, ga naar dashboard"
   },
   "anon": {
     "title": "Hoe heet je?",
@@ -156,5 +171,17 @@
     "title": "Scorekaart",
     "refresh": "Vernieuwen",
     "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt."
+  },
+  "profile": {
+    "title": "Mijn profiel",
+    "nameLabel": "Naam",
+    "emailLabel": "E-mailadres",
+    "phoneLabel": "WhatsApp-nummer",
+    "phonePlaceholder": "+31612345678",
+    "phoneHint": "Voer je nummer in E.164-formaat in, bijv. +31612345678. Dit nummer wordt gebruikt voor herinneringen.",
+    "phoneInvalid": "Voer een geldig nummer in E.164-formaat in (bijv. +31612345678)",
+    "whatsappNotice": "WhatsApp-verificatie wordt binnenkort toegevoegd. Sla je nummer alvast op zodat je automatisch herinneringen ontvangt zodra dit beschikbaar is.",
+    "savedSuccess": "Profiel opgeslagen!",
+    "saveFailed": "Opslaan mislukt. Probeer opnieuw."
   }
 }

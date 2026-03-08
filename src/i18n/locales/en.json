@@ -75,7 +75,22 @@
     "passwordHint": "At least 8 characters",
     "passwordConfirmLabel": "Confirm password",
     "passwordConfirmPlaceholder": "••••••••",
-    "passwordMismatch": "Passwords do not match"
+    "passwordMismatch": "Passwords do not match",
+    "phoneStepTitle": "Almost done!",
+    "phoneStepSubtitle": "Add your WhatsApp number and install the app — so you never have to check manually.",
+    "phoneStepBenefit1": "Get a WhatsApp message when a task hasn't been claimed yet",
+    "phoneStepBenefit2": "Receive a push notification the moment someone grabs a task — straight to your screen",
+    "phoneStepBenefit3": "The app on your home screen: one tap and you're in",
+    "phoneStepCta": "Save number & install app",
+    "phoneStepSkip": "Skip, I'll add it later",
+    "pickContact": "Choose from contacts",
+    "iosInstallTitle": "Add app to home screen",
+    "iosInstallIntro": "Follow these two steps in Safari to add the app to your home screen:",
+    "iosInstallStep1": "Tap the share icon in the Safari toolbar at the bottom",
+    "iosInstallShareLabel": "Share button in Safari",
+    "iosInstallStep2": "Scroll down and tap 'Add to Home Screen'",
+    "iosInstallAddLabel": "Add to Home Screen",
+    "iosInstallDone": "Done, go to dashboard"
   },
   "anon": {
     "title": "What's your name?",
@@ -156,5 +171,17 @@
     "title": "Scorecard",
     "refresh": "Refresh",
     "notVisible": "The scorecard is not visible to you. The initiator has restricted access."
+  },
+  "profile": {
+    "title": "My profile",
+    "nameLabel": "Name",
+    "emailLabel": "Email address",
+    "phoneLabel": "WhatsApp number",
+    "phonePlaceholder": "+31612345678",
+    "phoneHint": "Enter your number in E.164 format, e.g. +31612345678. This number will be used for reminders.",
+    "phoneInvalid": "Enter a valid number in E.164 format (e.g. +31612345678)",
+    "whatsappNotice": "WhatsApp verification will be added soon. Save your number now so you automatically receive reminders once this is available.",
+    "savedSuccess": "Profile saved!",
+    "saveFailed": "Save failed. Please try again."
   }
 }
