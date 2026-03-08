@@ -82,7 +82,12 @@
     "phoneStepBenefit2": "Receive a push notification the moment someone grabs a task — straight to your screen",
     "phoneStepBenefit3": "The app on your home screen: one tap and you're in",
     "phoneStepCta": "Save number & install app",
-    "phoneStepSkip": "Skip, I'll add it later"
+    "phoneStepSkip": "Skip, I'll add it later",
+    "iosInstallTitle": "Add app to home screen",
+    "iosInstallIntro": "On iPhone, installing works through the Safari browser. Follow these two steps:",
+    "iosInstallStep1": "Tap the share icon at the bottom of Safari",
+    "iosInstallStep2": "Scroll down and tap 'Add to Home Screen'",
+    "iosInstallDone": "Done, go to dashboard"
   },
   "anon": {
     "title": "What's your name?",
