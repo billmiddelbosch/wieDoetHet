@@ -3,19 +3,26 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroupStore } from '@/stores/group'
+import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 import { useGroups } from '@/composables/useGroups'
+import { useReminder } from '@/composables/useReminder'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseToggle from '@/components/ui/BaseToggle.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
 import ConfirmModal from '@/components/molecules/ConfirmModal.vue'
+import ReminderSection from '@/components/molecules/ReminderSection.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const groupStore = useGroupStore()
+const authStore = useAuthStore()
 const { fetchGroup, updateGroup, deleteGroup, loading, error } = useGroups()
+const { fetchMe } = useAuth()
+const { fetchReminder } = useReminder()
 
 const group = computed(() => groupStore.currentGroup)
 
@@ -28,9 +35,19 @@ const errors = ref({})
 const saveSuccess = ref(false)
 const showDeleteConfirm = ref(false)
 const deleteLoading = ref(false)
+const groupReminder = ref(null)
+
+const hasPhoneNumber = computed(() => !!authStore.user?.phoneNumber)
 
 onMounted(async () => {
-  await fetchGroup(route.params.id)
+  await Promise.all([
+    fetchGroup(route.params.id),
+    fetchMe().catch(() => {}),
+  ])
+  const reminder = await fetchReminder('group', route.params.id)
+  if (reminder && reminder.status !== 'none') {
+    groupReminder.value = reminder
+  }
 })
 
 watch(
@@ -174,6 +191,17 @@ async function confirmDelete() {
           </BaseButton>
         </form>
       </div>
+
+      <!-- Reminder -->
+      <ReminderSection
+        :id="route.params.id"
+        scope="group"
+        :has-phone-number="hasPhoneNumber"
+        :existing-reminder="groupReminder"
+        class="mb-6"
+        @scheduled="(at) => (groupReminder = { scheduledAt: at, status: 'scheduled' })"
+        @cancelled="groupReminder = null"
+      />
 
       <!-- Danger zone -->
       <div class="bg-danger-50 border border-danger-100 rounded-[1.25rem] p-6">

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useAuth } from '@/composables/useAuth'
@@ -10,6 +10,7 @@ import BaseAlert from '@/components/ui/BaseAlert.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const { fetchMe, updateProfile } = useAuth()
 
@@ -41,6 +42,10 @@ async function submit() {
   error.value = null
   try {
     await updateProfile({ phoneNumber: phoneNumber.value || null })
+    if (route.query.redirect) {
+      router.push(route.query.redirect)
+      return
+    }
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 3000)
   } catch (e) {

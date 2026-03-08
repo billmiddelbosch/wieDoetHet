@@ -1,11 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseTextarea from '@/components/ui/BaseTextarea.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseToggle from '@/components/ui/BaseToggle.vue'
+import ReminderSection from '@/components/molecules/ReminderSection.vue'
 
 const { t } = useI18n()
 
@@ -13,6 +14,10 @@ const props = defineProps({
   open: { type: Boolean, required: true },
   task: { type: Object, default: null }, // null = create mode
   loading: { type: Boolean, default: false },
+  /** groupId — required for task-scoped reminder ownership verification */
+  groupId: { type: String, default: null },
+  /** Whether the initiator has a phone number on their profile */
+  hasPhoneNumber: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['save', 'close'])
@@ -22,6 +27,11 @@ const description = ref('')
 const hasCapacity = ref(false)
 const maxClaims = ref(2)
 const errors = ref({})
+const taskReminder = ref(null)
+// In create mode, store the chosen scheduledAt to pass along with the save payload
+const pendingReminderAt = ref(null)
+
+const isCreateMode = computed(() => !props.task?.id)
 
 watch(
   () => props.open,
@@ -32,6 +42,8 @@ watch(
       hasCapacity.value = !!props.task?.maxClaims
       maxClaims.value = props.task?.maxClaims ?? 2
       errors.value = {}
+      taskReminder.value = props.task?.reminder ?? null
+      pendingReminderAt.value = null
     }
   }
 )
@@ -46,15 +58,11 @@ function validate() {
 
 function submit() {
   if (!validate()) return
-  console.log('Submitting task:', {
-    title: title.value,
-    description: description.value,
-    maxClaims: hasCapacity.value ? maxClaims.value : null,
-  })
   emit('save', {
     title: title.value.trim(),
     description: description.value.trim() || null,
     maxClaims: hasCapacity.value ? Number(maxClaims.value) : null,
+    pendingReminderAt: pendingReminderAt.value,
   })
 }
 </script>
@@ -95,6 +103,18 @@ function submit() {
         :label="t('tasks.maxCapacityLabel')"
         :error="errors.maxClaims"
         :hint="t('tasks.maxCapacityHint')"
+      />
+
+      <!-- Reminder — always visible; deferred in create mode (no taskId yet) -->
+      <ReminderSection
+        :id="task?.id ?? ''"
+        scope="task"
+        :group-id="groupId"
+        :has-phone-number="hasPhoneNumber"
+        :existing-reminder="taskReminder"
+        :deferred="isCreateMode"
+        @scheduled="(at) => isCreateMode ? (pendingReminderAt = at) : (taskReminder = { scheduledAt: at, status: 'scheduled' })"
+        @cancelled="taskReminder = null"
       />
     </div>
     <template #footer>

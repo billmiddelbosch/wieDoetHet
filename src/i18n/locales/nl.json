@@ -172,6 +172,25 @@
     "refresh": "Vernieuwen",
     "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt."
   },
+  "reminder": {
+    "sectionTitle": "Herinnering",
+    "noPhoneNumber": "Voeg eerst een telefoonnummer toe aan je profiel om een herinnering in te stellen.",
+    "goToProfile": "Ga naar profiel",
+    "dateTimeLabel": "Stuur herinnering op",
+    "save": "Herinnering instellen",
+    "cancel": "Herinnering annuleren",
+    "scheduled": "Ingepland voor {datetime}",
+    "statusScheduled": "Ingepland",
+    "statusSent": "Verstuurd",
+    "statusFailed": "Mislukt",
+    "saveSuccess": "Herinnering ingesteld.",
+    "cancelSuccess": "Herinnering geannuleerd.",
+    "errorSave": "Herinnering kon niet worden ingesteld. Probeer het opnieuw.",
+    "errorCancel": "Herinnering kon niet worden geannuleerd. Probeer het opnieuw.",
+    "taskHint": "Je ontvangt een WhatsApp-bericht als deze taak nog niet vol is op het gekozen tijdstip.",
+    "groupHint": "Je ontvangt een WhatsApp-bericht als een of meer taken nog niet vol zijn op het gekozen tijdstip.",
+    "futureDateRequired": "Kies een datum en tijd in de toekomst."
+  },
   "profile": {
     "title": "Mijn profiel",
     "nameLabel": "Naam",

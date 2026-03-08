@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useGroups } from '@/composables/useGroups'
 import { useTasks } from '@/composables/useTasks'
 import { useClaims } from '@/composables/useClaims'
+import { useReminder } from '@/composables/useReminder'
 import { trackEvent } from '@/lib/analytics'
 import GroupHeader from '@/components/organisms/GroupHeader.vue'
 import TaskList from '@/components/organisms/TaskList.vue'
@@ -27,6 +28,7 @@ const authStore = useAuthStore()
 const { fetchGroup, loading: groupLoading, error: groupError } = useGroups()
 const { tasks, fetchTasks, createTask, updateTask, deleteTask, clearTasks, loading: taskLoading } = useTasks()
 const { claimTask, unclaimTask } = useClaims()
+const { scheduleReminder } = useReminder()
 
 const group = computed(() => groupStore.currentGroup)
 const isInitiator = computed(
@@ -75,12 +77,15 @@ function onDeleteTask(taskId) {
   showDeleteConfirm.value = true
 }
 
-async function saveTask(payload) {
+async function saveTask({ pendingReminderAt, ...taskPayload }) {
   taskSaveLoading.value = true
   if (editingTask.value) {
-    await updateTask(route.params.id, editingTask.value.id, payload)
+    await updateTask(route.params.id, editingTask.value.id, taskPayload)
   } else {
-    await createTask(route.params.id, payload)
+    const newTask = await createTask(route.params.id, taskPayload)
+    if (newTask?.id && pendingReminderAt) {
+      await scheduleReminder('task', newTask.id, pendingReminderAt, route.params.id)
+    }
   }
   taskSaveLoading.value = false
   showTaskForm.value = false
@@ -185,6 +190,8 @@ async function onAnonSubmit(anonName) {
       :open="showTaskForm"
       :task="editingTask"
       :loading="taskSaveLoading"
+      :group-id="group?.id"
+      :has-phone-number="!!authStore.user?.phoneNumber"
       @save="saveTask"
       @close="showTaskForm = false"
     />

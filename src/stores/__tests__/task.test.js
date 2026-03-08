@@ -7,7 +7,7 @@ const mockTask = (overrides = {}) => ({
   groupId: 'group-1',
   title: 'Boodschappen',
   description: null,
-  maxCapacity: null,
+  maxClaims: null,
   order: 0,
   claims: [],
   ...overrides,
@@ -56,9 +56,9 @@ describe('useTaskStore', () => {
     expect(store.tasks[0].isClaimedByMe).toBe(true)
   })
 
-  it('isFull when maxCapacity reached', () => {
+  it('isFull when maxClaims reached', () => {
     const store = useTaskStore()
-    store.setTasks([mockTask({ id: 'task-1', maxCapacity: 1 })])
+    store.setTasks([mockTask({ id: 'task-1', maxClaims: 1 })])
     store.applyClaim('task-1', { id: 'c1', userId: 'u1', taskId: 'task-1' })
     expect(store.tasks[0].isFull).toBe(true)
   })

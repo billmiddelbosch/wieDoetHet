@@ -28,6 +28,37 @@
         "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI1",
         "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI2"
       ]
+    },
+    {
+      "Sid": "WdhEventBridgeReminderManage",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:DeleteRule"
+      ],
+      "Resource": "arn:aws:events:eu-west-2:344050431068:rule/wdh-reminder-*",
+      "Comment": "Applied to the wiedoethet-reminders Lambda execution role only"
+    },
+    {
+      "Sid": "WdhLambdaInvokeReminderFire",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-reminder-fire",
+      "Comment": "Applied to the wiedoethet-reminders Lambda execution role only"
+    },
+    {
+      "Sid": "WdhEventBridgeReminderDelete",
+      "Effect": "Allow",
+      "Action": [
+        "events:RemoveTargets",
+        "events:DeleteRule"
+      ],
+      "Resource": "arn:aws:events:eu-west-2:344050431068:rule/wdh-reminder-*",
+      "Comment": "Applied to the wiedoethet-reminder-fire Lambda execution role only"
     }
   ]
 }

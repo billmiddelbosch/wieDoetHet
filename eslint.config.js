@@ -21,6 +21,15 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'cypress/**', 'coverage/**'],
+    // Lambda functions run in Node.js — enable Node globals for the lambda/ directory
+    files: ['lambda/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'cypress/**', 'coverage/**', 'lambda/dist/**'],
   },
 ]

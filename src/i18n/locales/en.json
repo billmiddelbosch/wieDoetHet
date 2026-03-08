@@ -172,6 +172,25 @@
     "refresh": "Refresh",
     "notVisible": "The scorecard is not visible to you. The initiator has restricted access."
   },
+  "reminder": {
+    "sectionTitle": "Reminder",
+    "noPhoneNumber": "Add a phone number to your profile first to set a reminder.",
+    "goToProfile": "Go to profile",
+    "dateTimeLabel": "Send reminder at",
+    "save": "Set reminder",
+    "cancel": "Cancel reminder",
+    "scheduled": "Scheduled for {datetime}",
+    "statusScheduled": "Scheduled",
+    "statusSent": "Sent",
+    "statusFailed": "Failed",
+    "saveSuccess": "Reminder set.",
+    "cancelSuccess": "Reminder cancelled.",
+    "errorSave": "Could not set reminder. Please try again.",
+    "errorCancel": "Could not cancel reminder. Please try again.",
+    "taskHint": "You'll receive a WhatsApp message if this task isn't full by the chosen time.",
+    "groupHint": "You'll receive a WhatsApp message if one or more tasks aren't full by the chosen time.",
+    "futureDateRequired": "Choose a date and time in the future."
+  },
   "profile": {
     "title": "My profile",
     "nameLabel": "Name",
