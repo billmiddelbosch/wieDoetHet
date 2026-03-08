@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { trackPageView } from '@/lib/analytics'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -78,6 +79,10 @@ router.beforeEach((to) => {
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return { name: 'dashboard' }
   }
+})
+
+router.afterEach((to) => {
+  trackPageView(to.fullPath, to.name?.toString())
 })
 
 export default router

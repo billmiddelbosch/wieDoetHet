@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { trackEvent } from '@/lib/analytics'
 
 const props = defineProps({
   shareUrl: { type: String, required: true },
@@ -16,6 +17,7 @@ async function copyLink() {
     await navigator.clipboard.writeText(props.shareUrl)
     copied.value = true
     emit('copied')
+    trackEvent('share', { method: 'copy_link', group_name: props.groupName })
     setTimeout(() => {
       copied.value = false
     }, 2000)
@@ -30,6 +32,7 @@ function openWhatsApp() {
   )
   window.open(`https://wa.me/?text=${text}`, '_blank')
   emit('whatsapp')
+  trackEvent('share', { method: 'whatsapp', group_name: props.groupName })
 }
 </script>
 
