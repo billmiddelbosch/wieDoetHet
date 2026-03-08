@@ -30,6 +30,18 @@ const phoneNumber = ref('')
 const phoneError = ref('')
 const phoneLoading = ref(false)
 
+const supportsContactPicker = 'contacts' in navigator && 'ContactsManager' in window
+
+async function pickContact() {
+  try {
+    const contacts = await navigator.contacts.select(['tel'], { multiple: false })
+    const tel = contacts?.[0]?.tel?.[0]
+    if (tel) phoneNumber.value = tel.startsWith('+') ? tel : tel
+  } catch {
+    // User cancelled or API unavailable
+  }
+}
+
 function validate() {
   errors.value = {}
   if (!name.value.trim()) errors.value.name = t('auth.nameRequired')
@@ -85,13 +97,6 @@ async function submitPhone() {
   router.push('/dashboard')
 }
 
-async function openShareSheet() {
-  try {
-    await navigator.share({ title: 'wieDoetHet', url: window.location.origin })
-  } catch {
-    // User cancelled or share not supported — do nothing
-  }
-}
 </script>
 
 <template>
@@ -187,14 +192,30 @@ async function openShareSheet() {
 
           <form class="flex flex-col gap-4" @submit.prevent="submitPhone">
             <div class="flex flex-col gap-1">
-              <BaseInput
-                id="reg-phone"
-                v-model="phoneNumber"
-                type="tel"
-                :label="t('profile.phoneLabel')"
-                :placeholder="t('profile.phonePlaceholder')"
-                :error="phoneError"
-              />
+              <div class="flex items-end gap-2">
+                <div class="flex-1">
+                  <BaseInput
+                    id="reg-phone"
+                    v-model="phoneNumber"
+                    type="tel"
+                    autocomplete="tel"
+                    :label="t('profile.phoneLabel')"
+                    :placeholder="t('profile.phonePlaceholder')"
+                    :error="phoneError"
+                  />
+                </div>
+                <button
+                  v-if="supportsContactPicker"
+                  type="button"
+                  class="flex-shrink-0 h-[42px] px-3 rounded-[0.625rem] border border-[var(--border-default)] hover:border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  :title="t('auth.pickContact')"
+                  @click="pickContact"
+                >
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+              </div>
               <p class="text-xs text-[var(--text-secondary)]">{{ t('profile.phoneHint') }}</p>
             </div>
             <BaseButton type="submit" variant="primary" size="lg" full :loading="phoneLoading">
@@ -216,35 +237,42 @@ async function openShareSheet() {
 
   <!-- iOS install instructions -->
   <BaseModal :open="showIosSheet" size="sm" :title="t('auth.iosInstallTitle')" @close="router.push('/dashboard')">
-    <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-6">
       <p class="text-sm text-[var(--text-secondary)]">{{ t('auth.iosInstallIntro') }}</p>
 
-      <!-- Primary CTA: open share sheet -->
-      <BaseButton variant="primary" size="lg" full @click="openShareSheet">
-        <span class="flex items-center justify-center gap-2">
-          <!-- iOS share icon -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-          </svg>
-          {{ t('auth.iosInstallCta') }}
-        </span>
-      </BaseButton>
-
-      <!-- Hint: what to do in the share sheet -->
-      <div class="flex items-start gap-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-default)] px-4 py-3">
-        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--text-secondary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/>
-        </svg>
-        <p class="text-xs text-[var(--text-secondary)]">{{ t('auth.iosInstallHint') }}</p>
+      <!-- Step 1 -->
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-7 h-7 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs font-bold text-brand-600">1</div>
+        <div class="flex flex-col gap-2">
+          <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep1') }}</p>
+          <!-- Safari share button visual -->
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] w-fit">
+            <svg class="w-5 h-5 text-[#007AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+            </svg>
+            <span class="text-xs text-[var(--text-secondary)]">{{ t('auth.iosInstallShareLabel') }}</span>
+          </div>
+        </div>
       </div>
 
-      <button
-        type="button"
-        class="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center"
-        @click="router.push('/dashboard')"
-      >
+      <!-- Step 2 -->
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-7 h-7 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs font-bold text-brand-600">2</div>
+        <div class="flex flex-col gap-2">
+          <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep2') }}</p>
+          <!-- "Zet op beginscherm" visual -->
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] w-fit">
+            <svg class="w-4 h-4 text-[var(--text-secondary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="3" width="14" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 11v6m0 0l-2-2m2 2l2-2"/>
+            </svg>
+            <span class="text-xs text-[var(--text-secondary)]">{{ t('auth.iosInstallAddLabel') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <BaseButton variant="primary" size="lg" full @click="router.push('/dashboard')">
         {{ t('auth.iosInstallDone') }}
-      </button>
+      </BaseButton>
     </div>
   </BaseModal>
 </template>

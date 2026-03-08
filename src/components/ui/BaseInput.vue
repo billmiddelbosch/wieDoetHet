@@ -9,6 +9,7 @@ defineProps({
   required: { type: Boolean, default: false },
   hint: { type: String, default: '' },
   id: { type: String, default: null },
+  autocomplete: { type: String, default: null },
 })
 
 defineEmits(['update:modelValue'])
@@ -27,6 +28,7 @@ defineEmits(['update:modelValue'])
       :placeholder="placeholder"
       :disabled="disabled"
       :required="required"
+      :autocomplete="autocomplete"
       :class="[
         'w-full px-4 py-2.5 rounded-[0.625rem] border text-sm bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors duration-150',
         'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',

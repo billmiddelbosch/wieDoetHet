@@ -83,11 +83,14 @@
     "phoneStepBenefit3": "De app op je beginscherm: één tik en je bent er",
     "phoneStepCta": "Nummer opslaan & app installeren",
     "phoneStepSkip": "Overslaan, ik voeg het later toe",
+    "pickContact": "Kies uit contacten",
     "iosInstallTitle": "Voeg app toe aan beginscherm",
-    "iosInstallIntro": "Tik op de knop hieronder om het deelmenu van Safari te openen.",
-    "iosInstallCta": "Open deel-menu",
-    "iosInstallHint": "Kies vervolgens 'Zet op beginscherm' in het menu dat verschijnt.",
-    "iosInstallDone": "Later doen, ga naar dashboard"
+    "iosInstallIntro": "Volg deze twee stappen in Safari om de app op je beginscherm te zetten:",
+    "iosInstallStep1": "Tik op het deel-icoon onderin de Safari-balk",
+    "iosInstallShareLabel": "Deel-knop in Safari",
+    "iosInstallStep2": "Scroll naar beneden en tik op 'Zet op beginscherm'",
+    "iosInstallAddLabel": "Zet op beginscherm",
+    "iosInstallDone": "Klaar, ga naar dashboard"
   },
   "anon": {
     "title": "Hoe heet je?",
