@@ -1,6 +1,6 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-03-07 (added A-06, T-11; prioritised for user growth)
+**Last Updated:** 2026-03-08 (removed A-06 — done; added T-11, T-12, G-01 update, U-09, U-10, INT-05; prioritised for user growth)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
 
@@ -83,7 +83,6 @@ This backlog captures all possible future features beyond the current MVP. Items
 
 | # | Feature | Effort | Notes |
 |---|---|---|---|
-| A-06 | **Phone number on profile** | S | Registered users can save a WhatsApp-capable phone number in their profile. Used to deliver automated reminders (see T-11). Stored in E.164 format; verified via a one-time WhatsApp confirmation message. |
 | A-01 | **Social login (Google)** | M | Sign in with Google via Cognito federated identity. Reduces friction for new users. |
 | A-02 | **Magic link login** | M | Passwordless email login (send a one-time link). Especially useful on mobile. |
 | A-05 | **Profile name / avatar** | S | Registered users set a display name and optional avatar used in scorecards. |
@@ -143,6 +142,7 @@ This backlog captures all possible future features beyond the current MVP. Items
 | # | Feature | Effort | Notes |
 |---|---|---|---|
 | INT-05 | **Tikkie integration** | M | Initiator connects their Tikkie account and can send payment requests directly from a group. Supports splitting costs across members (e.g. shared groceries or entrance fees). Tikkie links are generated via the ABN AMRO Tikkie API and can be sent to members via WhatsApp or the share link. Related to T-12 (per-task claim action). |
+| INT-06 | **Google Analytics** | S | Integrate Google Analytics 4 (gtag.js) to track page views, group creation, task claims, and share events. Enables data-driven decisions on user growth and feature adoption. |
 | INT-01 | **Google Calendar event link** | S | Link a task group to a Google Calendar event; show event details in GroupHeader. |
 | INT-04 | **iCal export** | S | Export the event date as an .ics file so members can add it to their calendar. |
 | INT-03 | **Slack notification** | M | Post a message to a Slack channel when a task is claimed or when the list is complete. |
