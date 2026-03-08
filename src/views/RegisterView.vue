@@ -1,15 +1,20 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
+import { usePwaInstall } from '@/composables/usePwaInstall'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 const { register, updateProfile } = useAuth()
+const { installApp, isIos, isStandalone } = usePwaInstall()
+
+const showIosSheet = ref(false)
 
 const name = ref('')
 const email = ref('')
@@ -24,17 +29,6 @@ const step = ref(1)
 const phoneNumber = ref('')
 const phoneError = ref('')
 const phoneLoading = ref(false)
-
-// PWA install prompt — captured as early as possible
-const installPrompt = ref(null)
-
-function onBeforeInstallPrompt(e) {
-  e.preventDefault()
-  installPrompt.value = e
-}
-
-onMounted(() => window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt))
-onBeforeUnmount(() => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt))
 
 function validate() {
   errors.value = {}
@@ -71,13 +65,14 @@ async function submitPhone() {
   phoneLoading.value = true
   try {
     if (phoneNumber.value) await updateProfile({ phoneNumber: phoneNumber.value })
-    if (installPrompt.value) {
-      await installPrompt.value.prompt()
-      installPrompt.value = null
+    if (isIos() && !isStandalone()) {
+      showIosSheet.value = true
+      return
     }
+    await installApp()
   } finally {
     phoneLoading.value = false
-    router.push('/dashboard')
+    if (!showIosSheet.value) router.push('/dashboard')
   }
 }
 </script>
@@ -201,4 +196,33 @@ async function submitPhone() {
 
     </div>
   </div>
+
+  <!-- iOS install instructions -->
+  <BaseModal :open="showIosSheet" size="sm" :title="t('auth.iosInstallTitle')" @close="router.push('/dashboard')">
+    <div class="flex flex-col gap-5">
+      <p class="text-sm text-[var(--text-secondary)]">{{ t('auth.iosInstallIntro') }}</p>
+
+      <!-- Step 1 -->
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">1</div>
+        <div class="flex flex-col gap-1">
+          <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep1') }}</p>
+          <!-- iOS share icon -->
+          <svg class="w-6 h-6 text-[#007AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">2</div>
+        <p class="text-sm text-[var(--text-primary)]">{{ t('auth.iosInstallStep2') }}</p>
+      </div>
+
+      <BaseButton variant="primary" size="lg" full @click="router.push('/dashboard')">
+        {{ t('auth.iosInstallDone') }}
+      </BaseButton>
+    </div>
+  </BaseModal>
 </template>
