@@ -75,7 +75,14 @@
     "passwordHint": "Minimaal 8 tekens",
     "passwordConfirmLabel": "Wachtwoord bevestigen",
     "passwordConfirmPlaceholder": "••••••••",
-    "passwordMismatch": "Wachtwoorden komen niet overeen"
+    "passwordMismatch": "Wachtwoorden komen niet overeen",
+    "phoneStepTitle": "Bijna klaar!",
+    "phoneStepSubtitle": "Voeg je WhatsApp-nummer toe en installeer de app — dan hoef je nooit meer zelf te checken.",
+    "phoneStepBenefit1": "Ontvang een WhatsApp-bericht als een taak nog niet geclaimd is",
+    "phoneStepBenefit2": "Krijg een pushmelding zodra iemand een taak oppakt — direct op je scherm",
+    "phoneStepBenefit3": "De app op je beginscherm: één tik en je bent er",
+    "phoneStepCta": "Nummer opslaan & app installeren",
+    "phoneStepSkip": "Overslaan, ik voeg het later toe"
   },
   "anon": {
     "title": "Hoe heet je?",

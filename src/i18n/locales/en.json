@@ -75,7 +75,14 @@
     "passwordHint": "At least 8 characters",
     "passwordConfirmLabel": "Confirm password",
     "passwordConfirmPlaceholder": "••••••••",
-    "passwordMismatch": "Passwords do not match"
+    "passwordMismatch": "Passwords do not match",
+    "phoneStepTitle": "Almost done!",
+    "phoneStepSubtitle": "Add your WhatsApp number and install the app — so you never have to check manually.",
+    "phoneStepBenefit1": "Get a WhatsApp message when a task hasn't been claimed yet",
+    "phoneStepBenefit2": "Receive a push notification the moment someone grabs a task — straight to your screen",
+    "phoneStepBenefit3": "The app on your home screen: one tap and you're in",
+    "phoneStepCta": "Save number & install app",
+    "phoneStepSkip": "Skip, I'll add it later"
   },
   "anon": {
     "title": "What's your name?",
