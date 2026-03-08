@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "UpdateProfileInput",
+  "description": "Request body for PATCH /auth/profile. Allows a registered user to update their WhatsApp phone number. All fields are optional — omit a field to leave it unchanged; send null to clear it.",
+  "type": "object",
+  "properties": {
+    "phoneNumber": {
+      "type": ["string", "null"],
+      "pattern": "^\\+[1-9]\\d{7,14}$",
+      "description": "WhatsApp-capable phone number in E.164 format (e.g. +31612345678). Must start with + followed by 8–15 digits. Send null to remove the stored number."
+    }
+  },
+  "additionalProperties": false
+}

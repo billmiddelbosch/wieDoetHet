@@ -21,9 +21,14 @@ export function useAuth() {
     authStore.setUser(data)
   }
 
+  async function updateProfile({ phoneNumber }) {
+    const { data } = await apiClient.patch('/auth/profile', { phoneNumber })
+    authStore.setUser(data)
+  }
+
   function logout() {
     authStore.logout()
   }
 
-  return { login, register, fetchMe, logout }
+  return { login, register, fetchMe, updateProfile, logout }
 }
