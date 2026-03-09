@@ -87,7 +87,7 @@ function logout() {
 
         <!-- Authenticated nav -->
         <template v-if="isAuthenticated">
-          <RouterLink to="/dashboard">
+          <RouterLink to="/profile">
             <button
               type="button"
               class="p-1.5 rounded-full text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] transition-colors"

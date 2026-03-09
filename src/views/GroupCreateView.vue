@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroups } from '@/composables/useGroups'
+import { trackEvent } from '@/lib/analytics'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseToggle from '@/components/ui/BaseToggle.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -35,7 +36,10 @@ async function submit() {
     requireClaimOne: requireClaimOne.value,
     scorecardVisibility: scorecardVisibility.value,
   })
-  if (group) router.push(`/groups/${group.id}`)
+  if (group) {
+    trackEvent('group_created', { group_id: group.id, is_temporary: group.isTemporary })
+    router.push(`/groups/${group.id}`)
+  }
 }
 </script>
 

@@ -68,6 +68,24 @@ export async function deleteItem(pk, sk) {
   await ddb.send(new DeleteCommand({ TableName: table(), Key: { PK: pk, SK: sk } }))
 }
 
+export async function updateItem(pk, sk, updates) {
+  const expressions = []
+  const names = {}
+  const values = {}
+  for (const [key, val] of Object.entries(updates)) {
+    expressions.push(`#${key} = :${key}`)
+    names[`#${key}`] = key
+    values[`:${key}`] = val
+  }
+  await ddb.send(new UpdateCommand({
+    TableName: table(),
+    Key: { PK: pk, SK: sk },
+    UpdateExpression: `SET ${expressions.join(', ')}`,
+    ExpressionAttributeNames: names,
+    ExpressionAttributeValues: values,
+  }))
+}
+
 export async function queryByPk(pk, skPrefix = null, indexName = null) {
   const params = {
     TableName: table(),
