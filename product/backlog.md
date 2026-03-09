@@ -1,8 +1,16 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-03-08 (removed A-06 — done; added T-11, T-12, G-01 update, U-09, U-10, INT-05; prioritised for user growth)
+**Last Updated:** 2026-03-09 (added SEO-01 at top)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
+
+---
+
+## Growth & Discoverability
+
+| # | Feature | Effort | Notes |
+|---|---|---|---|
+| SEO-01 | **SEO optimisation** | M | Optimise the app for selected keywords in both regular Google search results and Google AI Overviews (SGE). Includes: meta titles and descriptions per page, structured data (JSON-LD), Open Graph tags for share link previews, sitemap.xml, robots.txt, landing page copy tuned for target keywords, and ensuring key pages are server-renderable or have static fallback content so Googlebot can index them without executing JavaScript. |
 
 ---
 
@@ -108,7 +116,7 @@ This backlog captures all possible future features beyond the current MVP. Items
 | # | Feature | Effort | Notes |
 |---|---|---|---|
 | U-09 | **PWA install prompt** | S | Add a `manifest.json` (name, icons, theme colour, `display: standalone`) and register a service worker so browsers offer an "Add to home screen" prompt. Show an in-app install banner for iOS (which suppresses the native prompt) with instructions to use the Share → Add to Home Screen flow. |
-| U-10 | **PWA install conversion strategy** | M | Surface the install nudge at high-intent moments (e.g. after successfully claiming a task or creating a group) rather than on first visit. Use a lightweight, dismissible bottom sheet — not a modal — so it never blocks the primary action. Remember dismissal in localStorage and do not re-prompt within N days. Skip the nudge entirely when already running as a standalone PWA. Requires U-09. |
+| U-10 | **PWA install conversion strategy** | M | Surface the install nudge at high-intent moments (e.g. after successfully claiming a task or creating a group) rather than on first visit. Use a lightweight, dismissible bottom sheet — not a modal — so it never blocks the primary action. Remember dismissal in localStorage and do not re-prompt within N days. Skip the nudge entirely when already running as a standalone PWA. Also: detect if the PWA is already installed on Android/Chrome via `navigator.getInstalledRelatedApps()` and show a non-blocking "Open in app" smart banner so users who open wiedoethet.nl in the browser are nudged to switch to the installed PWA. iOS detection is not possible — no API exists. Requires U-09. |
 | U-02 | **Onboarding tour** | M | First-use walkthrough for new initiators (create group → add tasks → share). |
 | U-01 | **Undo unclaim** | S | Show a brief "Ongedaan maken" toast after unclaiming so the user can reverse quickly. |
 | U-03 | **Empty state illustrations** | S | Friendly illustrations for empty group list, empty task list, and empty scorecard. |
