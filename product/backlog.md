@@ -1,8 +1,16 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-03-08 (removed A-06 — done; added T-11, T-12, G-01 update, U-09, U-10, INT-05; prioritised for user growth)
+**Last Updated:** 2026-03-09 (added SEO-01 at top)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
+
+---
+
+## Growth & Discoverability
+
+| # | Feature | Effort | Notes |
+|---|---|---|---|
+| SEO-01 | **SEO optimisation** | M | Optimise the app for selected keywords in both regular Google search results and Google AI Overviews (SGE). Includes: meta titles and descriptions per page, structured data (JSON-LD), Open Graph tags for share link previews, sitemap.xml, robots.txt, landing page copy tuned for target keywords, and ensuring key pages are server-renderable or have static fallback content so Googlebot can index them without executing JavaScript. |
 
 ---
 
