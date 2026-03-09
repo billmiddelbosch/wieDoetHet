@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useGroups } from '@/composables/useGroups'
 import { useTasks } from '@/composables/useTasks'
 import { useClaims } from '@/composables/useClaims'
+import { useHead, useJsonLd } from '@/composables/useHead'
 import ScorecardTable from '@/components/organisms/ScorecardTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
@@ -23,6 +24,33 @@ const { tasks, fetchTasks } = useTasks()
 const { scorecard, fetchClaims, loading, error } = useClaims()
 
 const group = computed(() => groupStore.currentGroup)
+
+// --- SEO ---
+useHead(computed(() => ({
+  title: group.value
+    ? `${group.value.name} – ${t('scorecard.title')} – Wie Doet Het`
+    : `${t('scorecard.title')} – Wie Doet Het`,
+  description: group.value
+    ? `${t('scorecard.ogDescription', { name: group.value.name, count: tasks.value?.length ?? 0 })}`
+    : 'Wie Doet Het – Taken verdelen voor groepen.',
+})))
+
+useJsonLd(computed(() => {
+  if (!group.value) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: group.value.name,
+    description: `Taakverdeling voor ${group.value.name} via Wie Doet Het`,
+    numberOfItems: tasks.value?.length ?? 0,
+    itemListElement: (tasks.value ?? []).map((task, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: task.title,
+      description: task.claimedBy ? `Geclaimd door: ${task.claimedBy}` : 'Nog niet geclaimd',
+    })),
+  }
+}))
 
 const canView = computed(() => {
   if (!group.value) return false

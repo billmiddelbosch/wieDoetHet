@@ -46,11 +46,6 @@ function validate() {
 
 function submit() {
   if (!validate()) return
-  console.log('Submitting task:', {
-    title: title.value,
-    description: description.value,
-    maxClaims: hasCapacity.value ? maxClaims.value : null,
-  })
   emit('save', {
     title: title.value.trim(),
     description: description.value.trim() || null,
