@@ -3,6 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { useReminder } from '@/composables/useReminder'
+import { usePushSubscription } from '@/composables/usePushSubscription'
+import { usePwaInstall } from '@/composables/usePwaInstall'
 import { trackEvent } from '@/lib/analytics'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -21,7 +23,9 @@ const props = defineProps({
   id: { type: String, default: '' },
   /** Required when scope is 'task' — the parent groupId for ownership verification */
   groupId: { type: String, default: null },
-  /** Whether the initiator has a phone number on their profile */
+  /** Whether the initiator has an active Web Push subscription */
+  hasPushSubscription: { type: Boolean, required: true },
+  /** Whether the initiator has a phone number on their profile (SMS fallback gate) */
   hasPhoneNumber: { type: Boolean, required: true },
   /** Pre-loaded reminder state: { scheduledAt, status } or null */
   existingReminder: { type: Object, default: null },
@@ -32,9 +36,11 @@ const props = defineProps({
   deferred: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['scheduled', 'cancelled'])
+const emit = defineEmits(['scheduled', 'cancelled', 'push-subscribed'])
 
 const { loading, error, scheduleReminder, cancelReminder } = useReminder()
+const { subscribe } = usePushSubscription()
+const { isIos, isStandalone } = usePwaInstall()
 
 const isOpen = ref(false)
 const scheduledAt = ref('')
@@ -44,8 +50,17 @@ const reminder = ref(props.existingReminder)
 const lastOp = ref(null)
 const showSaveSuccess = ref(false)
 const showCancelSuccess = ref(false)
-// Track whether we have already fired the phone-required event for this open
-const phoneEventFired = ref(false)
+const subscribing = ref(false)
+
+// Fire analytics when the section is opened and a gate is blocking the user
+watch(isOpen, (opened) => {
+  if (!opened) return
+  if (gateState.value === 'push-prompt') {
+    trackEvent('reminder_push_required', { scope: props.scope })
+  } else if (gateState.value === 'sms-required') {
+    trackEvent('reminder_phone_required', { scope: props.scope })
+  }
+})
 
 // Sync reminder when parent re-passes existingReminder (e.g. edit mode re-open)
 watch(
@@ -55,13 +70,32 @@ watch(
   }
 )
 
-// Fire analytics when the section is opened without a phone number (once per open)
-watch(isOpen, (open) => {
-  if (open && !props.hasPhoneNumber && !phoneEventFired.value) {
-    trackEvent('reminder_phone_required', { scope: props.scope })
-    phoneEventFired.value = true
+/**
+ * Five gate states:
+ *  'ready'       — push subscribed, or push unavailable+phone set (SMS fallback)
+ *  'push-prompt' — push available, not yet subscribed (Android/desktop Chrome)
+ *  'ios-install' — iOS Safari, not in standalone mode — must install first
+ *  'sms-required'— push definitively unavailable (denied or no PushManager) AND no phone
+ */
+const gateState = computed(() => {
+  // 1. Already subscribed to push — full reminder UI
+  if (props.hasPushSubscription) return 'ready'
+
+  // 2. Push API not available (non-PWA desktop without extension, etc.)
+  if (!('PushManager' in window)) {
+    return props.hasPhoneNumber ? 'ready' : 'sms-required'
   }
-  if (!open) phoneEventFired.value = false
+
+  // 3. Push permission explicitly denied by user
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+    return props.hasPhoneNumber ? 'ready' : 'sms-required'
+  }
+
+  // 4. iOS — must install PWA before push is possible
+  if (isIos() && !isStandalone()) return 'ios-install'
+
+  // 5. Push available but not yet subscribed — invite user to subscribe
+  return 'push-prompt'
 })
 
 const badgeVariant = computed(() => {
@@ -101,6 +135,22 @@ function validate() {
     return false
   }
   return true
+}
+
+async function handleSubscribe() {
+  subscribing.value = true
+  try {
+    const ok = await subscribe()
+    if (ok) {
+      trackEvent('reminder_push_subscribed', { scope: props.scope })
+      emit('push-subscribed')
+    }
+  } catch {
+    // Silently swallow — if permission was denied the gateState computed
+    // will react to Notification.permission changing to 'denied'
+  } finally {
+    subscribing.value = false
+  }
 }
 
 async function handleSave() {
@@ -178,61 +228,90 @@ async function handleCancel() {
 
     <!-- Expanded body -->
     <div v-show="isOpen" class="px-5 pb-5 flex flex-col gap-4 border-t border-[var(--border-default)]">
-      <!-- Gate: no phone number -->
-      <template v-if="!hasPhoneNumber">
-        <BaseAlert variant="warning" class="mt-4">
-          {{ t('reminder.noPhoneNumber') }}
-          <RouterLink
-            :to="profileLink"
-            class="font-semibold underline ml-1 hover:no-underline"
-          >
-            {{ t('reminder.goToProfile') }}
-          </RouterLink>
-        </BaseAlert>
-      </template>
 
-      <!-- Reminder already scheduled: show summary + cancel -->
-      <template v-else-if="reminder?.scheduledAt && reminder.status === 'scheduled'">
+      <!-- Gate: push-prompt — has Push API, not yet subscribed -->
+      <template v-if="gateState === 'push-prompt'">
         <p class="text-sm text-[var(--text-secondary)] mt-4">
-          {{ t('reminder.scheduled', { datetime: formattedDate }) }}
+          {{ t('reminder.pushPromptBody') }}
         </p>
-        <BaseAlert v-if="showCancelSuccess" variant="success">{{ t('reminder.cancelSuccess') }}</BaseAlert>
-        <BaseAlert v-if="errorMessage" variant="danger">{{ errorMessage }}</BaseAlert>
-        <BaseButton
-          variant="danger"
-          size="sm"
-          :loading="loading"
-          @click="handleCancel"
-        >
-          {{ t('reminder.cancel') }}
-        </BaseButton>
-      </template>
-
-      <!-- No active reminder: show datetime picker + save -->
-      <template v-else>
-        <p class="text-xs text-[var(--text-secondary)] mt-4">
-          {{ scope === 'task' ? t('reminder.taskHint') : t('reminder.groupHint') }}
-        </p>
-        <BaseAlert v-if="showSaveSuccess" variant="success">{{ t('reminder.saveSuccess') }}</BaseAlert>
-        <BaseInput
-          id="reminder-datetime"
-          v-model="scheduledAt"
-          type="datetime-local"
-          :label="t('reminder.dateTimeLabel')"
-          :error="fieldError"
-        />
-        <BaseAlert v-if="errorMessage" variant="danger">{{ errorMessage }}</BaseAlert>
         <div class="flex justify-end">
           <BaseButton
             variant="primary"
             size="sm"
-            :loading="loading"
-            @click="handleSave"
+            :loading="subscribing"
+            @click="handleSubscribe"
           >
-            {{ t('reminder.save') }}
+            {{ t('reminder.pushCta') }}
           </BaseButton>
         </div>
       </template>
+
+      <!-- Gate: ios-install — iOS Safari, must install PWA first -->
+      <template v-else-if="gateState === 'ios-install'">
+        <BaseAlert variant="warning" class="mt-4">
+          {{ t('reminder.iosInstallPrompt') }}
+        </BaseAlert>
+      </template>
+
+      <!-- Gate: sms-required — push unavailable AND no phone number -->
+      <template v-else-if="gateState === 'sms-required'">
+        <BaseAlert variant="warning" class="mt-4">
+          {{ t('reminder.smsFallbackPrompt') }}
+          <RouterLink
+            :to="profileLink"
+            class="font-semibold underline ml-1 hover:no-underline"
+          >
+            {{ t('reminder.gotoProfile') }}
+          </RouterLink>
+        </BaseAlert>
+      </template>
+
+      <!-- Ready state: full reminder UI -->
+      <template v-else>
+        <!-- Reminder already scheduled: show summary + cancel -->
+        <template v-if="reminder?.scheduledAt && reminder.status === 'scheduled'">
+          <p class="text-sm text-[var(--text-secondary)] mt-4">
+            {{ t('reminder.scheduled', { datetime: formattedDate }) }}
+          </p>
+          <BaseAlert v-if="showCancelSuccess" variant="success">{{ t('reminder.cancelSuccess') }}</BaseAlert>
+          <BaseAlert v-if="errorMessage" variant="danger">{{ errorMessage }}</BaseAlert>
+          <BaseButton
+            variant="danger"
+            size="sm"
+            :loading="loading"
+            @click="handleCancel"
+          >
+            {{ t('reminder.cancel') }}
+          </BaseButton>
+        </template>
+
+        <!-- No active reminder: show datetime picker + save -->
+        <template v-else>
+          <p class="text-xs text-[var(--text-secondary)] mt-4">
+            {{ scope === 'task' ? t('reminder.taskHint') : t('reminder.groupHint') }}
+          </p>
+          <BaseAlert v-if="showSaveSuccess" variant="success">{{ t('reminder.saveSuccess') }}</BaseAlert>
+          <BaseInput
+            id="reminder-datetime"
+            v-model="scheduledAt"
+            type="datetime-local"
+            :label="t('reminder.dateTimeLabel')"
+            :error="fieldError"
+          />
+          <BaseAlert v-if="errorMessage" variant="danger">{{ errorMessage }}</BaseAlert>
+          <div class="flex justify-end">
+            <BaseButton
+              variant="primary"
+              size="sm"
+              :loading="loading"
+              @click="handleSave"
+            >
+              {{ t('reminder.save') }}
+            </BaseButton>
+          </div>
+        </template>
+      </template>
+
     </div>
   </div>
 </template>

@@ -25,6 +25,8 @@
  *
  * Reminder    PK=REMINDER#{scope}#{scopeId}   SK=REMINDER
  *             GSI1PK=RULE#{ruleName}          GSI1SK=REMINDER
+ *
+ * PushSub     PK=PUSH_SUB#{userId}            SK=PUSH_SUB
  */
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
@@ -55,6 +57,7 @@ export const keys = {
   claimsByGroup: (groupId) => ({ GSI1PK: `GCLAIM#${groupId}` }),
   reminder: (scope, id) => ({ PK: `REMINDER#${scope}#${id}`, SK: 'REMINDER' }),
   reminderByRule: (ruleName) => ({ GSI1PK: `RULE#${ruleName}`, GSI1SK: 'REMINDER' }),
+  pushSub: (userId) => ({ PK: `PUSH_SUB#${userId}`, SK: 'PUSH_SUB' }),
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────

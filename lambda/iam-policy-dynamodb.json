@@ -28,8 +28,8 @@
         "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI1",
         "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI2"
       ]
-    },
-    {
+    }, 
+    { 
       "Sid": "WdhEventBridgeReminderManage",
       "Effect": "Allow",
       "Action": [
@@ -59,6 +59,15 @@
       ],
       "Resource": "arn:aws:events:eu-west-2:344050431068:rule/wdh-reminder-*",
       "Comment": "Applied to the wiedoethet-reminder-fire Lambda execution role only"
+    },
+    {
+      "Sid": "WdhSnsPublish",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "*",
+      "Comment": "Applied to the wiedoethet-reminder-fire Lambda execution role only — allows SNS SMS direct publish"
     }
   ]
 }

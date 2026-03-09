@@ -8,14 +8,20 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.750.0",
-    "@aws-sdk/lib-dynamodb": "^3.750.0"
+    "@aws-sdk/client-eventbridge": "^3.1004.0",
+    "@aws-sdk/client-sns": "^3.750.0",
+    "@aws-sdk/lib-dynamodb": "^3.750.0",
+    "web-push": "^3.6.7"
   },
   "scripts": {
-    "bundle:auth":   "esbuild wiedoethet-auth/index.js   --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-auth/index.js   --format=cjs",
-    "bundle:groups": "esbuild wiedoethet-groups/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-groups/index.js --format=cjs",
-    "bundle:tasks":  "esbuild wiedoethet-tasks/index.js  --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-tasks/index.js  --format=cjs",
-    "bundle:claims": "esbuild wiedoethet-claims/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-claims/index.js --format=cjs",
-    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims"
+    "bundle:auth": "esbuild wiedoethet-auth/index.js                       --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-auth/index.js                       --format=cjs",
+    "bundle:groups": "esbuild wiedoethet-groups/index.js                   --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-groups/index.js                   --format=cjs",
+    "bundle:tasks": "esbuild wiedoethet-tasks/index.js                     --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-tasks/index.js                     --format=cjs",
+    "bundle:claims": "esbuild wiedoethet-claims/index.js                   --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-claims/index.js                   --format=cjs",
+    "bundle:reminders": "esbuild wiedoethet-reminders/index.js             --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-reminders/index.js             --format=cjs",
+    "bundle:reminder-fire": "esbuild wiedoethet-reminder-fire/index.js     --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-reminder-fire/index.js     --format=cjs",
+    "bundle:push-subscriptions": "esbuild wiedoethet-push-subscriptions/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-push-subscriptions/index.js --format=cjs",
+    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims && npm run bundle:reminders && npm run bundle:reminder-fire && npm run bundle:push-subscriptions"
   },
   "devDependencies": {
     "esbuild": "^0.27.3"

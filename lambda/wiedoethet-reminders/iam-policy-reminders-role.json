@@ -1,0 +1,49 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WdhDynamoDBTableAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev"
+      ]
+    },
+    {
+      "Sid": "WdhDynamoDBIndexAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Query"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main/index/GSI1",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev/index/GSI1"
+      ]
+    },
+    {
+      "Sid": "WdhEventBridgeReminderManage",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:DeleteRule"
+      ],
+      "Resource": "arn:aws:events:eu-west-2:344050431068:rule/wdh-reminder-*"
+    },
+    {
+      "Sid": "WdhLambdaInvokeReminderFire",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-reminder-fire"
+    }
+  ]
+}

@@ -187,9 +187,14 @@
     "cancelSuccess": "Herinnering geannuleerd.",
     "errorSave": "Herinnering kon niet worden ingesteld. Probeer het opnieuw.",
     "errorCancel": "Herinnering kon niet worden geannuleerd. Probeer het opnieuw.",
-    "taskHint": "Je ontvangt een WhatsApp-bericht als deze taak nog niet vol is op het gekozen tijdstip.",
-    "groupHint": "Je ontvangt een WhatsApp-bericht als een of meer taken nog niet vol zijn op het gekozen tijdstip.",
-    "futureDateRequired": "Kies een datum en tijd in de toekomst."
+    "taskHint": "Je ontvangt een melding als deze taak nog niet vol is op het gekozen tijdstip.",
+    "groupHint": "Je ontvangt een melding als een of meer taken nog niet vol zijn op het gekozen tijdstip.",
+    "futureDateRequired": "Kies een datum en tijd in de toekomst.",
+    "pushPromptBody": "Installeer de app om pushmeldingen te ontvangen voor deze groep.",
+    "pushCta": "Meldingen inschakelen",
+    "iosInstallPrompt": "Voeg wieDoetHet toe aan je beginscherm via Safari om herinneringen in te stellen.",
+    "smsFallbackPrompt": "Voer een telefoonnummer in om per sms herinnerd te worden.",
+    "gotoProfile": "Ga naar profiel"
   },
   "profile": {
     "title": "Mijn profiel",

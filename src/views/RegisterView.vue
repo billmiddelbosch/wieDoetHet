@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { usePwaInstall } from '@/composables/usePwaInstall'
+import { usePushSubscription } from '@/composables/usePushSubscription'
 import { trackEvent } from '@/lib/analytics'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -14,6 +15,7 @@ const { t } = useI18n()
 const router = useRouter()
 const { register, updateProfile } = useAuth()
 const { installApp, isIos, isStandalone } = usePwaInstall()
+const { subscribe: subscribePush } = usePushSubscription()
 
 const showIosSheet = ref(false)
 
@@ -37,7 +39,7 @@ async function pickContact() {
   try {
     const contacts = await navigator.contacts.select(['tel'], { multiple: false })
     const tel = contacts?.[0]?.tel?.[0]
-    if (tel) phoneNumber.value = tel.startsWith('+') ? tel : tel
+    if (tel) phoneNumber.value = tel
   } catch {
     // User cancelled or API unavailable
   }
@@ -85,7 +87,8 @@ async function submitPhone() {
 
   if (isIos()) {
     if (isStandalone()) {
-      // Already running inside the PWA — navigate within the app
+      // Already running inside the PWA — subscribe to push silently, then navigate
+      subscribePush().catch(() => {})
       router.push('/dashboard')
     } else {
       // Safari on iOS — show manual install instructions
@@ -94,8 +97,9 @@ async function submitPhone() {
     return
   }
 
-  // Android / Chrome — trigger native install prompt, then go to dashboard
+  // Android / Chrome — trigger native install prompt, subscribe to push, then go to dashboard
   await installApp()
+  subscribePush().catch(() => {})
   router.push('/dashboard')
 }
 
@@ -183,7 +187,8 @@ async function submitPhone() {
         <div class="bg-[var(--bg-surface)] rounded-[1.25rem] border border-[var(--border-default)] p-6 shadow-sm">
           <!-- Benefits list -->
           <ul class="flex flex-col gap-2 mb-5">
-            <li v-for="benefit in ['phoneStepBenefit1', 'phoneStepBenefit2', 'phoneStepBenefit3']" :key="benefit"
+            <li
+v-for="benefit in ['phoneStepBenefit1', 'phoneStepBenefit2', 'phoneStepBenefit3']" :key="benefit"
               class="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
               <svg class="w-4 h-4 mt-0.5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

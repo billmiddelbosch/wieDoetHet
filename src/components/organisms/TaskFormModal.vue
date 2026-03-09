@@ -16,11 +16,13 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   /** groupId — required for task-scoped reminder ownership verification */
   groupId: { type: String, default: null },
+  /** Whether the initiator has an active Web Push subscription */
+  hasPushSubscription: { type: Boolean, default: false },
   /** Whether the initiator has a phone number on their profile */
   hasPhoneNumber: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['save', 'close'])
+const emit = defineEmits(['save', 'close', 'push-subscribed'])
 
 const title = ref('')
 const description = ref('')
@@ -110,11 +112,13 @@ function submit() {
         :id="task?.id ?? ''"
         scope="task"
         :group-id="groupId"
+        :has-push-subscription="hasPushSubscription"
         :has-phone-number="hasPhoneNumber"
         :existing-reminder="taskReminder"
         :deferred="isCreateMode"
         @scheduled="(at) => isCreateMode ? (pendingReminderAt = at) : (taskReminder = { scheduledAt: at, status: 'scheduled' })"
         @cancelled="taskReminder = null"
+        @push-subscribed="$emit('push-subscribed')"
       />
     </div>
     <template #footer>

@@ -4,51 +4,26 @@
  * NOT exposed via API Gateway. Receives the event payload set during
  * PutTargets: { ruleName: string }
  *
+ * Delivery chain:
+ *   1. Try Web Push (VAPID via web-push npm package)
+ *   2. If push fails or no subscription, try SMS via SNS
+ *   3. If neither channel available, mark status as 'failed'
+ *
  * Function name: wiedoethet-reminder-fire
  * Runtime: nodejs24.x
  * Handler: index.handler
  *
  * Environment variables:
- *   TABLE_NAME          — DynamoDB table (default: wdh-main)
- *   WHATSAPP_TOKEN      — Meta permanent access token (Bearer)
- *   WHATSAPP_PHONE_ID   — Meta phone number object ID
- *   AWS_REGION          — AWS region (default: eu-west-2)
+ *   TABLE_NAME         — DynamoDB table (default: wdh-main)
+ *   VAPID_PUBLIC_KEY   — base64url VAPID public key
+ *   VAPID_PRIVATE_KEY  — base64url VAPID private key (secret)
+ *   VAPID_SUBJECT      — mailto: or https: contact URI for VAPID
+ *   AWS_REGION         — AWS region (default: eu-west-2)
  */
 
 import { getItem, queryByPk, queryGsi1, updateItem } from '../shared/db.js'
 import { deleteRule } from '../shared/eventbridge.js'
-
-const WHATSAPP_API = 'https://graph.facebook.com/v19.0'
-
-// ─── WhatsApp ─────────────────────────────────────────────────────────────────
-
-async function sendWhatsApp(phoneNumber, messageText) {
-  const phoneId = process.env.WHATSAPP_PHONE_ID
-  const token = process.env.WHATSAPP_TOKEN
-
-  if (!phoneId || !token) throw new Error('WHATSAPP_PHONE_ID or WHATSAPP_TOKEN env var is not set')
-
-  const res = await fetch(`${WHATSAPP_API}/${phoneId}/messages`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: phoneNumber,
-      type: 'text',
-      text: { body: messageText },
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(`WhatsApp API error ${res.status}: ${JSON.stringify(body)}`)
-  }
-
-  return res.json()
-}
+import { sendWebPush, sendSms } from '../shared/sns.js'
 
 // ─── Minimum-claimants check ──────────────────────────────────────────────────
 
@@ -79,6 +54,65 @@ async function taskHasUnmetMinimum(taskId, groupId) {
   if (!task || !task.maxClaims) return false
   const claims = await queryByPk(`TASK#${taskId}`, 'CLAIM#')
   return claims.length < task.maxClaims
+}
+
+// ─── Notification delivery ────────────────────────────────────────────────────
+
+/**
+ * Attempts to deliver a reminder notification via Web Push, falling back to SMS.
+ *
+ * @param {string} initiatorId
+ * @param {string} groupId
+ * @param {string} scope        'group' | 'task'
+ * @param {string} scopeId
+ * @param {{ name: string, shareToken: string }} group
+ */
+async function sendNotification(initiatorId, groupId, scope, scopeId, group) {
+  const shareUrl = `https://wiedoethet.nl/g/${group.shareToken}`
+
+  const pushBody =
+    scope === 'group'
+      ? `Nog niet genoeg deelnemers voor alle taken. Deel de link opnieuw: ${shareUrl}`
+      : `Deze taak heeft nog niet genoeg deelnemers. Deel de link opnieuw: ${shareUrl}`
+
+  const pushPayload = {
+    title: group.name,
+    body: pushBody,
+    url: shareUrl,
+    tag: `wdh-reminder-${scope}-${scopeId}`,
+  }
+
+  const smsMessage =
+    scope === 'group'
+      ? `Nog niet genoeg deelnemers voor alle taken in "${group.name}". Deel de link opnieuw: ${shareUrl}`
+      : `Een taak in "${group.name}" heeft nog niet genoeg deelnemers. Deel de link opnieuw: ${shareUrl}`
+
+  // 1. Try Web Push
+  const pushSub = await getItem(`PUSH_SUB#${initiatorId}`, 'PUSH_SUB')
+  if (pushSub?.endpoint) {
+    try {
+      await sendWebPush({ endpoint: pushSub.endpoint, keys: pushSub.keys }, pushPayload)
+      console.warn(`reminder-fire: push sent successfully for ${scope} ${scopeId}`)
+      return
+    } catch (err) {
+      console.warn(
+        `reminder-fire: push failed for ${scope} ${scopeId} (status ${err.statusCode ?? 'unknown'}), trying SMS`,
+      )
+      // Fall through to SMS
+    }
+  }
+
+  // 2. SMS fallback
+  const initiator = await getItem(`USER#${initiatorId}`, 'PROFILE')
+  if (initiator?.phoneNumber) {
+    await sendSms(initiator.phoneNumber, smsMessage)
+    console.warn(`reminder-fire: SMS sent successfully for ${scope} ${scopeId}`)
+    return
+  }
+
+  // 3. No channel available
+  console.warn(`reminder-fire: no delivery channel available for ${scope} ${scopeId}`)
+  throw new Error('no_delivery_channel')
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -136,24 +170,9 @@ export const handler = async (event) => {
       return
     }
 
-    // Load initiator phone number
-    const initiator = await getItem(`USER#${initiatorId}`, 'PROFILE')
-    if (!initiator?.phoneNumber) {
-      console.warn(`reminder-fire: initiator ${initiatorId} has no phone number — aborting`)
-      await updateItem(`REMINDER#${scope}#${scopeId}`, 'REMINDER', { status: 'failed' })
-      await deleteRule(ruleName)
-      return
-    }
-
-    const shareUrl = `https://wiedoethet.nl/g/${group.shareToken}`
-    const messageText =
-      `Herinnering: je groep "${group.name}" heeft nog niet genoeg deelnemers voor alle taken.\n` +
-      `Deel de link opnieuw om iedereen te laten meedoen:\n${shareUrl}`
-
-    await sendWhatsApp(initiator.phoneNumber, messageText)
+    await sendNotification(initiatorId, groupId, scope, scopeId, group)
 
     await updateItem(`REMINDER#${scope}#${scopeId}`, 'REMINDER', { status: 'sent' })
-    console.warn(`reminder-fire: WhatsApp sent successfully for ${scope} ${scopeId}`)
   } catch (err) {
     console.error(`reminder-fire: error processing ${ruleName}`, err)
     await updateItem(`REMINDER#${scope}#${scopeId}`, 'REMINDER', { status: 'failed' })

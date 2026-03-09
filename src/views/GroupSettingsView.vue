@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAuth } from '@/composables/useAuth'
 import { useGroups } from '@/composables/useGroups'
 import { useReminder } from '@/composables/useReminder'
+import { usePushSubscription } from '@/composables/usePushSubscription'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseToggle from '@/components/ui/BaseToggle.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -23,6 +24,7 @@ const authStore = useAuthStore()
 const { fetchGroup, updateGroup, deleteGroup, loading, error } = useGroups()
 const { fetchMe } = useAuth()
 const { fetchReminder } = useReminder()
+const { isSubscribed } = usePushSubscription()
 
 const group = computed(() => groupStore.currentGroup)
 
@@ -38,17 +40,25 @@ const deleteLoading = ref(false)
 const groupReminder = ref(null)
 
 const hasPhoneNumber = computed(() => !!authStore.user?.phoneNumber)
+const hasPushSubscription = ref(false)
 
 onMounted(async () => {
   await Promise.all([
     fetchGroup(route.params.id),
     fetchMe().catch(() => {}),
   ])
-  const reminder = await fetchReminder('group', route.params.id)
+  const [reminder] = await Promise.all([
+    fetchReminder('group', route.params.id),
+    isSubscribed().then((v) => { hasPushSubscription.value = v }).catch(() => {}),
+  ])
   if (reminder && reminder.status !== 'none') {
     groupReminder.value = reminder
   }
 })
+
+async function onPushSubscribed() {
+  hasPushSubscription.value = await isSubscribed().catch(() => false)
+}
 
 watch(
   group,
@@ -196,11 +206,13 @@ async function confirmDelete() {
       <ReminderSection
         :id="route.params.id"
         scope="group"
+        :has-push-subscription="hasPushSubscription"
         :has-phone-number="hasPhoneNumber"
         :existing-reminder="groupReminder"
         class="mb-6"
         @scheduled="(at) => (groupReminder = { scheduledAt: at, status: 'scheduled' })"
         @cancelled="groupReminder = null"
+        @push-subscribed="onPushSubscribed"
       />
 
       <!-- Danger zone -->

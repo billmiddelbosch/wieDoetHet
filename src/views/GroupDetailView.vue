@@ -8,6 +8,7 @@ import { useGroups } from '@/composables/useGroups'
 import { useTasks } from '@/composables/useTasks'
 import { useClaims } from '@/composables/useClaims'
 import { useReminder } from '@/composables/useReminder'
+import { usePushSubscription } from '@/composables/usePushSubscription'
 import { trackEvent } from '@/lib/analytics'
 import GroupHeader from '@/components/organisms/GroupHeader.vue'
 import TaskList from '@/components/organisms/TaskList.vue'
@@ -29,6 +30,7 @@ const { fetchGroup, loading: groupLoading, error: groupError } = useGroups()
 const { tasks, fetchTasks, createTask, updateTask, deleteTask, clearTasks, loading: taskLoading } = useTasks()
 const { claimTask, unclaimTask } = useClaims()
 const { scheduleReminder } = useReminder()
+const { isSubscribed } = usePushSubscription()
 
 const group = computed(() => groupStore.currentGroup)
 const isInitiator = computed(
@@ -37,6 +39,16 @@ const isInitiator = computed(
 const shareUrl = computed(() =>
   group.value ? `${window.location.origin}/g/${group.value.shareToken}` : ''
 )
+
+const hasPushSubscription = ref(false)
+
+async function loadPushSubscriptionState() {
+  hasPushSubscription.value = await isSubscribed().catch(() => false)
+}
+
+async function onPushSubscribed() {
+  hasPushSubscription.value = await isSubscribed().catch(() => false)
+}
 
 // Modals
 const showTaskForm = ref(false)
@@ -58,7 +70,10 @@ async function loadGroup(id) {
   await fetchTasks(id)
 }
 
-onMounted(() => loadGroup(route.params.id))
+onMounted(() => {
+  loadGroup(route.params.id)
+  loadPushSubscriptionState()
+})
 onUnmounted(() => { clearTasks(); groupStore.setCurrentGroup(null) })
 watch(() => route.params.id, (id) => { if (id) loadGroup(id) })
 
@@ -191,9 +206,11 @@ async function onAnonSubmit(anonName) {
       :task="editingTask"
       :loading="taskSaveLoading"
       :group-id="group?.id"
+      :has-push-subscription="hasPushSubscription"
       :has-phone-number="!!authStore.user?.phoneNumber"
       @save="saveTask"
       @close="showTaskForm = false"
+      @push-subscribed="onPushSubscribed"
     />
 
     <ConfirmModal

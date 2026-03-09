@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WdhDynamoDBTableAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-main",
+        "arn:aws:dynamodb:eu-west-2:344050431068:table/wdh-dev"
+      ]
+    }
+  ]
+}

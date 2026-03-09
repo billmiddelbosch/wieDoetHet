@@ -187,9 +187,14 @@
     "cancelSuccess": "Reminder cancelled.",
     "errorSave": "Could not set reminder. Please try again.",
     "errorCancel": "Could not cancel reminder. Please try again.",
-    "taskHint": "You'll receive a WhatsApp message if this task isn't full by the chosen time.",
-    "groupHint": "You'll receive a WhatsApp message if one or more tasks aren't full by the chosen time.",
-    "futureDateRequired": "Choose a date and time in the future."
+    "taskHint": "You'll receive a notification if this task isn't full by the chosen time.",
+    "groupHint": "You'll receive a notification if one or more tasks aren't full by the chosen time.",
+    "futureDateRequired": "Choose a date and time in the future.",
+    "pushPromptBody": "Install the app to receive push notifications for this group.",
+    "pushCta": "Enable notifications",
+    "iosInstallPrompt": "Add wieDoetHet to your home screen via Safari to set reminders.",
+    "smsFallbackPrompt": "Add a phone number to receive SMS reminders.",
+    "gotoProfile": "Go to profile"
   },
   "profile": {
     "title": "My profile",
