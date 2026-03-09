@@ -168,10 +168,45 @@
     "deleteMessage": "Weet je zeker dat je deze taak wilt verwijderen? Claims worden ook verwijderd.",
     "claimFailed": "Claimen mislukt. Probeer opnieuw."
   },
+  "seo": {
+    "landing": {
+      "title": "Wie Doet Het – Taken verdelen voor groepen",
+      "description": "Verdeel taken over je groep via WhatsApp. Maak een takenlijst, deel de link en zie wie wat oppakt. Gratis, geen account nodig voor deelnemers."
+    },
+    "login": {
+      "title": "Inloggen – Wie Doet Het",
+      "description": "Log in op je Wie Doet Het account om je groepen en taken te beheren."
+    },
+    "register": {
+      "title": "Account aanmaken – Wie Doet Het",
+      "description": "Maak een gratis account aan en begin met taken verdelen voor je groep."
+    },
+    "dashboard": {
+      "title": "Mijn groepen – Wie Doet Het"
+    },
+    "profile": {
+      "title": "Mijn profiel – Wie Doet Het"
+    },
+    "groupSettings": {
+      "title": "Groepsinstellingen – Wie Doet Het"
+    }
+  },
+  "faq": {
+    "title": "Veelgestelde vragen",
+    "q1": "Hoe verdeel ik taken over een groep?",
+    "a1": "Maak een groep aan op Wie Doet Het, voeg je taken toe en deel de link via WhatsApp. Deelnemers klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft opgepakt.",
+    "q2": "Welke app kan taken verdelen?",
+    "a2": "Wie Doet Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep. Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen account nodig.",
+    "q3": "Is Wie Doet Het gratis?",
+    "a3": "Ja, Wie Doet Het is volledig gratis te gebruiken. Maak een account aan als organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens voor aan te melden.",
+    "q4": "Kan ik taken verdelen via WhatsApp?",
+    "a4": "Na het aanmaken van een takenlijst genereer je een deellink die je rechtstreeks in je WhatsApp-groep plakt. Deelnemers openen de link en claimen hun taak zonder extra app of account."
+  },
   "scorecard": {
     "title": "Scorekaart",
     "refresh": "Vernieuwen",
-    "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt."
+    "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt.",
+    "ogDescription": "Bekijk de taakverdeling voor {name}. {count} taken · Wie Doet Het"
   },
   "profile": {
     "title": "Mijn profiel",

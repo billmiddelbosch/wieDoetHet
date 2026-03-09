@@ -2,12 +2,20 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGroups } from '@/composables/useGroups'
+import { useHead } from '@/composables/useHead'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
 
 const route = useRoute()
 const router = useRouter()
 const { fetchGroupByShareToken, error } = useGroups()
+
+// Provide a meaningful title while the share token resolves.
+// Once resolved the router navigates to GroupDetailView which sets its own meta.
+useHead({
+  title: 'Groep laden – Wie Doet Het',
+  description: 'Taakverdeling via Wie Doet Het. Deel de link en zie wie wat doet.',
+})
 
 onMounted(async () => {
   const group = await fetchGroupByShareToken(route.params.shareToken)

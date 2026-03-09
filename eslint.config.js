@@ -34,6 +34,19 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'cypress/**', 'coverage/**'],
+    // Lambda source + dist — Node.js CJS/ESM environment
+    files: ['lambda/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'cypress/**', 'coverage/**', 'lambda/**', 'public/mockServiceWorker.js'],
   },
 ]

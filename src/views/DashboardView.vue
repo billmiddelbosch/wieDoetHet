@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroups } from '@/composables/useGroups'
 import { useGroupStore } from '@/stores/group'
+import { useHead } from '@/composables/useHead'
 import GroupCard from '@/components/molecules/GroupCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
@@ -11,6 +12,11 @@ import BaseEmptyState from '@/components/ui/BaseEmptyState.vue'
 import BaseAddButton from '@/components/ui/BaseAddButton.vue'
 
 const { t } = useI18n()
+
+useHead({
+  title: t('seo.dashboard.title'),
+  noindex: true,
+})
 const router = useRouter()
 const { fetchGroups, loading, error } = useGroups()
 const groupStore = useGroupStore()

@@ -1,13 +1,68 @@
 <script setup>
+// SEO-SYNC: H1 text (landing.headline + landing.headlineAccent), subheadline
+// (landing.subheadline), and FAQ content (faq.*) must stay in sync with the
+// #seo-static block in index.html. Update both files in the same commit.
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import { useHead, useJsonLd } from '@/composables/useHead'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// --- SEO ---
+useHead({
+  title: t('seo.landing.title'),
+  description: t('seo.landing.description'),
+})
+
+const BASE_URL = import.meta.env.VITE_APP_BASE_URL ?? ''
+
+useJsonLd({
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Wie Doet Het',
+  url: BASE_URL || 'https://wiedoethet.nl',
+  description: t('seo.landing.description'),
+  applicationCategory: 'UtilityApplication',
+  operatingSystem: 'All',
+  inLanguage: 'nl',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'EUR',
+  },
+})
+
+useJsonLd({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: t('faq.q1'),
+      acceptedAnswer: { '@type': 'Answer', text: t('faq.a1') },
+    },
+    {
+      '@type': 'Question',
+      name: t('faq.q2'),
+      acceptedAnswer: { '@type': 'Answer', text: t('faq.a2') },
+    },
+    {
+      '@type': 'Question',
+      name: t('faq.q3'),
+      acceptedAnswer: { '@type': 'Answer', text: t('faq.a3') },
+    },
+    {
+      '@type': 'Question',
+      name: t('faq.q4'),
+      acceptedAnswer: { '@type': 'Answer', text: t('faq.a4') },
+    },
+  ],
+})
 
 const deferredPrompt = ref(null)
 const showInstallBanner = ref(false)
@@ -172,6 +227,23 @@ const features = [
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <h2 class="text-2xl font-bold text-[var(--text-primary)] text-center mb-10">
+        {{ t('faq.title') }}
+      </h2>
+      <dl class="flex flex-col gap-4">
+        <div
+          v-for="n in [1, 2, 3, 4]"
+          :key="n"
+          class="bg-[var(--bg-surface)] rounded-[1rem] border border-[var(--border-default)] px-6 py-5"
+        >
+          <dt class="font-semibold text-[var(--text-primary)] mb-2">{{ t(`faq.q${n}`) }}</dt>
+          <dd class="text-sm text-[var(--text-secondary)] leading-relaxed">{{ t(`faq.a${n}`) }}</dd>
+        </div>
+      </dl>
     </section>
 
     <!-- Bottom CTA -->

@@ -5,11 +5,17 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { usePwaInstall } from '@/composables/usePwaInstall'
 import { trackEvent } from '@/lib/analytics'
+import { useHead } from '@/composables/useHead'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
 
 const { t } = useI18n()
+
+useHead({
+  title: t('seo.register.title'),
+  description: t('seo.register.description'),
+})
 const router = useRouter()
 const { register } = useAuth()
 const { installApp, canInstall, isIos, isStandalone } = usePwaInstall()

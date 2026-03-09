@@ -14,6 +14,7 @@ function resolveUser(request) {
 
 // Helper: strip sensitive fields before sending a user object
 function safeUser(u) {
+  // eslint-disable-next-line no-unused-vars
   const { password, ...rest } = u
   return rest
 }
