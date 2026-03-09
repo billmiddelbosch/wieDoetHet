@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node:*)",
-      "Bash(npx cypress:*)"
+      "Bash(npx cypress:*)",
+      "Bash(/bin/zsh:*)"
     ]
   }
 }
