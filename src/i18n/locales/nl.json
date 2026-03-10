@@ -189,6 +189,10 @@
     },
     "groupSettings": {
       "title": "Groepsinstellingen – Wie Doet Het"
+    },
+    "shareRedirect": {
+      "title": "Groep laden – Wie Doet Het",
+      "description": "Taakverdeling via Wie Doet Het. Deel de link en zie wie wat doet."
     }
   },
   "faq": {
