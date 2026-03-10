@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroupStore } from '@/stores/group'
 import { useGroups } from '@/composables/useGroups'
+import { useHead } from '@/composables/useHead'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseToggle from '@/components/ui/BaseToggle.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -12,6 +13,11 @@ import ConfirmModal from '@/components/molecules/ConfirmModal.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const { t } = useI18n()
+
+useHead({
+  title: t('seo.groupSettings.title'),
+  noindex: true,
+})
 const route = useRoute()
 const router = useRouter()
 const groupStore = useGroupStore()

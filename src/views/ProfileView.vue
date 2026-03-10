@@ -4,11 +4,17 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useAuth } from '@/composables/useAuth'
+import { useHead } from '@/composables/useHead'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseAlert from '@/components/ui/BaseAlert.vue'
 
 const { t } = useI18n()
+
+useHead({
+  title: t('seo.profile.title'),
+  noindex: true,
+})
 const router = useRouter()
 const authStore = useAuthStore()
 const { fetchMe, updateProfile } = useAuth()

@@ -58,7 +58,7 @@ describe('useTaskStore', () => {
 
   it('isFull when maxCapacity reached', () => {
     const store = useTaskStore()
-    store.setTasks([mockTask({ id: 'task-1', maxCapacity: 1 })])
+    store.setTasks([mockTask({ id: 'task-1', maxClaims: 1 })])
     store.applyClaim('task-1', { id: 'c1', userId: 'u1', taskId: 'task-1' })
     expect(store.tasks[0].isFull).toBe(true)
   })
