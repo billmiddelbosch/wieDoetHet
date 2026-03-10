@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- ============================================================
+         SEO baseline — read by Googlebot before JavaScript executes.
+         useHead composable (src/composables/useHead.js) overrides
+         these reactively per route once Vue has mounted.
+         ============================================================ -->
+    <title>Wie Doet Het – Taken verdelen voor groepen</title>
+    <meta
+      name="description"
+      content="Verdeel taken over je groep via WhatsApp. Maak een takenlijst, deel de link en zie wie wat oppakt. Gratis, geen account nodig voor deelnemers."
+    />
+
+    <!-- Open Graph baseline (overridden per route by useHead) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Wie Doet Het – Taken verdelen voor groepen" />
+    <meta
+      property="og:description"
+      content="Verdeel taken over je groep via WhatsApp. Maak een takenlijst, deel de link en zie wie wat oppakt. Gratis, geen account nodig voor deelnemers."
+    />
+    <meta property="og:image" content="https://wiedoethet.nl/og-image.png" />
+    <meta property="og:url" content="https://wiedoethet.nl/" />
+
     <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
 
@@ -17,7 +38,6 @@
 
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wie Doet Het</title>
 
     <!-- Service worker registration -->
     <script>
@@ -31,6 +51,51 @@
     </script>
   </head>
   <body>
+    <!--
+      SEO-SYNC: keep H1, description, and FAQ answers below in sync with
+      src/views/LandingView.vue copy. Update both files in the same commit.
+
+      This block is hidden from users via CSS once the stylesheet loads,
+      but remains in the DOM so Googlebot reads it without executing JavaScript.
+      Vue mounts exclusively on #app and never touches this element.
+    -->
+    <style>#seo-static{display:none}</style>
+    <div id="seo-static" aria-hidden="true">
+      <h1>Wie Doet Het – Taken verdelen voor groepen</h1>
+      <p>
+        Maak een takenlijst, deel de link via WhatsApp en zie wie wat oppakt.
+        Gratis, geen account nodig voor deelnemers. Ideaal voor sport, school,
+        feesten, vrijwilligerswerk en alles daartussenin.
+      </p>
+      <section>
+        <h2>Veelgestelde vragen</h2>
+        <h3>Hoe verdeel ik taken over een groep?</h3>
+        <p>
+          Maak een groep aan op Wie Doet Het, voeg je taken toe en deel de link
+          via WhatsApp. Deelnemers klikken op de taak die zij willen doen. Jij
+          ziet direct wie wat heeft opgepakt.
+        </p>
+        <h3>Welke app kan taken verdelen?</h3>
+        <p>
+          Wie Doet Het is een gratis app waarmee je eenvoudig taken verdeelt
+          over een groep. Ideaal voor sport, school, feesten en
+          vrijwilligerswerk. Deelnemers hebben geen account nodig.
+        </p>
+        <h3>Is Wie Doet Het gratis?</h3>
+        <p>
+          Ja, Wie Doet Het is volledig gratis te gebruiken. Maak een account aan
+          als organisator en nodig deelnemers uit via een deellink — zij hoeven
+          zich nergens voor aan te melden.
+        </p>
+        <h3>Kan ik taken verdelen via WhatsApp?</h3>
+        <p>
+          Na het aanmaken van een takenlijst genereer je een deellink die je
+          rechtstreeks in je WhatsApp-groep plakt. Deelnemers openen de link en
+          claimen hun taak zonder extra app of account.
+        </p>
+      </section>
+    </div>
+
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

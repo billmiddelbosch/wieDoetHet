@@ -168,10 +168,49 @@
     "deleteMessage": "Are you sure you want to delete this task? Claims will also be deleted.",
     "claimFailed": "Claiming failed. Please try again."
   },
+  "seo": {
+    "landing": {
+      "title": "Wie Doet Het – Task assignment for groups",
+      "description": "Assign tasks to your group via WhatsApp. Create a task list, share the link and see who picks what. Free, no account needed for participants."
+    },
+    "login": {
+      "title": "Log in – Wie Doet Het",
+      "description": "Log in to your Wie Doet Het account to manage your groups and tasks."
+    },
+    "register": {
+      "title": "Create account – Wie Doet Het",
+      "description": "Create a free account and start assigning tasks to your group."
+    },
+    "dashboard": {
+      "title": "My groups – Wie Doet Het"
+    },
+    "profile": {
+      "title": "My profile – Wie Doet Het"
+    },
+    "groupSettings": {
+      "title": "Group settings – Wie Doet Het"
+    },
+    "shareRedirect": {
+      "title": "Loading group – Wie Doet Het",
+      "description": "Task assignment via Wie Doet Het. Share the link and see who does what."
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": "How do I assign tasks to a group?",
+    "a1": "Create a group on Wie Doet Het, add your tasks and share the link via WhatsApp. Participants click on the task they want to do. You can instantly see who picked what.",
+    "q2": "Which app can distribute tasks?",
+    "a2": "Wie Doet Het is a free app that lets you easily divide tasks among a group. Ideal for sports, school, parties and volunteering. Participants don't need an account.",
+    "q3": "Is Wie Doet Het free?",
+    "a3": "Yes, Wie Doet Het is completely free to use. Create an account as an organiser and invite participants via a share link — they don't need to sign up anywhere.",
+    "q4": "Can I divide tasks via WhatsApp?",
+    "a4": "After creating a task list you generate a share link that you paste directly into your WhatsApp group. Participants open the link and claim their task without an extra app or account."
+  },
   "scorecard": {
     "title": "Scorecard",
     "refresh": "Refresh",
-    "notVisible": "The scorecard is not visible to you. The initiator has restricted access."
+    "notVisible": "The scorecard is not visible to you. The initiator has restricted access.",
+    "ogDescription": "View the task assignments for {name}. {count} tasks · Wie Doet Het"
   },
   "profile": {
     "title": "My profile",
