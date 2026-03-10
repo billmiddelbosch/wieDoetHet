@@ -3,4 +3,4 @@ Allow: /
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /groups/*/settings
-Sitemap: https://wiedoethet.nl/sitemap.xml
+Sitemap: https://www.wiedoethet.nl/sitemap.xml
