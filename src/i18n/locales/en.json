@@ -189,6 +189,10 @@
     },
     "groupSettings": {
       "title": "Group settings – Wie Doet Het"
+    },
+    "shareRedirect": {
+      "title": "Loading group – Wie Doet Het",
+      "description": "Task assignment via Wie Doet Het. Share the link and see who does what."
     }
   },
   "faq": {
