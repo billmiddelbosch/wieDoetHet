@@ -1,6 +1,6 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-03-10 (SEO-01 completed and removed)
+**Last Updated:** 2026-05-04 (added SEO-03 through SEO-06)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
 
@@ -11,6 +11,10 @@ This backlog captures all possible future features beyond the current MVP. Items
 | # | Feature | Effort | Notes |
 |---|---|---|---|
 | SEO-02 | **English SEO / hreflang** | M | Full English UI and SEO pass. Add hreflang tags, English meta titles and descriptions, English FAQ content in JSON-LD. Deferred from SEO-01. |
+| SEO-03 | **SEO landing page: AI agent MKB / AI automatisering MKB** | L | Dedicated conversion-optimised landing page op aintern.nl gericht op commerciële queries "AI agent MKB" en "AI automatisering MKB Nederland". Vereisten: keyword in H1 + title tag, value proposition, use cases, pricing CTA, "MKB" in URL slug (bijv. /ai-agent-mkb). Concurreert direct met mkb-aigent.nl. Bottom-of-funnel commercieel intent. Next development run — P1. |
+| SEO-04 | **Kennisbank artikelreeks: AI automatisering MKB long-tail keywords** | M | Artikelenreeks gericht op long-tail queries waar aintern.nl en mkb-aigent.nl beiden op nul ranken. Doelzinnen: "hoe implementeer je AI in een MKB bedrijf", "AI automatisering kosten MKB 2026", "AI agent implementeren stappen MKB", "wat is een AI agent voor MKB". Bouwt topical authority over 3–6 maanden, vergroot kans op citatie in AI Overviews (ChatGPT, Perplexity, Google). Next kennisbank run — P2. |
+| SEO-05 | **SEO: voeg 'MKB' toe aan aintern.nl title tag en H1** | S | Het woord "MKB" ontbreekt in de homepage title tag, H1 en meta description — verlaagt geo-verticale specificiteit t.o.v. mkb-aigent.nl. Quick win, kan parallel lopen met landing page item. Next development run — P1. |
+| SEO-06 | **Groei-systeem: geautomatiseerde editorial outreach voor MKB AI-mentions** | L | Geautomatiseerde flow die aintern.nl laat opnemen in redactionele artikelen op Dutch AI/MKB sites (slimiq.nl, ambrix.nl, timmermansmedia.nl, Sprout.nl, ZiPconomy, AG Connect, MKB Servicedesk). Stappen: (1) scrapen relevante "beste AI tools MKB" artikelen, (2) contactpersoon identificeren, (3) gepersonaliseerde outreach email opstellen (gratis account / case study / expert quote), (4) automatisch versturen via groei-systeem email infra. Doel: 3–5 editoriale backlinks per kwartaal. Integreert naast bestaande LinkedIn outreach automatisering. Tags: groei-systeem + SEO. P2. |
 
 ---
 
