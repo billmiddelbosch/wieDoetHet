@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto'
 import { ok, created, unauthorized, conflict, badRequest, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { signJwt, verifyJwt } from '../shared/jwt.js'
 import { hashPassword, verifyPassword } from '../shared/password.js'
-import { getItem, putItem, updateItem, queryGsi1 } from '../shared/db.js'
+import { getItem, putItem, updateItem, queryGsi1, keys } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -50,6 +50,7 @@ async function register(event) {
     SK: 'PROFILE',
     GSI1PK: `EMAIL#${emailLower}`,
     GSI1SK: 'USER',
+    ...keys.userGsi3(now, id),
     id,
     name,
     email: emailLower,
@@ -94,7 +95,7 @@ async function updateProfile(event) {
 
 function safeUser(u) {
   // eslint-disable-next-line no-unused-vars
-  const { PK, SK, GSI1PK, GSI1SK, passwordHash, ...rest } = u
+  const { PK, SK, GSI1PK, GSI1SK, GSI3PK, GSI3SK, passwordHash, ...rest } = u
   return rest
 }
 

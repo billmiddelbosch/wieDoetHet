@@ -87,6 +87,9 @@ function logout() {
 
         <!-- Authenticated nav -->
         <template v-if="isAuthenticated">
+          <RouterLink v-if="authStore.isAdmin" to="/admin">
+            <BaseButton variant="ghost" size="sm">{{ t('nav.admin') }}</BaseButton>
+          </RouterLink>
           <RouterLink to="/profile">
             <button
               type="button"

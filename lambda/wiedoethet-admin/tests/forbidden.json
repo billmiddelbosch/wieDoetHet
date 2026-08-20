@@ -1,0 +1,17 @@
+{
+  "httpMethod": "GET",
+  "path": "/admin/stats",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_NON_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": null,
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/admin/stats",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

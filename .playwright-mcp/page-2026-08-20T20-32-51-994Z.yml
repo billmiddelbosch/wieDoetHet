@@ -1,0 +1,19 @@
+- generic [ref=f3e3]:
+  - banner [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - link "wieDoetHet" [ref=f3e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f3e11]:
+        - button "Schakel naar donkere modus" [ref=f3e12]
+        - link [ref=f3e37] [cursor=pointer]:
+          - /url: /admin
+          - button "Admin" [ref=f3e38]
+        - link [ref=f3e39] [cursor=pointer]:
+          - /url: /profile
+          - button "BM" [ref=f3e40]
+        - button "Uitloggen" [ref=f3e43]
+  - main [ref=f3e19]:
+    - generic [ref=f3e45]:
+      - heading "Mijn groepen" [level=1] [ref=f3e46]
+      - paragraph [ref=f3e47]: Alle groepen waar jij initiator van bent
+  - contentinfo [ref=f3e36]: © 2026 wieDoetHet — Wie pakt welke taak?

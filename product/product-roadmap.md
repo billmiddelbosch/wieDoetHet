@@ -1,6 +1,6 @@
 # Product Roadmap — wieDoetHet
 
-**Last Updated:** 2026-03-03 (added Milestone 1.7 — AWS Lambda backend services)
+**Last Updated:** 2026-08-20 (added Milestone 1.9 — Admin Section, and the Admin Service under 1.7)
 
 ---
 
@@ -51,6 +51,8 @@
 
 **Infrastructure stack:** AWS Lambda + API Gateway (HTTP API) + DynamoDB + S3 (group pictures) + Cognito (auth) + CloudFormation / SAM for IaC.
 
+> **Reality check (2026-08-20):** the line above describes the original plan, not what's deployed. In practice, auth is a hand-rolled JWT (HS256 via Node's `node:crypto`, see `lambda/shared/jwt.js`) — there is no Cognito. Deployment is fully manual: esbuild bundle → zip → Lambda console upload, with `openapi.yaml` (repo root) manually re-imported into API Gateway — there is no CloudFormation/SAM template. See `lambda/DYNAMODB_SETUP.md` and `product/specs/admin-api.spec.md` for the current, accurate picture. Left here rather than rewritten so the drift is visible; a full pass to correct this milestone's write-up is tech debt, not part of the Admin Section feature.
+
 #### Auth Service (`/auth`)
 - [ ] `POST /auth/register` — create Cognito user + DynamoDB profile record
 - [ ] `POST /auth/login` — Cognito InitiateAuth, return JWT access token
@@ -82,6 +84,15 @@
 - [ ] `POST /notifications/whatsapp/invite` — generate WhatsApp deep-link payload with share URL
 - [ ] `POST /notifications/whatsapp/reminder` — schedule a reminder Lambda (EventBridge rule) and generate WhatsApp deep-link
 
+#### Admin Service (`/admin`) — internal, role-gated read-only CRM
+- [ ] `GET /admin/stats` — platform-wide counts and recent activity (admin only)
+- [ ] `GET /admin/users` — paginated/searchable user list (admin only)
+- [ ] `GET /admin/users/{userId}` — user detail (admin only)
+- [ ] `GET /admin/groups` — paginated/searchable group list (admin only)
+- [ ] `GET /admin/groups/{groupId}` — group detail (admin only)
+- [ ] Authorization re-fetches the caller's User record on every request and checks `role === 'admin'` server-side — no admin claim in the JWT itself (see `product/specs/admin-api.spec.md`)
+- [ ] See Milestone 1.9 for the full feature breakdown (data model, GSI3, backfill prerequisite)
+
 #### Infrastructure & Shared
 - [ ] DynamoDB table design: `Groups`, `Tasks`, `Claims`, `Users` (single-table or multi-table)
 - [ ] API Gateway HTTP API with CORS configured for the Vue SPA origin
@@ -91,12 +102,34 @@
 - [ ] SAM template (`template.yaml`) for all Lambda functions and API Gateway
 - [ ] `npm run deploy` script via AWS SAM CLI
 - [ ] Local development: `sam local start-api` mapped to `VITE_API_BASE_URL=http://localhost:3000`
+- [ ] GSI3 added to `wdh-main` (constant-per-type partition key `USER`/`GROUP`, sort key `{createdAt}#{id}`) — enables native `Query`-based pagination for admin listings without a table `Scan`
 
 ### Milestone 1.8 — Polish & PWA
 - [ ] PWA manifest and service worker
 - [ ] "Add to homescreen" prompt
 - [ ] Responsive mobile-first polish
 - [ ] Full Dutch i18n + English fallback
+
+### Milestone 1.9 — Admin Section (internal CRM, read-only v1)
+
+**Goal:** Give internal admins a read-only oversight view of platform data (users, groups, activity) without needing direct AWS console access for routine questions.
+
+**Data model**
+- [ ] `role: 'admin' | 'user'` added to the `User` entity, default `'user'` (see `product/data-model.md`)
+- [ ] First admin seeded by manually editing their DynamoDB item — no Cognito, no invite flow, no promote-to-admin UI in v1
+- [ ] New GSI3 on `wdh-main` (`GSI3PK = 'USER'|'GROUP'`, `GSI3SK = {createdAt}#{id}`) for native paginated listing of users/groups, avoiding a full-table `Scan`
+- [ ] **Deployment prerequisite — flagged, not built in this run:** if `wdh-main` already holds production data, existing User/Group items predate GSI3 and won't appear in admin listings until a one-time backfill script populates `GSI3PK`/`GSI3SK` on them. Confirm with the user whether real data exists before this ships.
+
+**Backend** — see `product/specs/admin-api.spec.md`
+- [ ] `wiedoethet-admin` Lambda: `GET /admin/stats`, `GET /admin/users`, `GET /admin/users/{userId}`, `GET /admin/groups`, `GET /admin/groups/{groupId}`
+
+**Frontend** — spec'd separately in a later session (`admin.spec.md`)
+- [ ] Admin-gated routes, e.g. `/admin`, `/admin/users`, `/admin/users/:id`, `/admin/groups`, `/admin/groups/:id`
+- [ ] Stats dashboard view
+- [ ] Users list (search + pagination) and detail view
+- [ ] Groups list (search + pagination) and detail view
+
+**Explicitly out of scope for v1:** editing, deactivating, or deleting users/groups from the panel; promote-to-admin UI; any invite-based admin onboarding.
 
 ---
 

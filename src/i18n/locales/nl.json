@@ -5,7 +5,8 @@
     "login": "Inloggen",
     "register": "Registreren",
     "logout": "Uitloggen",
-    "dashboard": "Mijn groepen"
+    "dashboard": "Mijn groepen",
+    "admin": "Admin"
   },
   "theme": {
     "switchDark": "Schakel naar donkere modus",
@@ -193,6 +194,21 @@
     "shareRedirect": {
       "title": "Groep laden – Wie Doet Het",
       "description": "Taakverdeling via Wie Doet Het. Deel de link en zie wie wat doet."
+    },
+    "adminDashboard": {
+      "title": "Admin overzicht – Wie Doet Het"
+    },
+    "adminUsers": {
+      "title": "Admin – Gebruikers – Wie Doet Het"
+    },
+    "adminUserDetail": {
+      "title": "Admin – Gebruikersdetail – Wie Doet Het"
+    },
+    "adminGroups": {
+      "title": "Admin – Groepen – Wie Doet Het"
+    },
+    "adminGroupDetail": {
+      "title": "Admin – Groepsdetail – Wie Doet Het"
     }
   },
   "faq": {
@@ -223,5 +239,69 @@
     "whatsappNotice": "WhatsApp-verificatie wordt binnenkort toegevoegd. Sla je nummer alvast op zodat je automatisch herinneringen ontvangt zodra dit beschikbaar is.",
     "savedSuccess": "Profiel opgeslagen!",
     "saveFailed": "Opslaan mislukt. Probeer opnieuw."
+  },
+  "admin": {
+    "subnav": {
+      "dashboard": "Overzicht",
+      "users": "Gebruikers",
+      "groups": "Groepen"
+    },
+    "dashboard": {
+      "title": "Admin overzicht",
+      "totalUsers": "Totaal gebruikers",
+      "totalGroups": "Totaal groepen",
+      "newUsersLast7d": "Nieuwe gebruikers (7d)",
+      "newGroupsLast7d": "Nieuwe groepen (7d)",
+      "recentUsers": "Recente gebruikers",
+      "recentGroups": "Recente groepen",
+      "viewAllUsers": "Alle gebruikers bekijken",
+      "viewAllGroups": "Alle groepen bekijken"
+    },
+    "users": {
+      "title": "Gebruikers",
+      "searchPlaceholder": "Zoek op naam of e-mailadres...",
+      "columnEmail": "E-mailadres",
+      "columnName": "Naam",
+      "columnRole": "Rol",
+      "columnCreatedAt": "Aangemeld",
+      "columnGroupCount": "Groepen",
+      "columnLastActivity": "Laatste activiteit",
+      "emptyTitle": "Geen gebruikers gevonden",
+      "emptyDesc": "Probeer een andere zoekterm."
+    },
+    "userDetail": {
+      "back": "Terug naar gebruikers",
+      "groupsTitle": "Gestarte groepen",
+      "notFound": "Gebruiker niet gevonden."
+    },
+    "groups": {
+      "title": "Groepen",
+      "searchPlaceholder": "Zoek op groepsnaam...",
+      "columnName": "Naam",
+      "columnInitiator": "Organisator",
+      "columnTaskCount": "Taken",
+      "columnMemberCount": "Leden",
+      "columnCreatedAt": "Aangemaakt",
+      "emptyTitle": "Geen groepen gevonden",
+      "emptyDesc": "Probeer een andere zoekterm."
+    },
+    "groupDetail": {
+      "back": "Terug naar groepen",
+      "tasksTitle": "Taken",
+      "notFound": "Groep niet gevonden.",
+      "columnTask": "Taak",
+      "columnClaimedBy": "Geclaimd door",
+      "columnStatus": "Status",
+      "claimed": "Geclaimd",
+      "unclaimed": "Niet geclaimd"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "Gebruiker"
+    },
+    "pagination": {
+      "previous": "Vorige",
+      "next": "Volgende"
+    }
   }
 }
