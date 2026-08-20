@@ -1,6 +1,6 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-05-04 (added SEO-03 through SEO-06)
+**Last Updated:** 2026-08-20 (added ADM-01 through ADM-16)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
 
@@ -158,3 +158,26 @@ This backlog captures all possible future features beyond the current MVP. Items
 | INT-04 | **iCal export** | S | Export the event date as an .ics file so members can add it to their calendar. |
 | INT-03 | **Slack notification** | M | Post a message to a Slack channel when a task is claimed or when the list is complete. |
 | INT-02 | **Zapier / Make connector** | L | Trigger a Zap when a task is claimed (e.g. add row to Google Sheets). |
+
+---
+
+## Admin & CRM (Internal)
+
+| # | Feature | Effort | Notes |
+|---|---|---|---|
+| ADM-01 | **Admin Lambda + GSI3 listing index** | M | New `wiedoethet-admin` Lambda plus GSI3 (`GSI3PK`=`USER`\|`GROUP`, `GSI3SK`={createdAt}#{id}) enabling scan-free paginated listing of users and groups. See `product/specs/admin-api.spec.md`. |
+| ADM-02 | **GET /admin/stats endpoint** | S | Platform-wide counts (totalUsers, totalGroups, newUsersLast7d, newGroupsLast7d) plus recent-activity snapshot (recentUsers/recentGroups, top 5 each) for the admin dashboard. totalTasks/totalClaims intentionally excluded in v1 — no GSI3 partition for those entity types. |
+| ADM-03 | **Admin user list + detail API** | M | `GET /admin/users` (paginated, searchable) and `GET /admin/users/{userId}`, enriched with `groupCount` and `lastActivityAt`. |
+| ADM-04 | **Admin group list + detail API** | M | `GET /admin/groups` (paginated, searchable) and `GET /admin/groups/{groupId}`, enriched with initiator, task, and member info. |
+| ADM-05 | **requireAdmin server-side authorization** | S | Re-fetches the caller's `User` record on every admin request; distinguishes 401 (unauthenticated) from 403 (authenticated, not admin). |
+| ADM-06 | **GSI3 write-path updates** | S | `wiedoethet-auth` and `wiedoethet-groups` write GSI3 keys on create, and strip them from all public-facing responses. |
+| ADM-07 | **GSI3 backfill script** | S | One-time script to backfill GSI3 keys onto pre-existing production User/Group items. Deployment prerequisite for ADM-01 — not yet built. |
+| ADM-08 | **Admin route guard (`/admin/*`)** | S | New route area with `meta.requiresAdmin`. Unauthenticated → `/login`; authenticated non-admin → `/dashboard`. |
+| ADM-09 | **AdminLayout + nested admin routes** | S | Layout component and nested `/admin` route structure (dashboard, users, groups). |
+| ADM-10 | **useAuthStore: role + isAdmin** | S | Extend `user` with `role`; add `isAdmin` computed. No self-serve promotion — role is server-assigned only. |
+| ADM-11 | **Admin dashboard view** | M | Stats tiles + recent activity feed, backed by `GET /admin/stats`. |
+| ADM-12 | **Admin users list + detail view** | M | Search, pagination, and read-only detail view for platform users. |
+| ADM-13 | **Admin groups list + detail view** | M | Search, pagination, and read-only detail view for groups. |
+| ADM-14 | **BaseTable / BasePagination primitives** | M | New reusable UI primitives for the admin list views; first consumers are ADM-12 and ADM-13. |
+| ADM-15 | **Admin nav entry in AppHeader** | S | Conditional "Admin" link shown only when `isAdmin` is true. |
+| ADM-16 | **Admin i18n keys** | S | `admin.*` translation keys, nl default with en fallback. |

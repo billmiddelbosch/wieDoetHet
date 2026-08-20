@@ -8,15 +8,21 @@
  * Primary:  PK (string)  +  SK (string)
  * GSI1:     GSI1PK       +  GSI1SK       (index name: GSI1)
  * GSI2:     GSI2PK       +  GSI2SK       (index name: GSI2)
+ * GSI3:     GSI3PK       +  GSI3SK       (index name: GSI3) — added for the
+ *           Admin Section (wiedoethet-admin). GSI3PK is a constant per entity
+ *           type ('USER' or 'GROUP'), GSI3SK is `{createdAt}#{id}`. Only User
+ *           and Group items get a GSI3 partition — see lambda/DYNAMODB_SETUP.md.
  *
  * Entity key patterns
  * ───────────────────
  * User        PK=USER#{id}          SK=PROFILE
  *             GSI1PK=EMAIL#{email}  GSI1SK=USER
+ *             GSI3PK=USER           GSI3SK={createdAt}#{id}
  *
  * Group       PK=GROUP#{id}              SK=METADATA
  *             GSI1PK=SHARE#{shareToken}  GSI1SK=GROUP
  *             GSI2PK=INITIATOR#{userId}  GSI2SK=GROUP#{id}
+ *             GSI3PK=GROUP               GSI3SK={createdAt}#{id}
  *
  * Task        PK=GROUP#{groupId}   SK=TASK#{order:0>5}#{taskId}
  *
@@ -50,6 +56,9 @@ export const keys = {
   claim: (taskId, claimId) => ({ PK: `TASK#${taskId}`, SK: `CLAIM#${claimId}` }),
   claimsOnTask: (taskId) => ({ PK: `TASK#${taskId}`, SKPrefix: 'CLAIM#' }),
   claimsByGroup: (groupId) => ({ GSI1PK: `GCLAIM#${groupId}` }),
+  // GSI3 — Admin Section (wiedoethet-admin): "list all users/groups" without a table Scan.
+  userGsi3: (createdAt, id) => ({ GSI3PK: 'USER', GSI3SK: `${createdAt}#${id}` }),
+  groupGsi3: (createdAt, id) => ({ GSI3PK: 'GROUP', GSI3SK: `${createdAt}#${id}` }),
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -133,4 +142,50 @@ export async function queryGsi2(gsi2pk, gsi2skPrefix = null) {
   }
   const { Items } = await ddb.send(new QueryCommand(params))
   return Items ?? []
+}
+
+/**
+ * Query GSI3 — "all items of one entity type" (Users or Groups), used only by
+ * wiedoethet-admin. Deliberately richer than queryGsi1/queryGsi2: this is the
+ * first caller that needs cursor pagination, sort direction, an optional
+ * FilterExpression, and count-only queries, so it takes an options object and
+ * returns { items, lastEvaluatedKey, count } instead of a bare array.
+ *
+ * Gotcha: FilterExpression is applied by DynamoDB AFTER it reads `limit` items
+ * from the index, not after filtering — a filtered query can return fewer than
+ * `limit` items even though more matches exist further in the index. Callers
+ * that pass filterExpression must loop on a non-null lastEvaluatedKey rather
+ * than treating `items.length < limit` as "no more pages".
+ */
+export async function queryGsi3(gsi3pk, {
+  skGte,
+  limit,
+  exclusiveStartKey,
+  scanIndexForward = true,
+  filterExpression,
+  expressionAttributeNames,
+  expressionAttributeValues,
+  select,
+} = {}) {
+  const names = { ...expressionAttributeNames }
+  const values = { ':pk': gsi3pk, ...expressionAttributeValues }
+  let keyCondition = 'GSI3PK = :pk'
+  if (skGte !== undefined) {
+    keyCondition += ' AND GSI3SK >= :skGte'
+    values[':skGte'] = skGte
+  }
+  const params = {
+    TableName: table(),
+    IndexName: 'GSI3',
+    KeyConditionExpression: keyCondition,
+    ExpressionAttributeValues: values,
+    ScanIndexForward: scanIndexForward,
+  }
+  if (Object.keys(names).length) params.ExpressionAttributeNames = names
+  if (limit !== undefined) params.Limit = limit
+  if (exclusiveStartKey !== undefined) params.ExclusiveStartKey = exclusiveStartKey
+  if (filterExpression) params.FilterExpression = filterExpression
+  if (select) params.Select = select
+  const { Items, LastEvaluatedKey, Count } = await ddb.send(new QueryCommand(params))
+  return { items: Items ?? [], lastEvaluatedKey: LastEvaluatedKey ?? null, count: Count }
 }

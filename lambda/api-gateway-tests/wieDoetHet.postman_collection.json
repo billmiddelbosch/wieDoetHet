@@ -39,6 +39,24 @@
       "value": "sess_anon_test_001",
       "type": "string",
       "description": "Fixed session ID used for anonymous claim tests"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT for a user whose DynamoDB profile has role: admin — set manually, this collection cannot create one"
+    },
+    {
+      "key": "adminUserId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-filled by Admin > List Users"
+    },
+    {
+      "key": "adminGroupId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-filled by Admin > List Groups"
     }
   ],
   "item": [
@@ -586,6 +604,228 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{baseUrl}}/groups/{{groupId}}/claims", "host": ["{{baseUrl}}"], "path": ["groups", "{{groupId}}", "claims"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Requires {{adminToken}} — a JWT for a user whose DynamoDB USER#<id>/PROFILE item has role: \"admin\" set manually. role is read fresh from DynamoDB on every request, so an existing token works once the attribute is set.",
+      "item": [
+        {
+          "name": "Get Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('totals present', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.totalUsers).to.be.a('number');",
+                  "  pm.expect(body.totalGroups).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        },
+        {
+          "name": "List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('items is array', () => pm.expect(body.items).to.be.an('array'));",
+                  "if (body.items && body.items.length > 0) {",
+                  "  pm.collectionVariables.set('adminUserId', body.items[0].id);",
+                  "  console.log('adminUserId saved:', body.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "List Users (search)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('items is array', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?limit=10&q=jan",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "q", "value": "jan" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('user.id matches', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.id).to.equal(pm.collectionVariables.get('adminUserId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/users/{{adminUserId}}", "host": ["{{baseUrl}}"], "path": ["admin", "users", "{{adminUserId}}"] }
+          }
+        },
+        {
+          "name": "List Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('items is array', () => pm.expect(body.items).to.be.an('array'));",
+                  "if (body.items && body.items.length > 0) {",
+                  "  pm.collectionVariables.set('adminGroupId', body.items[0].id);",
+                  "  console.log('adminGroupId saved:', body.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/groups?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "groups"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "List Groups (search)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('items is array', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/groups?limit=10&q=sprint",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "groups"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "q", "value": "sprint" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('group.id matches', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.id).to.equal(pm.collectionVariables.get('adminGroupId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/groups/{{adminGroupId}}", "host": ["{{baseUrl}}"], "path": ["admin", "groups", "{{adminGroupId}}"] }
+          }
+        },
+        {
+          "name": "Get Stats (unauthorized — no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        },
+        {
+          "name": "Get Stats (forbidden — non-admin token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
           }
         }
       ]

@@ -216,6 +216,177 @@ components:
       required:
         - message
 
+    AdminUserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+        createdAt:
+          type: string
+        groupCount:
+          type: integer
+        lastActivityAt:
+          type: string
+      required:
+        - id
+        - email
+        - name
+        - role
+        - createdAt
+        - groupCount
+        - lastActivityAt
+
+    AdminUserDetail:
+      allOf:
+        - $ref: '#/components/schemas/AdminUserSummary'
+        - type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  shareToken:
+                    type: string
+                  createdAt:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - shareToken
+                  - createdAt
+          required:
+            - groups
+
+    AdminUserListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummary'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - items
+        - nextCursor
+
+    AdminGroupSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        pictureUrl:
+          type: string
+          nullable: true
+        initiatorId:
+          type: string
+        initiatorName:
+          type: string
+        initiatorEmail:
+          type: string
+        taskCount:
+          type: integer
+        memberCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - initiatorId
+        - initiatorName
+        - initiatorEmail
+        - taskCount
+        - memberCount
+        - createdAt
+
+    AdminGroupDetail:
+      allOf:
+        - $ref: '#/components/schemas/AdminGroupSummary'
+        - type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  order:
+                    type: integer
+                  claimCount:
+                    type: integer
+                required:
+                  - id
+                  - title
+                  - order
+                  - claimCount
+          required:
+            - tasks
+
+    AdminGroupListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminGroupSummary'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - items
+        - nextCursor
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalGroups:
+          type: integer
+        newUsersLast7d:
+          type: integer
+        newGroupsLast7d:
+          type: integer
+        recentUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummary'
+        recentGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminGroupSummary'
+        generatedAt:
+          type: string
+      required:
+        - totalUsers
+        - totalGroups
+        - newUsersLast7d
+        - newGroupsLast7d
+        - recentUsers
+        - recentGroups
+        - generatedAt
+
 paths:
 
   /auth/login:
@@ -598,4 +769,169 @@ paths:
         type: aws_proxy
         httpMethod: POST
         uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-claims/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/stats:
+    get:
+      summary: Platform-wide counts and recent activity (admin only)
+      operationId: getAdminStats
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStats'
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/users:
+    get:
+      summary: Paginated, searchable list of all users (admin only)
+      operationId: listAdminUsers
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+        "400":
+          description: Invalid limit or cursor
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get a single user's admin detail view (admin only)
+      operationId: getAdminUserDetail
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserDetail'
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+        "404":
+          description: User not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/groups:
+    get:
+      summary: Paginated, searchable list of all groups (admin only)
+      operationId: listAdminGroups
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated group list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminGroupListResponse'
+        "400":
+          description: Invalid limit or cursor
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/groups/{groupId}:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get a single group's admin detail view (admin only)
+      operationId: getAdminGroupDetail
+      responses:
+        "200":
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminGroupDetail'
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+        "404":
+          description: Group not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
         passthroughBehavior: when_no_match

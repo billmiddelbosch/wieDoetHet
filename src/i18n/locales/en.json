@@ -5,7 +5,8 @@
     "login": "Log in",
     "register": "Register",
     "logout": "Log out",
-    "dashboard": "My groups"
+    "dashboard": "My groups",
+    "admin": "Admin"
   },
   "theme": {
     "switchDark": "Switch to dark mode",
@@ -193,6 +194,21 @@
     "shareRedirect": {
       "title": "Loading group – Wie Doet Het",
       "description": "Task assignment via Wie Doet Het. Share the link and see who does what."
+    },
+    "adminDashboard": {
+      "title": "Admin dashboard – Wie Doet Het"
+    },
+    "adminUsers": {
+      "title": "Admin – Users – Wie Doet Het"
+    },
+    "adminUserDetail": {
+      "title": "Admin – User detail – Wie Doet Het"
+    },
+    "adminGroups": {
+      "title": "Admin – Groups – Wie Doet Het"
+    },
+    "adminGroupDetail": {
+      "title": "Admin – Group detail – Wie Doet Het"
     }
   },
   "faq": {
@@ -223,5 +239,69 @@
     "whatsappNotice": "WhatsApp verification will be added soon. Save your number now so you automatically receive reminders once this is available.",
     "savedSuccess": "Profile saved!",
     "saveFailed": "Save failed. Please try again."
+  },
+  "admin": {
+    "subnav": {
+      "dashboard": "Overview",
+      "users": "Users",
+      "groups": "Groups"
+    },
+    "dashboard": {
+      "title": "Admin dashboard",
+      "totalUsers": "Total users",
+      "totalGroups": "Total groups",
+      "newUsersLast7d": "New users (7d)",
+      "newGroupsLast7d": "New groups (7d)",
+      "recentUsers": "Recent users",
+      "recentGroups": "Recent groups",
+      "viewAllUsers": "View all users",
+      "viewAllGroups": "View all groups"
+    },
+    "users": {
+      "title": "Users",
+      "searchPlaceholder": "Search by name or email...",
+      "columnEmail": "Email",
+      "columnName": "Name",
+      "columnRole": "Role",
+      "columnCreatedAt": "Signed up",
+      "columnGroupCount": "Groups",
+      "columnLastActivity": "Last activity",
+      "emptyTitle": "No users found",
+      "emptyDesc": "Try a different search term."
+    },
+    "userDetail": {
+      "back": "Back to users",
+      "groupsTitle": "Groups initiated",
+      "notFound": "User not found."
+    },
+    "groups": {
+      "title": "Groups",
+      "searchPlaceholder": "Search by group name...",
+      "columnName": "Name",
+      "columnInitiator": "Initiator",
+      "columnTaskCount": "Tasks",
+      "columnMemberCount": "Members",
+      "columnCreatedAt": "Created",
+      "emptyTitle": "No groups found",
+      "emptyDesc": "Try a different search term."
+    },
+    "groupDetail": {
+      "back": "Back to groups",
+      "tasksTitle": "Tasks",
+      "notFound": "Group not found.",
+      "columnTask": "Task",
+      "columnClaimedBy": "Claimed by",
+      "columnStatus": "Status",
+      "claimed": "Claimed",
+      "unclaimed": "Unclaimed"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "User"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    }
   }
 }

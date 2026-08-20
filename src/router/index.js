@@ -63,6 +63,26 @@ const router = createRouter({
       component: () => import('@/views/ShareRedirectView.vue'),
     },
     {
+      path: '/admin',
+      component: () => import('@/layouts/AdminLayout.vue'),
+      meta: { requiresAdmin: true },
+      children: [
+        { path: '', name: 'admin-dashboard', component: () => import('@/views/AdminDashboardView.vue') },
+        { path: 'users', name: 'admin-users', component: () => import('@/views/AdminUsersView.vue') },
+        {
+          path: 'users/:id',
+          name: 'admin-user-detail',
+          component: () => import('@/views/AdminUserDetailView.vue'),
+        },
+        { path: 'groups', name: 'admin-groups', component: () => import('@/views/AdminGroupsView.vue') },
+        {
+          path: 'groups/:id',
+          name: 'admin-group-detail',
+          component: () => import('@/views/AdminGroupDetailView.vue'),
+        },
+      ],
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/',
     },
@@ -74,6 +94,15 @@ router.beforeEach((to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.requiresAdmin) {
+    if (!authStore.isAuthenticated) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+    if (!authStore.isAdmin) {
+      return { name: 'dashboard' }
+    }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
