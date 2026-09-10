@@ -1,7 +1,6 @@
 <script setup>
 import { RouterView, RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import AppHeader from '@/components/organisms/AppHeader.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -22,8 +21,6 @@ function isActive(tabName) {
 
 <template>
   <div class="min-h-screen flex flex-col bg-[var(--bg-page)]">
-    <AppHeader />
-
     <nav class="border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 flex items-center gap-1">
         <RouterLink
