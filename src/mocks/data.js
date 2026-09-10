@@ -9,6 +9,8 @@ export const db = reactive({
       email: 'test@wiedoehet.nl',
       password: 'test1234',
       avatarUrl: null,
+      role: 'admin',
+      createdAt: '2026-01-10T09:00:00Z',
     },
     {
       id: 'user-2',
@@ -16,6 +18,8 @@ export const db = reactive({
       email: 'anna@example.nl',
       password: 'test1234',
       avatarUrl: null,
+      role: 'user',
+      createdAt: '2026-01-20T09:00:00Z',
     },
   ],
 

@@ -19,6 +19,39 @@ function safeUser(u) {
   return rest
 }
 
+// Helper: 403 for a resolved-but-non-admin caller (mirrors requireAdmin() in wiedoethet-admin)
+function requireAdmin(request) {
+  const user = resolveUser(request)
+  if (!user) return { error: HttpResponse.json({ message: 'Niet ingelogd' }, { status: 401 }) }
+  if (user.role !== 'admin') return { error: HttpResponse.json({ message: 'Geen toegang' }, { status: 403 }) }
+  return { user }
+}
+
+// Helper: groupCount + lastActivityAt for an AdminUserSummary/AdminUserDetail
+function enrichAdminUser(user) {
+  const groups = db.groups.filter((g) => g.initiatorId === user.id)
+  const lastActivityAt = groups.reduce(
+    (latest, g) => (g.createdAt > latest ? g.createdAt : latest),
+    user.createdAt,
+  )
+  return { groupCount: groups.length, lastActivityAt }
+}
+
+// Helper: initiatorName/initiatorEmail/taskCount/memberCount for an AdminGroupSummary/AdminGroupDetail
+function enrichAdminGroup(group) {
+  const initiator = db.users.find((u) => u.id === group.initiatorId)
+  const taskCount = db.tasks.filter((t) => t.groupId === group.id).length
+  const memberCount = new Set(
+    db.claims.filter((c) => c.groupId === group.id).map((c) => c.userId ?? c.sessionId),
+  ).size
+  return {
+    initiatorName: initiator?.name ?? 'Onbekend',
+    initiatorEmail: initiator?.email ?? '',
+    taskCount,
+    memberCount,
+  }
+}
+
 export const handlers = [
   // ─── AUTH ────────────────────────────────────────────────────────────────
 
@@ -220,5 +253,96 @@ export const handlers = [
       return { ...c, taskTitle: task?.title ?? '?', claimedByName: claimedBy }
     })
     return HttpResponse.json(enriched)
+  }),
+
+  // ─── ADMIN ───────────────────────────────────────────────────────────────
+
+  http.get(`${BASE}/admin/stats`, async ({ request }) => {
+    await delay(LAG)
+    const { error } = requireAdmin(request)
+    if (error) return error
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const recentUsers = [...db.users]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, 5)
+      .map(safeUser)
+    const recentGroups = [...db.groups]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, 5)
+      .map((g) => ({ ...g, ...enrichAdminGroup(g) }))
+
+    return HttpResponse.json({
+      totalUsers: db.users.length,
+      totalGroups: db.groups.length,
+      newUsersLast7d: db.users.filter((u) => u.createdAt >= sevenDaysAgo).length,
+      newGroupsLast7d: db.groups.filter((g) => g.createdAt >= sevenDaysAgo).length,
+      recentUsers,
+      recentGroups,
+      generatedAt: new Date().toISOString(),
+    })
+  }),
+
+  http.get(`${BASE}/admin/users`, async ({ request }) => {
+    await delay(LAG)
+    const { error } = requireAdmin(request)
+    if (error) return error
+
+    const url = new URL(request.url)
+    const q = (url.searchParams.get('q') ?? '').toLowerCase()
+    const items = [...db.users]
+      .filter((u) => !q || u.email.toLowerCase().includes(q) || u.name.toLowerCase().includes(q))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .map((u) => ({ ...safeUser(u), ...enrichAdminUser(u) }))
+
+    return HttpResponse.json({ items, nextCursor: null })
+  }),
+
+  http.get(`${BASE}/admin/users/:id`, async ({ request, params }) => {
+    await delay(LAG)
+    const { error } = requireAdmin(request)
+    if (error) return error
+
+    const user = db.users.find((u) => u.id === params.id)
+    if (!user) return HttpResponse.json({ message: 'Gebruiker niet gevonden' }, { status: 404 })
+
+    const groups = db.groups.filter((g) => g.initiatorId === user.id)
+    return HttpResponse.json({ ...safeUser(user), ...enrichAdminUser(user), groups })
+  }),
+
+  http.get(`${BASE}/admin/groups`, async ({ request }) => {
+    await delay(LAG)
+    const { error } = requireAdmin(request)
+    if (error) return error
+
+    const url = new URL(request.url)
+    const q = (url.searchParams.get('q') ?? '').toLowerCase()
+    const items = [...db.groups]
+      .filter((g) => !q || g.name.toLowerCase().includes(q))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .map((g) => ({ ...g, ...enrichAdminGroup(g) }))
+
+    return HttpResponse.json({ items, nextCursor: null })
+  }),
+
+  http.get(`${BASE}/admin/groups/:id`, async ({ request, params }) => {
+    await delay(LAG)
+    const { error } = requireAdmin(request)
+    if (error) return error
+
+    const group = db.groups.find((g) => g.id === params.id)
+    if (!group) return HttpResponse.json({ message: 'Groep niet gevonden' }, { status: 404 })
+
+    const tasks = db.tasks
+      .filter((t) => t.groupId === group.id)
+      .map((t) => {
+        const claim = db.claims.find((c) => c.taskId === t.id)
+        const claimedBy = claim
+          ? (claim.userId ? db.users.find((u) => u.id === claim.userId)?.name ?? null : claim.anonymousName)
+          : null
+        return { ...t, claimedBy }
+      })
+
+    return HttpResponse.json({ ...group, ...enrichAdminGroup(group), tasks })
   }),
 ]

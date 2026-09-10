@@ -1,6 +1,6 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-03-10 (SEO-01 completed and removed)
+**Last Updated:** 2026-08-20 (added ADM-01 through ADM-16)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
 
@@ -11,6 +11,10 @@ This backlog captures all possible future features beyond the current MVP. Items
 | # | Feature | Effort | Notes |
 |---|---|---|---|
 | SEO-02 | **English SEO / hreflang** | M | Full English UI and SEO pass. Add hreflang tags, English meta titles and descriptions, English FAQ content in JSON-LD. Deferred from SEO-01. |
+| SEO-03 | **SEO landing page: AI agent MKB / AI automatisering MKB** | L | Dedicated conversion-optimised landing page op aintern.nl gericht op commerciële queries "AI agent MKB" en "AI automatisering MKB Nederland". Vereisten: keyword in H1 + title tag, value proposition, use cases, pricing CTA, "MKB" in URL slug (bijv. /ai-agent-mkb). Concurreert direct met mkb-aigent.nl. Bottom-of-funnel commercieel intent. Next development run — P1. |
+| SEO-04 | **Kennisbank artikelreeks: AI automatisering MKB long-tail keywords** | M | Artikelenreeks gericht op long-tail queries waar aintern.nl en mkb-aigent.nl beiden op nul ranken. Doelzinnen: "hoe implementeer je AI in een MKB bedrijf", "AI automatisering kosten MKB 2026", "AI agent implementeren stappen MKB", "wat is een AI agent voor MKB". Bouwt topical authority over 3–6 maanden, vergroot kans op citatie in AI Overviews (ChatGPT, Perplexity, Google). Next kennisbank run — P2. |
+| SEO-05 | **SEO: voeg 'MKB' toe aan aintern.nl title tag en H1** | S | Het woord "MKB" ontbreekt in de homepage title tag, H1 en meta description — verlaagt geo-verticale specificiteit t.o.v. mkb-aigent.nl. Quick win, kan parallel lopen met landing page item. Next development run — P1. |
+| SEO-06 | **Groei-systeem: geautomatiseerde editorial outreach voor MKB AI-mentions** | L | Geautomatiseerde flow die aintern.nl laat opnemen in redactionele artikelen op Dutch AI/MKB sites (slimiq.nl, ambrix.nl, timmermansmedia.nl, Sprout.nl, ZiPconomy, AG Connect, MKB Servicedesk). Stappen: (1) scrapen relevante "beste AI tools MKB" artikelen, (2) contactpersoon identificeren, (3) gepersonaliseerde outreach email opstellen (gratis account / case study / expert quote), (4) automatisch versturen via groei-systeem email infra. Doel: 3–5 editoriale backlinks per kwartaal. Integreert naast bestaande LinkedIn outreach automatisering. Tags: groei-systeem + SEO. P2. |
 
 ---
 
@@ -154,3 +158,26 @@ This backlog captures all possible future features beyond the current MVP. Items
 | INT-04 | **iCal export** | S | Export the event date as an .ics file so members can add it to their calendar. |
 | INT-03 | **Slack notification** | M | Post a message to a Slack channel when a task is claimed or when the list is complete. |
 | INT-02 | **Zapier / Make connector** | L | Trigger a Zap when a task is claimed (e.g. add row to Google Sheets). |
+
+---
+
+## Admin & CRM (Internal)
+
+| # | Feature | Effort | Notes |
+|---|---|---|---|
+| ADM-01 | **Admin Lambda + GSI3 listing index** | M | New `wiedoethet-admin` Lambda plus GSI3 (`GSI3PK`=`USER`\|`GROUP`, `GSI3SK`={createdAt}#{id}) enabling scan-free paginated listing of users and groups. See `product/specs/admin-api.spec.md`. |
+| ADM-02 | **GET /admin/stats endpoint** | S | Platform-wide counts (totalUsers, totalGroups, newUsersLast7d, newGroupsLast7d) plus recent-activity snapshot (recentUsers/recentGroups, top 5 each) for the admin dashboard. totalTasks/totalClaims intentionally excluded in v1 — no GSI3 partition for those entity types. |
+| ADM-03 | **Admin user list + detail API** | M | `GET /admin/users` (paginated, searchable) and `GET /admin/users/{userId}`, enriched with `groupCount` and `lastActivityAt`. |
+| ADM-04 | **Admin group list + detail API** | M | `GET /admin/groups` (paginated, searchable) and `GET /admin/groups/{groupId}`, enriched with initiator, task, and member info. |
+| ADM-05 | **requireAdmin server-side authorization** | S | Re-fetches the caller's `User` record on every admin request; distinguishes 401 (unauthenticated) from 403 (authenticated, not admin). |
+| ADM-06 | **GSI3 write-path updates** | S | `wiedoethet-auth` and `wiedoethet-groups` write GSI3 keys on create, and strip them from all public-facing responses. |
+| ADM-07 | **GSI3 backfill script** | S | One-time script to backfill GSI3 keys onto pre-existing production User/Group items. Deployment prerequisite for ADM-01 — not yet built. |
+| ADM-08 | **Admin route guard (`/admin/*`)** | S | New route area with `meta.requiresAdmin`. Unauthenticated → `/login`; authenticated non-admin → `/dashboard`. |
+| ADM-09 | **AdminLayout + nested admin routes** | S | Layout component and nested `/admin` route structure (dashboard, users, groups). |
+| ADM-10 | **useAuthStore: role + isAdmin** | S | Extend `user` with `role`; add `isAdmin` computed. No self-serve promotion — role is server-assigned only. |
+| ADM-11 | **Admin dashboard view** | M | Stats tiles + recent activity feed, backed by `GET /admin/stats`. |
+| ADM-12 | **Admin users list + detail view** | M | Search, pagination, and read-only detail view for platform users. |
+| ADM-13 | **Admin groups list + detail view** | M | Search, pagination, and read-only detail view for groups. |
+| ADM-14 | **BaseTable / BasePagination primitives** | M | New reusable UI primitives for the admin list views; first consumers are ADM-12 and ADM-13. |
+| ADM-15 | **Admin nav entry in AppHeader** | S | Conditional "Admin" link shown only when `isAdmin` is true. |
+| ADM-16 | **Admin i18n keys** | S | `admin.*` translation keys, nl default with en fallback. |

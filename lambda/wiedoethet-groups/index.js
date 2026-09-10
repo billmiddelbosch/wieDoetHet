@@ -52,6 +52,7 @@ async function createGroup(event) {
     GSI1SK: 'GROUP',
     GSI2PK: `INITIATOR#${user.sub}`,
     GSI2SK: `GROUP#${id}`,
+    ...keys.groupGsi3(now, id),
     id,
     name: body.name.trim(),
     pictureUrl: body.pictureUrl ?? null,
@@ -139,7 +140,7 @@ async function enrichGroup(group) {
 }
 
 function stripKeys(item) {
-  const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, ...rest } = item
+  const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, GSI3PK, GSI3SK, ...rest } = item
   return rest
 }
 

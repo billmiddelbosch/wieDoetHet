@@ -1,0 +1,39 @@
+- generic [ref=f5e3]:
+  - banner [ref=f5e4]:
+    - generic [ref=f5e5]:
+      - link "wieDoetHet" [ref=f5e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f5e11]:
+        - button "Schakel naar donkere modus" [ref=f5e12]
+        - link [ref=f5e36] [cursor=pointer]:
+          - /url: /admin
+          - button "Admin" [ref=f5e37]
+        - link [ref=f5e38] [cursor=pointer]:
+          - /url: /profile
+          - button "BM" [active] [ref=f5e39]
+        - button "Uitloggen" [ref=f5e19]
+  - main [ref=f5e20]:
+    - generic [ref=f5e40]:
+      - button "Terug" [ref=f5e41]
+      - heading "Mijn profiel" [level=1] [ref=f5e44]
+      - paragraph [ref=f5e45]: b.middelbosch@bm-c.nl
+      - generic [ref=f5e47]:
+        - generic [ref=f5e48]:
+          - generic [ref=f5e49]: Naam
+          - textbox "Naam" [disabled] [ref=f5e50]:
+            - /placeholder: ""
+            - text: Bill Middelbosch
+        - generic [ref=f5e51]:
+          - generic [ref=f5e52]: E-mailadres
+          - textbox "E-mailadres" [disabled] [ref=f5e53]:
+            - /placeholder: ""
+            - text: b.middelbosch@bm-c.nl
+        - generic [ref=f5e54]:
+          - generic [ref=f5e55]:
+            - generic [ref=f5e56]: WhatsApp-nummer
+            - textbox "WhatsApp-nummer" [ref=f5e57]:
+              - /placeholder: "+31612345678"
+          - paragraph [ref=f5e58]: Voer je nummer in E.164-formaat in, bijv. +31612345678. Dit nummer wordt gebruikt voor herinneringen.
+        - paragraph [ref=f5e63]: WhatsApp-verificatie wordt binnenkort toegevoegd. Sla je nummer alvast op zodat je automatisch herinneringen ontvangt zodra dit beschikbaar is.
+        - button "Opslaan" [ref=f5e64]
+  - contentinfo [ref=f5e35]: © 2026 wieDoetHet — Wie pakt welke taak?
