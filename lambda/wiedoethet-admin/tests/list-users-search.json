@@ -1,0 +1,20 @@
+{
+  "httpMethod": "GET",
+  "path": "/admin/users",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": null,
+  "pathParameters": null,
+  "queryStringParameters": {
+    "limit": "10",
+    "q": "jan"
+  },
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/admin/users",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

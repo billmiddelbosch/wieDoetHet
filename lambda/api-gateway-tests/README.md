@@ -183,3 +183,77 @@ Copy the `id` from the response — this is your `taskId`.
 **Path Parameters:** `groupId = <id from step 4>`
 **Headers:** `Authorization: Bearer <token>`
 **Body:** *(empty)*
+
+---
+
+## Admin Routes
+
+All `/admin/*` routes require the calling user's DynamoDB `USER#<id>` / `PROFILE` item to have `role: "admin"` set. There is no self-serve promotion in v1 — set this attribute manually in the DynamoDB console for the account you want to test with, then log in again (or reuse an existing token — `role` is read fresh from DynamoDB on every request, not from the JWT) to get an admin-authorized token.
+
+All admin routes are `GET` only and return `401` with no `Authorization` header, `403` for a valid token belonging to a non-admin user, and `200` for a valid admin token.
+
+---
+
+## Step 19 — Admin: Get Stats
+
+**Route:** `GET /admin/stats`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+---
+
+## Step 20 — Admin: List Users
+
+**Route:** `GET /admin/users`
+**Query Parameters:** `limit = 10` *(optional, 1–50, default 20)*
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+Copy `nextCursor` from the response and pass it as `?cursor=<value>` to fetch the next page. Copy an `id` from `items[]` — this is your `userId` for step 21.
+
+---
+
+## Step 21 — Admin: List Users (search)
+
+**Route:** `GET /admin/users`
+**Query Parameters:** `limit = 10`, `q = <substring of a name or email>`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+---
+
+## Step 22 — Admin: Get User Detail
+
+**Route:** `GET /admin/users/{userId}`
+**Path Parameters:** `userId = <id from step 20>`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+---
+
+## Step 23 — Admin: List Groups
+
+**Route:** `GET /admin/groups`
+**Query Parameters:** `limit = 10` *(optional, 1–50, default 20)*
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+Copy `nextCursor` from the response and pass it as `?cursor=<value>` to fetch the next page. Copy an `id` from `items[]` — this is your `groupId` for step 25.
+
+---
+
+## Step 24 — Admin: List Groups (search)
+
+**Route:** `GET /admin/groups`
+**Query Parameters:** `limit = 10`, `q = <substring of a group name>`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*
+
+---
+
+## Step 25 — Admin: Get Group Detail
+
+**Route:** `GET /admin/groups/{groupId}`
+**Path Parameters:** `groupId = <id from step 23>`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** *(empty)*

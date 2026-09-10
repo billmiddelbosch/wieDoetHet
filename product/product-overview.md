@@ -1,6 +1,6 @@
 # Product Overview — wieDoetHet
 
-**Last Updated:** 2026-03-03
+**Last Updated:** 2026-08-20 (added Admin Section)
 **Version:** 0.1.0 (MVP)
 
 ---
@@ -26,6 +26,7 @@ When groups need to divide tasks, coordination typically happens chaotically thr
 | **Initiator** | The person who creates the group and task list. Has full control over settings and visibility. |
 | **Member (anonymous)** | A participant who receives a share link. Can view and claim tasks without an account. |
 | **Member (registered)** | A participant with an account. Can see all groups they belong to and manage settings. |
+| **Administrator** | An internal team member — a registered account with `role: 'admin'`. Not a group participant; uses a separate internal panel to monitor platform health (users, groups, activity). Granted manually, not self-serve. |
 
 ---
 
@@ -75,6 +76,14 @@ When groups need to divide tasks, coordination typically happens chaotically thr
 - Share link included in the WhatsApp message template
 - Initiator configures reminder timing (e.g. send reminder 1 day before event)
 
+### 8. Admin Section (Internal)
+- Separate, role-gated internal panel — not part of the public-facing product surface
+- Access requires `role: 'admin'` on the signed-in user's account; the first admin is granted by editing their DynamoDB item directly (no invite flow, no self-serve promotion in v1)
+- **Stats dashboard**: platform-wide counts (users, groups) and recent signup/group-creation activity, at a glance
+- **User browser**: searchable, paginated list of registered users (email, name, signup date, group count, last activity) with a detail view per user
+- **Group browser**: searchable, paginated list of groups with a detail view per group
+- v1 is strictly **read-only** — no editing, deactivating, or deleting users/groups from the panel
+
 ---
 
 ## Out of Scope (Not MVP)
@@ -84,6 +93,9 @@ When groups need to divide tasks, coordination typically happens chaotically thr
 - Real-time collaboration (WebSocket live updates — MVP uses polling or manual refresh)
 - File attachments on tasks
 - Task comments/discussion threads
+- Admin: editing/deactivating/deleting users or groups from the panel
+- Admin: promote-to-admin UI or invite flow (v1 promotion is a manual DynamoDB edit)
+- Admin: Cognito or any third-party IdP for admin login — admins authenticate through the same hand-rolled JWT login as everyone else; the panel is gated purely by the `role` field
 
 ---
 

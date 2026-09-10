@@ -1,0 +1,60 @@
+- generic [ref=f5e3]:
+  - banner [ref=f5e4]:
+    - generic [ref=f5e5]:
+      - link "wieDoetHet" [ref=f5e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f5e11]:
+        - button "Schakel naar donkere modus" [ref=f5e12]
+        - link [ref=f5e36] [cursor=pointer]:
+          - /url: /admin
+          - button "Admin" [ref=f5e37]
+        - link [ref=f5e38] [cursor=pointer]:
+          - /url: /profile
+          - button "BM" [ref=f5e39]
+        - button "Uitloggen" [ref=f5e19]
+  - main [ref=f5e20]:
+    - generic [ref=f5e65]:
+      - generic [ref=f5e67]:
+        - link "wieDoetHet" [ref=f5e68] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f5e73]:
+          - button "Schakel naar donkere modus" [ref=f5e74]
+          - link [ref=f5e77] [cursor=pointer]:
+            - /url: /admin
+            - button "Admin" [ref=f5e78]
+          - link [ref=f5e79] [cursor=pointer]:
+            - /url: /profile
+            - button "BM" [ref=f5e80]
+          - button "Uitloggen" [ref=f5e83]
+      - navigation [ref=f5e84]:
+        - generic [ref=f5e85]:
+          - link "Overzicht" [ref=f5e86] [cursor=pointer]:
+            - /url: /admin
+          - link "Gebruikers" [active] [ref=f5e87] [cursor=pointer]:
+            - /url: /admin/users
+          - link "Groepen" [ref=f5e88] [cursor=pointer]:
+            - /url: /admin/groups
+      - main [ref=f5e89]:
+        - generic [ref=f5e93]:
+          - heading "Gebruikers" [level=1] [ref=f5e94]
+          - textbox "Zoek op naam of e-mailadres..." [ref=f5e97]
+          - alert [ref=f5e98]:
+            - generic [ref=f5e99]: "Fout bij laden: Network Error"
+          - table [ref=f5e101]:
+            - rowgroup [ref=f5e102]:
+              - row [ref=f5e103]:
+                - columnheader "E-mailadres" [ref=f5e104]
+                - columnheader "Naam" [ref=f5e105]
+                - columnheader "Rol" [ref=f5e106]
+                - columnheader "Aangemeld" [ref=f5e107]
+                - columnheader "Groepen" [ref=f5e108]
+                - columnheader "Laatste activiteit" [ref=f5e109]
+            - rowgroup [ref=f5e110]:
+              - row [ref=f5e111]:
+                - cell [ref=f5e112]:
+                  - paragraph [ref=f5e113]: Geen gebruikers gevonden
+                  - paragraph [ref=f5e114]: Probeer een andere zoekterm.
+          - generic [ref=f5e116]:
+            - button "Vorige" [disabled] [ref=f5e117]
+            - button "Volgende" [disabled] [ref=f5e120]
+  - contentinfo [ref=f5e35]: © 2026 wieDoetHet — Wie pakt welke taak?

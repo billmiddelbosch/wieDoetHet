@@ -12,7 +12,10 @@ describe('Landing page', () => {
   })
 
   it('has a create group CTA button', () => {
-    cy.contains('Maak een groep aan').should('be.visible')
+    // Scoped to #app: index.html ships a hidden #seo-static block (for
+    // crawlers) whose FAQ copy also contains this phrase, and an unscoped
+    // cy.contains() matches that hidden node instead of the visible CTA.
+    cy.get('#app').contains('Maak een groep aan').should('be.visible')
   })
 
   it('shows the how-it-works section with 3 steps', () => {

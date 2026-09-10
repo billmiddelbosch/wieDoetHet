@@ -1,0 +1,58 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "wieDoetHet" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e11]:
+        - button "Schakel naar donkere modus" [ref=e12]
+        - link [ref=e44] [cursor=pointer]:
+          - /url: /admin
+          - button "Admin" [ref=e45]
+        - link [ref=e46] [cursor=pointer]:
+          - /url: /profile
+          - button "BM" [ref=e47]
+        - button "Uitloggen" [ref=e19]
+  - main [ref=e20]:
+    - generic [ref=e73]:
+      - generic [ref=e75]:
+        - link "wieDoetHet" [ref=e76] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e81]:
+          - button "Schakel naar donkere modus" [ref=e82]
+          - link [ref=e85] [cursor=pointer]:
+            - /url: /admin
+            - button "Admin" [ref=e86]
+          - link [ref=e87] [cursor=pointer]:
+            - /url: /profile
+            - button "BM" [ref=e88]
+          - button "Uitloggen" [ref=e91]
+      - navigation [ref=e92]:
+        - generic [ref=e93]:
+          - link "Overzicht" [ref=e94] [cursor=pointer]:
+            - /url: /admin
+          - link "Gebruikers" [active] [ref=e95] [cursor=pointer]:
+            - /url: /admin/users
+          - link "Groepen" [ref=e96] [cursor=pointer]:
+            - /url: /admin/groups
+      - main [ref=e97]:
+        - generic [ref=e98]:
+          - heading "Gebruikers" [level=1] [ref=e99]
+          - textbox "Zoek op naam of e-mailadres..." [ref=e102]
+          - table [ref=e104]:
+            - rowgroup [ref=e105]:
+              - row [ref=e106]:
+                - columnheader "E-mailadres" [ref=e107]
+                - columnheader "Naam" [ref=e108]
+                - columnheader "Rol" [ref=e109]
+                - columnheader "Aangemeld" [ref=e110]
+                - columnheader "Groepen" [ref=e111]
+                - columnheader "Laatste activiteit" [ref=e112]
+            - rowgroup [ref=e113]:
+              - row [ref=e114]:
+                - cell [ref=e115]:
+                  - paragraph [ref=e116]: Geen gebruikers gevonden
+                  - paragraph [ref=e117]: Probeer een andere zoekterm.
+          - generic [ref=e119]:
+            - button "Vorige" [disabled] [ref=e120]
+            - button "Volgende" [disabled] [ref=e123]
+  - contentinfo [ref=e43]: © 2026 wieDoetHet — Wie pakt welke taak?
