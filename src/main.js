@@ -19,6 +19,13 @@ async function bootstrap() {
   app.use(router)
   app.use(i18n)
   app.mount('#app')
+
+  // Exposes the router for E2E tests that need to navigate client-side to
+  // routes with no corresponding clickable link (e.g. a group's share URL),
+  // since a full page reload would reset the in-memory mock database.
+  if (window.Cypress) {
+    window.__router__ = router
+  }
 }
 
 bootstrap()

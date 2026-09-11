@@ -140,4 +140,10 @@ export function nextId() {
   return `gen-${++_nextId}`
 }
 
-export const TEST_TOKEN = 'mock-jwt-token-test-gebruiker'
+// Deterministic per-user token so the mock backend can resolve the actual
+// caller instead of assuming a single hardcoded user.
+export function tokenForUser(userId) {
+  return `mock-jwt-token-${userId}`
+}
+
+export const TEST_TOKEN = tokenForUser('user-1')

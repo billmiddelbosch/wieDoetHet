@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from 'msw'
-import { db, nextId, TEST_TOKEN } from './data.js'
+import { db, nextId, tokenForUser } from './data.js'
 
 const BASE = '/api'
 const LAG = 300 // simulated network delay in ms
@@ -8,8 +8,8 @@ const LAG = 300 // simulated network delay in ms
 function resolveUser(request) {
   const auth = request.headers.get('Authorization') ?? ''
   const token = auth.replace('Bearer ', '')
-  if (token !== TEST_TOKEN) return null
-  return db.users.find((u) => u.id === 'user-1') ?? null
+  if (!token) return null
+  return db.users.find((u) => tokenForUser(u.id) === token) ?? null
 }
 
 // Helper: strip sensitive fields before sending a user object
@@ -62,7 +62,7 @@ export const handlers = [
     if (!user) {
       return HttpResponse.json({ message: 'Ongeldig e-mailadres of wachtwoord' }, { status: 401 })
     }
-    return HttpResponse.json({ token: TEST_TOKEN, user: safeUser(user) })
+    return HttpResponse.json({ token: tokenForUser(user.id), user: safeUser(user) })
   }),
 
   http.post(`${BASE}/auth/register`, async ({ request }) => {
@@ -71,9 +71,9 @@ export const handlers = [
     if (db.users.find((u) => u.email === email)) {
       return HttpResponse.json({ message: 'E-mailadres al in gebruik' }, { status: 409 })
     }
-    const user = { id: nextId(), name, email, password, avatarUrl: null }
+    const user = { id: nextId(), name, email, password, avatarUrl: null, role: 'user', createdAt: new Date().toISOString() }
     db.users.push(user)
-    return HttpResponse.json({ token: TEST_TOKEN, user: safeUser(user) }, { status: 201 })
+    return HttpResponse.json({ token: tokenForUser(user.id), user: safeUser(user) }, { status: 201 })
   }),
 
   http.get(`${BASE}/auth/me`, async ({ request }) => {

@@ -26,7 +26,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthEndpoint = error.config?.url?.startsWith('/auth/login') || error.config?.url?.startsWith('/auth/register')
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('auth_token')
       router.push({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
     }

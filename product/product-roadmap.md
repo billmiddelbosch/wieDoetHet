@@ -1,6 +1,6 @@
 # Product Roadmap — wieDoetHet
 
-**Last Updated:** 2026-08-20 (added Milestone 1.9 — Admin Section, and the Admin Service under 1.7)
+**Last Updated:** 2026-09-11 (added Milestone 1.10 — Infrastructure as Code (CDK Adoption); 2026-08-20 added Milestone 1.9 — Admin Section, and the Admin Service under 1.7)
 
 ---
 
@@ -52,6 +52,8 @@
 **Infrastructure stack:** AWS Lambda + API Gateway (HTTP API) + DynamoDB + S3 (group pictures) + Cognito (auth) + CloudFormation / SAM for IaC.
 
 > **Reality check (2026-08-20):** the line above describes the original plan, not what's deployed. In practice, auth is a hand-rolled JWT (HS256 via Node's `node:crypto`, see `lambda/shared/jwt.js`) — there is no Cognito. Deployment is fully manual: esbuild bundle → zip → Lambda console upload, with `openapi.yaml` (repo root) manually re-imported into API Gateway — there is no CloudFormation/SAM template. See `lambda/DYNAMODB_SETUP.md` and `product/specs/admin-api.spec.md` for the current, accurate picture. Left here rather than rewritten so the drift is visible; a full pass to correct this milestone's write-up is tech debt, not part of the Admin Section feature.
+>
+> **Update (2026-09-11):** the no-IaC gap flagged above caused a real production incident (a GSI3 fix silently never reached the `production` alias). See Milestone 1.10 — Infrastructure as Code (CDK Adoption) below for the remediation now underway.
 
 #### Auth Service (`/auth`)
 - [ ] `POST /auth/register` — create Cognito user + DynamoDB profile record
@@ -130,6 +132,51 @@
 - [ ] Groups list (search + pagination) and detail view
 
 **Explicitly out of scope for v1:** editing, deactivating, or deleting users/groups from the panel; promote-to-admin UI; any invite-based admin onboarding.
+
+---
+
+### Milestone 1.10 — Infrastructure as Code (CDK Adoption)
+
+**Goal:** End the fully-manual deployment process flagged as tech debt in the
+Milestone 1.7 Reality check below, by bringing the already-live AWS resources
+under CDK/CloudFormation management — without recreating or duplicating
+anything. See `infra/DESIGN.md` and `infra/IMPORT_CHECKLIST.md` for the full
+design and step-by-step adoption checklist; `product/specs/infra-cdk-import.spec.md`
+for the spec.
+
+**Triggering incident:** a GSI3-related fix shipped to `wiedoethet-auth` and
+`wiedoethet-groups`'s `$LATEST`/`development` alias but never reached the
+manually-pinned `production` alias, because there was no reliable deployment
+process and no record of what was actually running where. Every user/group
+created in production since GSI3 was added was invisible in `/admin/*` as a
+result.
+
+**Approach:** `cdk import` — write CDK constructs that describe the existing
+DynamoDB tables, Lambda functions/aliases, and API Gateway REST API exactly as
+they exist live, then adopt them into CloudFormation via `cdk import` rather
+than replacing them.
+
+- [ ] `wdh-main` and `wdh-dev` DynamoDB tables imported as-is (`RemovalPolicy.RETAIN`)
+- [ ] `wiedoethet-auth`, `wiedoethet-groups`, `wiedoethet-tasks`,
+  `wiedoethet-claims`, `wiedoethet-admin` Lambda functions imported with their
+  `development` (tracks `$LATEST`) and `production` (pinned version) aliases
+- [ ] wieDoetHet API Gateway REST API imported complete and as-is via an
+  exported OpenAPI body — **pending empirical confirmation that
+  `AWS::ApiGateway::RestApi`/`Deployment`/`Stage` support CloudFormation
+  import at all** (see DESIGN.md §4.7); falls back to "described but not yet
+  CDK-managed" for this resource if unsupported
+- [ ] `lambda/package.json` gains a `build` script so `infra/`'s predeploy
+  hook can bundle fresh code before every synth/import/deploy
+
+**Explicitly out of scope for this milestone, tracked as follow-ups:**
+- `wiedoethet-whatsapp` and `wiedoethet-reminders` — wired into the live API
+  Gateway but have no recovered source code in this repo; excluded from
+  Lambda management until source is recovered
+- Properly wiring `wdh-dev` (currently provisioned but functionally unused —
+  every function resolves to `wdh-main` regardless of alias)
+- Reproducing Lambda execution roles' inline IAM policies as CDK-managed
+  resources (referenced read-only via `fromRoleArn` for now)
+- Enabling Point-in-Time Recovery on either DynamoDB table
 
 ---
 
