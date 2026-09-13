@@ -151,14 +151,30 @@ async function getGroupDetail(event) {
   ])
 
   // Claims fetched once, grouped by taskId in memory — not one claims query per task
-  const claimCountByTask = new Map()
+  const claimsByTask = new Map()
   for (const c of claims) {
-    claimCountByTask.set(c.taskId, (claimCountByTask.get(c.taskId) ?? 0) + 1)
+    if (!claimsByTask.has(c.taskId)) claimsByTask.set(c.taskId, [])
+    claimsByTask.get(c.taskId).push(c)
   }
   const uniqueClaimers = new Set(claims.map((c) => c.userId ?? c.sessionId))
 
+  // Resolve claimant display names — same convention as wiedoethet-claims' listClaims
+  const userIds = [...new Set(claims.map((c) => c.userId).filter(Boolean))]
+  const userRecords = await Promise.all(userIds.map((uid) => getItem(`USER#${uid}`, 'PROFILE')))
+  const userMap = Object.fromEntries(userRecords.filter(Boolean).map((u) => [u.id, u.name]))
+  const claimerName = (c) => (c.userId ? (userMap[c.userId] ?? 'Onbekend') : c.anonymousName ?? 'Anoniem')
+
   const taskList = tasks
-    .map((t) => ({ id: t.id, title: t.title, order: t.order, claimCount: claimCountByTask.get(t.id) ?? 0 }))
+    .map((t) => {
+      const taskClaims = claimsByTask.get(t.id) ?? []
+      return {
+        id: t.id,
+        title: t.title,
+        order: t.order,
+        claimCount: taskClaims.length,
+        claimedBy: taskClaims.length ? taskClaims.map(claimerName).join(', ') : null,
+      }
+    })
     .sort((a, b) => a.order - b.order)
 
   const detail = {
@@ -196,6 +212,8 @@ function toGroupSummaryBase(group, initiator) {
     id: group.id,
     name: group.name,
     pictureUrl: group.pictureUrl ?? null,
+    shareToken: group.shareToken,
+    scorecardVisibility: group.scorecardVisibility,
     initiatorId: group.initiatorId,
     initiatorName: initiator?.name ?? 'Onbekend',
     initiatorEmail: initiator?.email ?? '',
