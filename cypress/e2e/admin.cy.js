@@ -112,6 +112,7 @@ const groupDetail = {
   tasks: [
     { id: 'task-1', title: 'Vlees & worsten regelen', claimedBy: 'Anna de Vries' },
     { id: 'task-2', title: 'Salade maken', claimedBy: null },
+    { id: 'task-3', title: 'Tafels opzetten', claimedBy: 'Jan Jansen, Piet Peters' },
   ],
 }
 
@@ -242,6 +243,36 @@ describe('Admin section', () => {
       cy.contains('Terug naar groepen').click()
       cy.wait('@groupsList')
       cy.url().should('include', '/admin/groups')
+    })
+
+    // Regression: getGroupDetail used to return claimCount but never claimedBy,
+    // so every task rendered as "Niet geclaimd" regardless of actual claims.
+    it('shows the correct claimed status per task on the group detail page', () => {
+      cy.intercept('GET', '**/admin/stats', stats).as('stats')
+      cy.intercept('GET', '**/admin/groups*', groupsList).as('groupsList')
+      cy.intercept('GET', '**/admin/groups/group-1', groupDetail).as('groupDetail')
+
+      cy.get('header').contains('a', 'Admin').click()
+      cy.wait('@stats')
+      cy.get('nav').contains('a', 'Groepen').click()
+      cy.wait('@groupsList')
+      cy.contains('Buurtbarbecue 2026').click()
+      cy.wait('@groupDetail')
+
+      cy.get('main').contains('tr', 'Vlees & worsten regelen').within(() => {
+        cy.contains('Anna de Vries').should('be.visible')
+        cy.contains('Geclaimd').should('be.visible')
+      })
+
+      cy.get('main').contains('tr', 'Salade maken').within(() => {
+        cy.contains('—').should('be.visible')
+        cy.contains('Niet geclaimd').should('be.visible')
+      })
+
+      cy.get('main').contains('tr', 'Tafels opzetten').within(() => {
+        cy.contains('Jan Jansen, Piet Peters').should('be.visible')
+        cy.contains('Geclaimd').should('be.visible')
+      })
     })
 
     it('shows an error message when the stats request fails', () => {
