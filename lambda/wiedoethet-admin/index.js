@@ -22,6 +22,7 @@ import { ok, unauthorized, forbidden, notFound, badRequest, serverError, extract
 import { verifyJwt } from '../shared/jwt.js'
 import { getItem, queryByPk, queryGsi1, queryGsi2, queryGsi3 } from '../shared/db.js'
 import { sendMail } from '../shared/ses.js'
+import { wrapEmailHtml } from '../shared/email-template.js'
 
 const MAX_INTERNAL_QUERIES = 5
 const MAX_MAIL_RESOLVE_QUERIES = 200 // safety cap on the resolveAllMatchingUsers loop (~10,000 users at page size 50)
@@ -167,7 +168,7 @@ async function mailUsers(event) {
     return badRequest(`Te veel ontvangers (${recipients.length}). Maximum is ${MAX_MAIL_RECIPIENTS} per verzending.`)
   }
 
-  const { sent, failed, failures } = await sendToRecipients(recipients, subject, html)
+  const { sent, failed, failures } = await sendToRecipients(recipients, subject, wrapEmailHtml(html))
 
   logSuccess({ route: 'POST /admin/mail', adminUserId: admin.id, start, resultCount: sent })
   return ok({ sent, failed, failures })
