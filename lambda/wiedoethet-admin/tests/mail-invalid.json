@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/mail",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"subject\":\"\",\"html\":\"\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/admin/mail",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

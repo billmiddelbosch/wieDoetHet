@@ -792,6 +792,93 @@
           }
         },
         {
+          "name": "Mail Users (explicit list)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('response shape', () => {",
+                  "  pm.expect(body.sent).to.be.a('number');",
+                  "  pm.expect(body.failed).to.be.a('number');",
+                  "  pm.expect(body.failures).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{adminUserId}}\"],\n  \"subject\": \"Belangrijke mededeling\",\n  \"html\": \"<p>Beste gebruiker,</p><p>Dit is een testbericht vanuit het admin-paneel.</p>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/mail", "host": ["{{baseUrl}}"], "path": ["admin", "mail"] }
+          }
+        },
+        {
+          "name": "Mail Users (select all matching filter)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('response shape', () => {",
+                  "  pm.expect(body.sent).to.be.a('number');",
+                  "  pm.expect(body.failed).to.be.a('number');",
+                  "  pm.expect(body.failures).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selectAll\": true,\n  \"q\": \"\",\n  \"subject\": \"Belangrijke mededeling\",\n  \"html\": \"<p>Beste gebruiker,</p><p>Dit bericht gaat naar iedereen die overeenkomt met het huidige filter.</p>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/mail", "host": ["{{baseUrl}}"], "path": ["admin", "mail"] }
+          }
+        },
+        {
+          "name": "Mail Users (invalid — missing subject/html)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"\",\n  \"html\": \"\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/mail", "host": ["{{baseUrl}}"], "path": ["admin", "mail"] }
+          }
+        },
+        {
           "name": "Get Stats (unauthorized — no token)",
           "event": [
             {

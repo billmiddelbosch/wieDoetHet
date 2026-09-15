@@ -1,6 +1,9 @@
 # Feature Backlog — wieDoetHet
 
-**Last Updated:** 2026-08-20 (added ADM-01 through ADM-16)
+**Last Updated:** 2026-09-15 (added ADM-17 through ADM-22 — Admin Mail Users feature, all implemented on
+branch `feature/admin-mail-users`, pending review/validation; added ADM-23, a send-cooldown/quota follow-up
+flagged during code review and deliberately left unimplemented pending a product decision. Prior 2026-08-20
+entry: added ADM-01 through ADM-16.)
 
 This backlog captures all possible future features beyond the current MVP. Items are grouped by theme, not priority. Each item includes a rough effort indication (S / M / L / XL).
 
@@ -181,3 +184,10 @@ This backlog captures all possible future features beyond the current MVP. Items
 | ADM-14 | **BaseTable / BasePagination primitives** | M | New reusable UI primitives for the admin list views; first consumers are ADM-12 and ADM-13. |
 | ADM-15 | **Admin nav entry in AppHeader** | S | Conditional "Admin" link shown only when `isAdmin` is true. |
 | ADM-16 | **Admin i18n keys** | S | `admin.*` translation keys, nl default with en fallback. |
+| ADM-17 | **POST /admin/mail endpoint** | M | **Done** (branch `feature/admin-mail-users`, pending review/validation). New write/side-effecting route on `wiedoethet-admin`: sends rich-text HTML email via SES to explicit `userIds` or every user matching `q` (`selectAll: true`, resolved server-side). `MAX_MAIL_RECIPIENTS` cap (500), bounded-concurrency sends. See `product/specs/admin-api.spec.md` § POST /admin/mail. |
+| ADM-18 | **GET /admin/users totalCount** | S | **Done** (same branch). Added `totalCount` to `listUsers`'s response so the frontend can show "select all N matching" before committing to a send, via a new `countAllMatchingUsers` GSI3 loop. |
+| ADM-19 | **AdminSelectionToolbar + BaseTable selection mode** | M | **Done** (same branch). `BaseTable` gained fully-controlled `selectable`/`selectedKeys` props and `update:selectedKeys` emit; new `AdminSelectionToolbar` molecule shows selected count and a "select all N matching" action. Code-review fix: added a `selectionDisabled` prop so checkboxes render disabled while in select-all mode, after a bug was found where unchecking one row would silently collapse "all N matching" down to a page-scoped subset. |
+| ADM-20 | **BaseRichTextEditor atom (Tiptap)** | M | **Done** (same branch). New rich-text form field atom for composing the mail body, built on `@tiptap/vue-3`/`@tiptap/starter-kit`. Judgment call: first third-party rich-text editor dependency in the project — flagged for review. |
+| ADM-21 | **AdminMailComposeModal + useAdminMail** | M | **Done** (same branch). New organism (compose modal: subject + rich-text body, validation, per-recipient send-result display) and composable (`sendMail({ userIds, selectAll, q, subject, html })`) wiring the frontend to `POST /admin/mail`. |
+| ADM-22 | **SES integration + IAM policy** | S | **Done** (same branch). `lambda/shared/ses.js` (one `SendEmailCommand` per recipient, for per-recipient bounce/complaint tracking), new `lambda/iam-policy-ses.json` granting `ses:SendEmail`/`ses:SendRawEmail`. Manual AWS steps (SES identity verification, IAM attachment) not performed by Claude — see `lambda/SES_SETUP.md`. |
+| ADM-23 | **Send cooldown / quota for `POST /admin/mail`** | S | **Not started — flagged in code review, needs a product decision.** `MAX_MAIL_RECIPIENTS` (500) caps a single call, but there is no per-admin/day cooldown or quota, so a valid admin session could call the endpoint repeatedly with no throttling (e.g. a leaked admin token could mass-email the whole user base many times over). Deliberately not implemented speculatively — needs the product owner to decide an acceptable cooldown window or daily send quota before building it. |

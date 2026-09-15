@@ -281,9 +281,16 @@ components:
         nextCursor:
           type: string
           nullable: true
+        totalCount:
+          type: integer
+          description: >-
+            Total users matching q (or all users, if q is absent) — not just
+            this page. Powers the "select all N matching filter" affordance
+            in the admin UI.
       required:
         - items
         - nextCursor
+        - totalCount
 
     AdminGroupSummary:
       type: object
@@ -386,6 +393,60 @@ components:
         - recentUsers
         - recentGroups
         - generatedAt
+
+    AdminMailRequest:
+      type: object
+      description: >-
+        Either userIds or selectAll must be provided. When selectAll is true,
+        the server re-resolves every user matching q itself — a client-
+        supplied userIds list is never trusted for the "select all" case.
+      properties:
+        userIds:
+          type: array
+          items:
+            type: string
+          description: Explicit recipient user IDs. Ignored if selectAll is true.
+        selectAll:
+          type: boolean
+          description: If true, send to every user matching q (re-resolved server-side).
+        q:
+          type: string
+          description: Same search filter as GET /admin/users' q. Only used when selectAll is true.
+        subject:
+          type: string
+        html:
+          type: string
+          description: HTML email body.
+      required:
+        - subject
+        - html
+
+    AdminMailResult:
+      type: object
+      properties:
+        sent:
+          type: integer
+        failed:
+          type: integer
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+              email:
+                type: string
+              message:
+                type: string
+            required:
+              - userId
+              - email
+              - message
+      required:
+        - sent
+        - failed
+        - failures
 
 paths:
 
@@ -896,6 +957,40 @@ paths:
                 $ref: '#/components/schemas/AdminGroupListResponse'
         "400":
           description: Invalid limit or cursor
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail:
+    post:
+      summary: >-
+        Compose and send an HTML email to one or many users (admin only).
+        Recipients are either an explicit userIds list, or selectAll: true
+        (+ optional q) which re-resolves every user matching that filter
+        server-side — a client-supplied ID list is never trusted for that
+        case. Individual send failures are non-fatal; see AdminMailResult.
+      operationId: mailAdminUsers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminMailRequest'
+      responses:
+        "200":
+          description: Aggregate send result (per-recipient failures are reported here, not as an error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMailResult'
+        "400":
+          description: Missing subject/html, no recipients resolved, or too many recipients
         "401":
           description: Not authenticated
         "403":

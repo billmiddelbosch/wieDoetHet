@@ -62,6 +62,7 @@ const usersList = {
     },
   ],
   nextCursor: null,
+  totalCount: 2,
 }
 
 const usersPage1 = {
@@ -329,6 +330,190 @@ describe('Admin section', () => {
       cy.wait('@usersBack1')
       cy.contains('admin@wiedoehet.nl').should('be.visible')
       cy.contains('anna@example.nl').should('not.exist')
+    })
+
+    // Admin Mail Users feature (branch feature/admin-mail-users): checkbox
+    // selection + server-resolved "select all N matching" + rich-text email
+    // via AdminMailComposeModal / POST /admin/mail. See
+    // product/specs/admin.spec.md § Admin Mail Users and
+    // product/specs/admin-api.spec.md § POST /admin/mail.
+    describe('user selection and mail sending', () => {
+      function openUsersList() {
+        cy.intercept('GET', '**/admin/stats', stats).as('stats')
+        cy.intercept('GET', '**/admin/users*', usersList).as('users')
+        cy.get('header').contains('a', 'Admin').click()
+        cy.wait('@stats')
+        cy.get('nav').contains('a', 'Gebruikers').click()
+        cy.wait('@users')
+      }
+
+      it('shows the selection toolbar with the correct count and hides it again once the row is unchecked', () => {
+        openUsersList()
+
+        cy.contains('geselecteerd').should('not.exist')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('1 geselecteerd').should('be.visible')
+        cy.contains('button', 'E-mail versturen').should('be.visible')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('geselecteerd').should('not.exist')
+      })
+
+      it('selects all matching users via the toolbar and reflects the total count', () => {
+        openUsersList()
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('1 geselecteerd').should('be.visible')
+        cy.contains('Alle 2 resultaten selecteren').should('be.visible').click()
+
+        cy.contains('2 geselecteerd').should('be.visible')
+        // The "select all matching" link only shows while selectedCount < totalCount.
+        cy.contains('Alle 2 resultaten selecteren').should('not.exist')
+        cy.get('thead input[type="checkbox"]').should('be.checked')
+      })
+
+      it('disables row checkboxes while select-all-matching is active, so unchecking one cannot silently shrink the send', () => {
+        // Regression test for a bug found in code review: BaseTable's per-row
+        // checkbox only ever knows about the current page's rows, so
+        // unchecking one row while in select-all mode used to collapse "all
+        // N matching" down to "this page minus one" with no warning. Fixed
+        // by disabling the checkboxes entirely while select-all mode is
+        // active (see AdminUsersView.vue's selection-disabled wiring).
+        openUsersList()
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('Alle 2 resultaten selecteren').click()
+        cy.contains('2 geselecteerd').should('be.visible')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').should('be.disabled')
+        cy.get('thead input[type="checkbox"]').should('be.disabled')
+
+        // Clicking a disabled checkbox does not fire the toggle handler —
+        // the full "2 geselecteerd" count must remain unchanged.
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click({ force: true })
+        cy.contains('2 geselecteerd').should('be.visible')
+      })
+
+      it('clears the selection when the search query changes', () => {
+        openUsersList()
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('1 geselecteerd').should('be.visible')
+
+        cy.intercept('GET', '**/admin/users*', {
+          items: [usersList.items[1]],
+          nextCursor: null,
+          totalCount: 1,
+        }).as('filteredUsers')
+        cy.get('input[placeholder="Zoek op naam of e-mailadres..."]').type('anna')
+        cy.wait('@filteredUsers')
+
+        cy.contains('geselecteerd').should('not.exist')
+      })
+
+      it('sends an email to the explicitly checked users and shows the success result', () => {
+        openUsersList()
+        cy.intercept('POST', '**/admin/mail', { sent: 1, failed: 0, failures: [] }).as('sendMail')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('button', 'E-mail versturen').click()
+
+        cy.contains('E-mail opstellen').should('be.visible')
+        cy.contains('Dit bericht wordt verstuurd naar 1 ontvanger(s).').should('be.visible')
+
+        cy.get('#mail-subject').type('Belangrijke update')
+        cy.get('.ProseMirror').type('Hallo Anna, dit is een testbericht.')
+        cy.contains('button', /^Versturen$/).click()
+
+        cy.wait('@sendMail').its('request.body').then((body) => {
+          expect(body.userIds).to.deep.equal(['user-9'])
+          expect(body.selectAll).to.be.undefined
+          expect(body.subject).to.equal('Belangrijke update')
+          expect(body.html).to.contain('Hallo Anna, dit is een testbericht.')
+        })
+
+        cy.contains('1 verstuurd, 0 mislukt.').should('be.visible')
+      })
+
+      it('sends to selectAll:true with the current filter when in select-all mode', () => {
+        openUsersList()
+        cy.intercept('POST', '**/admin/mail', { sent: 2, failed: 0, failures: [] }).as('sendMail')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('Alle 2 resultaten selecteren').click()
+        cy.contains('2 geselecteerd').should('be.visible')
+
+        cy.contains('button', 'E-mail versturen').click()
+        cy.contains('Dit bericht wordt verstuurd naar 2 ontvanger(s).').should('be.visible')
+
+        cy.get('#mail-subject').type('Nieuwsbrief')
+        cy.get('.ProseMirror').type('Testbericht voor iedereen.')
+        cy.contains('button', /^Versturen$/).click()
+
+        cy.wait('@sendMail').its('request.body').then((body) => {
+          expect(body.selectAll).to.equal(true)
+          expect(body.q).to.equal('')
+          expect(body.userIds).to.be.undefined
+          expect(body.subject).to.equal('Nieuwsbrief')
+          expect(body.html).to.contain('Testbericht voor iedereen.')
+        })
+
+        cy.contains('2 verstuurd, 0 mislukt.').should('be.visible')
+      })
+
+      it('shows validation errors when subject and body are left empty, and does not send', () => {
+        openUsersList()
+        cy.intercept('POST', '**/admin/mail', { sent: 1, failed: 0, failures: [] }).as('sendMail')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('button', 'E-mail versturen').click()
+        cy.contains('button', /^Versturen$/).click()
+
+        cy.contains('Onderwerp is verplicht.').should('be.visible')
+        cy.contains('Bericht is verplicht.').should('be.visible')
+        cy.get('@sendMail.all').should('have.length', 0)
+      })
+
+      it('shows a partial-failure summary when some recipients fail to send', () => {
+        openUsersList()
+        cy.intercept('POST', '**/admin/mail', {
+          sent: 1,
+          failed: 1,
+          failures: [{ userId: 'admin-1', email: 'admin@wiedoehet.nl', message: 'Bounce: mailbox does not exist' }],
+        }).as('sendMail')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('Alle 2 resultaten selecteren').click()
+        cy.contains('button', 'E-mail versturen').click()
+
+        cy.get('#mail-subject').type('Nieuwsbrief')
+        cy.get('.ProseMirror').type('Testbericht voor iedereen.')
+        cy.contains('button', /^Versturen$/).click()
+        cy.wait('@sendMail')
+
+        cy.contains('1 verstuurd, 1 mislukt.').should('be.visible')
+        cy.contains('admin@wiedoehet.nl').should('be.visible')
+        cy.contains('Bounce: mailbox does not exist').should('be.visible')
+      })
+
+      it('shows a request-level error message when the send request itself fails', () => {
+        openUsersList()
+        cy.intercept('POST', '**/admin/mail', {
+          statusCode: 500,
+          body: { message: 'E-mail versturen mislukt.' },
+        }).as('sendMail')
+
+        cy.contains('td', 'anna@example.nl').parent('tr').find('input[type="checkbox"]').click()
+        cy.contains('button', 'E-mail versturen').click()
+
+        cy.get('#mail-subject').type('Nieuwsbrief')
+        cy.get('.ProseMirror').type('Testbericht voor iedereen.')
+        cy.contains('button', /^Versturen$/).click()
+        cy.wait('@sendMail')
+
+        cy.contains('E-mail versturen mislukt.').should('be.visible')
+      })
     })
   })
 })

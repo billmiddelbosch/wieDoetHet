@@ -1,0 +1,5 @@
+{
+  "userIds": ["REPLACE_WITH_USER_ID"],
+  "subject": "Belangrijke mededeling",
+  "html": "<p>Beste gebruiker,</p><p>Dit is een testbericht vanuit het admin-paneel.</p>"
+}

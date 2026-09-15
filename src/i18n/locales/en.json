@@ -302,6 +302,22 @@
     "pagination": {
       "previous": "Previous",
       "next": "Next"
+    },
+    "mail": {
+      "selectedCount": "{count} selected",
+      "selectAllMatching": "Select all {count} matching results",
+      "clearSelection": "Clear selection",
+      "sendEmail": "Send email",
+      "composeTitle": "Compose email",
+      "recipientSummary": "This message will be sent to {count} recipient(s).",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Email subject",
+      "subjectRequired": "Subject is required.",
+      "bodyLabel": "Message",
+      "bodyPlaceholder": "Write your message here...",
+      "bodyRequired": "Message is required.",
+      "sendCta": "Send",
+      "resultSummary": "{sent} sent, {failed} failed."
     }
   }
 }

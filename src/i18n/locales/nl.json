@@ -302,6 +302,22 @@
     "pagination": {
       "previous": "Vorige",
       "next": "Volgende"
+    },
+    "mail": {
+      "selectedCount": "{count} geselecteerd",
+      "selectAllMatching": "Alle {count} resultaten selecteren",
+      "clearSelection": "Selectie wissen",
+      "sendEmail": "E-mail versturen",
+      "composeTitle": "E-mail opstellen",
+      "recipientSummary": "Dit bericht wordt verstuurd naar {count} ontvanger(s).",
+      "subjectLabel": "Onderwerp",
+      "subjectPlaceholder": "Onderwerp van de e-mail",
+      "subjectRequired": "Onderwerp is verplicht.",
+      "bodyLabel": "Bericht",
+      "bodyPlaceholder": "Schrijf hier je bericht...",
+      "bodyRequired": "Bericht is verplicht.",
+      "sendCta": "Versturen",
+      "resultSummary": "{sent} verstuurd, {failed} mislukt."
     }
   }
 }
