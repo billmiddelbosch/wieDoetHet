@@ -1,25 +1,33 @@
 /**
  * Admin Lambda — handles:
- *   GET /admin/stats
- *   GET /admin/users
- *   GET /admin/users/{userId}
- *   GET /admin/groups
- *   GET /admin/groups/{groupId}
+ *   GET  /admin/stats
+ *   GET  /admin/users
+ *   GET  /admin/users/{userId}
+ *   GET  /admin/groups
+ *   GET  /admin/groups/{groupId}
+ *   POST /admin/mail
  *
  * Function name: wiedoethet-admin
  * Runtime: nodejs24.x
  * Handler: index.handler
  *
- * Read-only, role-gated (User.role === 'admin', re-checked server-side on every
- * request — the JWT itself carries no role claim). See
- * product/specs/admin-api.spec.md for the full contract.
+ * Role-gated (User.role === 'admin', re-checked server-side on every request —
+ * the JWT itself carries no role claim). All GET routes are read-only; POST
+ * /admin/mail is the one write/side-effecting route (sends email via SES, no
+ * database writes). See product/specs/admin-api.spec.md for the full
+ * contract, and lambda/SES_SETUP.md for the SES setup this route depends on.
  */
 
-import { ok, unauthorized, forbidden, notFound, badRequest, serverError, extractBearer } from '../shared/http.js'
+import { ok, unauthorized, forbidden, notFound, badRequest, serverError, extractBearer, parseBody } from '../shared/http.js'
 import { verifyJwt } from '../shared/jwt.js'
 import { getItem, queryByPk, queryGsi1, queryGsi2, queryGsi3 } from '../shared/db.js'
+import { sendMail } from '../shared/ses.js'
+import { wrapEmailHtml } from '../shared/email-template.js'
 
 const MAX_INTERNAL_QUERIES = 5
+const MAX_MAIL_RESOLVE_QUERIES = 200 // safety cap on the resolveAllMatchingUsers loop (~10,000 users at page size 50)
+const MAX_MAIL_RECIPIENTS = 500 // safety cap on a single /admin/mail send — keeps Lambda duration and SES throughput bounded
+const MAIL_SEND_CONCURRENCY = 5
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -70,18 +78,147 @@ async function listUsers(event) {
   if (params.error) return params.error
   const { limit, exclusiveStartKey, q } = params
 
-  const { items: rawUsers, nextCursor } = await queryGsi3Paginated('USER', {
-    limit,
-    exclusiveStartKey,
-    filterExpression: q ? 'contains(email, :q) OR contains(#name, :q)' : undefined,
-    expressionAttributeNames: q ? { '#name': 'name' } : undefined,
-    expressionAttributeValues: q ? { ':q': q } : undefined,
-  })
+  const filterExpression = q ? 'contains(email, :q) OR contains(#name, :q)' : undefined
+  const expressionAttributeNames = q ? { '#name': 'name' } : undefined
+  const expressionAttributeValues = q ? { ':q': q } : undefined
+
+  const [{ items: rawUsers, nextCursor }, totalCount] = await Promise.all([
+    queryGsi3Paginated('USER', { limit, exclusiveStartKey, filterExpression, expressionAttributeNames, expressionAttributeValues }),
+    countAllMatchingUsers(q),
+  ])
 
   const items = await Promise.all(rawUsers.map((u) => enrichUserSummary(u)))
 
   logSuccess({ route: 'GET /admin/users', adminUserId: admin.id, start, resultCount: items.length })
-  return ok({ items, nextCursor })
+  return ok({ items, nextCursor, totalCount })
+}
+
+/**
+ * Total count of users matching q, across the WHOLE partition (not just one
+ * page) — powers "select all N matching filter" in the admin UI. Select:
+ * 'COUNT' still applies FilterExpression after reading `limit` items per
+ * internal page, same gotcha as queryGsi3Paginated, so this loops the same
+ * way rather than trusting a single query's Count.
+ */
+async function countAllMatchingUsers(q) {
+  if (!q) {
+    const result = await queryGsi3('USER', { select: 'COUNT' })
+    return result.count
+  }
+  let total = 0
+  let exclusiveStartKey
+  for (let loop = 0; loop < MAX_MAIL_RESOLVE_QUERIES; loop++) {
+    const result = await queryGsi3('USER', {
+      limit: 50,
+      exclusiveStartKey,
+      filterExpression: 'contains(email, :q) OR contains(#name, :q)',
+      expressionAttributeNames: { '#name': 'name' },
+      expressionAttributeValues: { ':q': q },
+    })
+    total += result.items.length
+    if (!result.lastEvaluatedKey) break
+    exclusiveStartKey = result.lastEvaluatedKey
+  }
+  return total
+}
+
+/**
+ * POST /admin/mail — compose and send an HTML email to one or many users.
+ *
+ * Two ways to pick recipients:
+ *  - `userIds: string[]` — explicit list (from the checkboxes the admin ticked
+ *    on the current page).
+ *  - `selectAll: true` (+ optional `q`) — "select all N matching the current
+ *    filter". We NEVER trust a client-supplied bulk list for this case; we
+ *    re-run listUsers' own filter server-side (resolveAllMatchingUsers) so the
+ *    recipient set always matches what the admin actually searched for, not
+ *    whatever the client happened to send.
+ *
+ * Sends are per-recipient (not one BCC'd SES call — SES's own per-recipient
+ * bounce/complaint tracking works properly this way), in small bounded-
+ * concurrency chunks. An individual send failure is not fatal to the request;
+ * failures are collected and returned alongside the success count.
+ */
+async function mailUsers(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const body = parseBody(event)
+  const subject = body.subject?.trim()
+  const html = body.html?.trim()
+  if (!subject) return badRequest('Onderwerp is verplicht')
+  if (!html) return badRequest('Berichttekst is verplicht')
+
+  let recipients
+  if (body.selectAll === true) {
+    const q = typeof body.q === 'string' ? body.q.trim() || undefined : undefined
+    recipients = await resolveAllMatchingUsers(q)
+  } else {
+    if (!Array.isArray(body.userIds) || body.userIds.length === 0) {
+      return badRequest('userIds is verplicht (of selectAll: true)')
+    }
+    const uniqueIds = [...new Set(body.userIds)]
+    const found = await Promise.all(uniqueIds.map((id) => getItem(`USER#${id}`, 'PROFILE')))
+    recipients = found.filter(Boolean)
+  }
+
+  if (recipients.length === 0) return badRequest('Geen ontvangers gevonden')
+  if (recipients.length > MAX_MAIL_RECIPIENTS) {
+    return badRequest(`Te veel ontvangers (${recipients.length}). Maximum is ${MAX_MAIL_RECIPIENTS} per verzending.`)
+  }
+
+  const { sent, failed, failures } = await sendToRecipients(recipients, subject, wrapEmailHtml(html))
+
+  logSuccess({ route: 'POST /admin/mail', adminUserId: admin.id, start, resultCount: sent })
+  return ok({ sent, failed, failures })
+}
+
+/**
+ * Re-runs listUsers' own email/name filter against the full GSI3 'USER'
+ * partition, unpaged, to resolve "select all N matching current filter"
+ * server-side. Bounded by MAX_MAIL_RESOLVE_QUERIES as a sanity cap — a real
+ * DynamoDB partition always terminates via a null LastEvaluatedKey well
+ * before that.
+ */
+async function resolveAllMatchingUsers(q) {
+  const users = []
+  let exclusiveStartKey
+  for (let loop = 0; loop < MAX_MAIL_RESOLVE_QUERIES; loop++) {
+    const result = await queryGsi3('USER', {
+      limit: 50,
+      exclusiveStartKey,
+      filterExpression: q ? 'contains(email, :q) OR contains(#name, :q)' : undefined,
+      expressionAttributeNames: q ? { '#name': 'name' } : undefined,
+      expressionAttributeValues: q ? { ':q': q } : undefined,
+    })
+    users.push(...result.items)
+    if (!result.lastEvaluatedKey) break
+    exclusiveStartKey = result.lastEvaluatedKey
+  }
+  return users
+}
+
+/** Sends one email per recipient in small concurrent chunks; failures are non-fatal. */
+async function sendToRecipients(recipients, subject, html) {
+  let sent = 0
+  const failures = []
+  for (let i = 0; i < recipients.length; i += MAIL_SEND_CONCURRENCY) {
+    const chunk = recipients.slice(i, i + MAIL_SEND_CONCURRENCY)
+    const results = await Promise.all(chunk.map(async (user) => {
+      try {
+        await sendMail({ to: user.email, subject, html })
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, userId: user.id, email: user.email, message: err.message }
+      }
+    }))
+    for (const result of results) {
+      if (result.ok) sent++
+      else failures.push({ userId: result.userId, email: result.email, message: result.message })
+    }
+  }
+  return { sent, failed: failures.length, failures }
 }
 
 async function getUserDetail(event) {
@@ -373,6 +510,7 @@ export const handler = async (event) => {
     if (method === 'GET' && /^\/admin\/users\/[^/]+$/.test(path))   return await getUserDetail(event)
     if (method === 'GET' && path === '/admin/groups')                return await listGroups(event)
     if (method === 'GET' && /^\/admin\/groups\/[^/]+$/.test(path))  return await getGroupDetail(event)
+    if (method === 'POST' && path === '/admin/mail')                 return await mailUsers(event)
 
     return { statusCode: 404, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Route niet gevonden' }) }
   } catch (err) {

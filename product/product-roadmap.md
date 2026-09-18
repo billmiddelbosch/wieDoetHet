@@ -1,6 +1,8 @@
 # Product Roadmap — wieDoetHet
 
-**Last Updated:** 2026-08-20 (added Milestone 1.9 — Admin Section, and the Admin Service under 1.7)
+**Last Updated:** 2026-09-15 (added Milestone 1.9's "Admin Mail Users" sub-section — the panel's first
+non-read-only capability, implemented on branch `feature/admin-mail-users`, pending REVIEW/VALIDATE/COMMIT.
+Prior 2026-08-20 entry: added Milestone 1.9 — Admin Section, and the Admin Service under 1.7.)
 
 ---
 
@@ -84,12 +86,15 @@
 - [ ] `POST /notifications/whatsapp/invite` — generate WhatsApp deep-link payload with share URL
 - [ ] `POST /notifications/whatsapp/reminder` — schedule a reminder Lambda (EventBridge rule) and generate WhatsApp deep-link
 
-#### Admin Service (`/admin`) — internal, role-gated read-only CRM
+#### Admin Service (`/admin`) — internal, role-gated CRM (read-only + one deliberate mail exception)
 - [ ] `GET /admin/stats` — platform-wide counts and recent activity (admin only)
-- [ ] `GET /admin/users` — paginated/searchable user list (admin only)
+- [ ] `GET /admin/users` — paginated/searchable user list (admin only), now also returns `totalCount`
 - [ ] `GET /admin/users/{userId}` — user detail (admin only)
 - [ ] `GET /admin/groups` — paginated/searchable group list (admin only)
 - [ ] `GET /admin/groups/{groupId}` — group detail (admin only)
+- [x] `POST /admin/mail` — send rich-text HTML email via SES to explicit `userIds` or all users matching a
+  filter (`selectAll`); see Milestone 1.9 § Admin Mail Users. Implemented on branch
+  `feature/admin-mail-users`; SPEC/DESIGN/IMPLEMENT/TEST complete, REVIEW/VALIDATE/COMMIT pending.
 - [ ] Authorization re-fetches the caller's User record on every request and checks `role === 'admin'` server-side — no admin claim in the JWT itself (see `product/specs/admin-api.spec.md`)
 - [ ] See Milestone 1.9 for the full feature breakdown (data model, GSI3, backfill prerequisite)
 
@@ -130,6 +135,38 @@
 - [ ] Groups list (search + pagination) and detail view
 
 **Explicitly out of scope for v1:** editing, deactivating, or deleting users/groups from the panel; promote-to-admin UI; any invite-based admin onboarding.
+
+#### Admin Mail Users (branch `feature/admin-mail-users`)
+
+**Goal:** Let an admin compose and send a rich-text (HTML) email via AWS SES to one or many platform users
+selected from `AdminUsersView`, without leaving the existing read-only Admin Section. The one deliberate
+write/side-effecting exception to Milestone 1.9's "read-only v1" scope — it sends outbound email, it does not
+edit, deactivate, or delete any stored user/group record.
+
+**Status:** SPEC/DESIGN/IMPLEMENT/TEST complete (118/118 unit/component tests passing). REVIEW (code-reviewer
+agent), VALIDATE (browser confirmation), and COMMIT (push to branch) pending user action. See
+`product/specs/admin.spec.md` § Admin Mail Users and `product/specs/admin-api.spec.md` § POST /admin/mail for
+full contracts.
+
+- [x] `useAdminMail` composable — `sendMail({ userIds, selectAll, q, subject, html })`
+- [x] `AdminSelectionToolbar` molecule — shows selected count, "select all N matching", clear, send
+- [x] `AdminMailComposeModal` organism — subject + `BaseRichTextEditor` body, validation, send result display
+- [x] `BaseRichTextEditor` atom — new Tiptap-backed rich-text field (judgment call: new dependency, see
+  `components-ui.spec.md`)
+- [x] `BaseTable` extended with `selectable`/`selectedKeys` controlled-selection props and
+  `update:selectedKeys` emit
+- [x] `AdminUsersView` wiring: checkbox selection, select-all-mode (server-resolved, never a client id
+  snapshot), search clears selection
+- [x] Backend: `wiedoethet-admin`'s `POST /admin/mail` route, `countAllMatchingUsers`/`resolveAllMatchingUsers`
+  (GSI3-backed), `sendToRecipients` (bounded-concurrency SES sends), `MAX_MAIL_RECIPIENTS` safety cap (500)
+- [x] `lambda/shared/ses.js` — SES integration, one `SendEmailCommand` per recipient
+- [x] `lambda/iam-policy-ses.json` — new IAM policy for `ses:SendEmail`/`ses:SendRawEmail`
+- [x] `openapi.yaml` — `POST /admin/mail` path documented
+- [x] i18n: `admin.mail.*` keys in `nl.json`/`en.json`
+- [ ] Cypress E2E coverage for selection + send flow — in progress this session
+- [ ] `code-reviewer` agent pass (REVIEW stage) — in progress this session
+- [ ] Manual AWS steps (SES identity verification, IAM policy attachment, API Gateway re-import) — not
+  performed by Claude; see final report for the full manual checklist
 
 ---
 

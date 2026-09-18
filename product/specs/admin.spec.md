@@ -1,14 +1,16 @@
 # Spec — Admin Section (Frontend)
 
-**Status:** SPEC complete. DESIGN/IMPLEMENT/TEST/REVIEW/VALIDATE/COMMIT not yet started.
+**Status:** SPEC/DESIGN/IMPLEMENT/TEST complete for the base read-only section AND the Admin Mail Users
+feature (§ Admin Mail Users below), now including Cypress E2E coverage. REVIEW/VALIDATE/COMMIT pending for
+Admin Mail Users — see that section's own status line.
 **Scope of this file:** frontend only — routes, views, composables, store, navigation guard, new UI primitives, i18n key list. Backend contract (endpoints, request/response shapes, pagination/search params, auth semantics) is `product/specs/admin-api.spec.md` — this spec's API-integration notes cite it, not redefine it. Read models (`AdminUserSummary`, `AdminUserDetail`, `AdminGroupSummary`, `AdminGroupDetail`, `AdminStats`) are defined in `product/data-model.md` § Admin Read Models.
-**Last Updated:** 2026-08-20 — initial version.
+**Last Updated:** 2026-09-15 — added § Admin Mail Users (bulk HTML email to selected/filtered users via SES); corrected the "Strictly v1 read-only" framing below, which Admin Mail Users' `POST /admin/mail` intentionally breaks.
 
 ---
 
 ## Purpose
 
-Give internal admin-role users a read-only browsing UI over platform users and groups, plus a stats dashboard, without needing AWS Console access for routine questions. Strictly v1 read-only: no create/update/delete affordances anywhere in this UI. Access is gated client-side by `authStore.isAdmin` (for UX — hiding nav/redirecting) and enforced server-side by the backend's `requireAdmin` check (the real security boundary; the frontend gate is a UX convenience, not a substitute for it).
+Give internal admin-role users a browsing UI over platform users and groups, plus a stats dashboard, without needing AWS Console access for routine questions. The original v1 was strictly read-only (no create/update/delete affordances); the Admin Mail Users feature (below) is a deliberate, narrow exception — it adds one write/side-effecting action (sending email via SES) while leaving every other admin affordance read-only. There is still no create/update/delete of Users or Groups themselves, and no promote-to-admin UI. Access is gated client-side by `authStore.isAdmin` (for UX — hiding nav/redirecting) and enforced server-side by the backend's `requireAdmin` check (the real security boundary; the frontend gate is a UX convenience, not a substitute for it).
 
 ---
 
@@ -134,6 +136,11 @@ No other change. `role` arrives for free once the backend's `safeUser()` update 
   stats: AdminStats | null,
   users: AdminUserSummary[],
   usersNextCursor: string | null,      // from the last /admin/users response
+  usersTotalCount: number,             // (added for Admin Mail Users) total count of users matching the
+                                        // current filter, across ALL pages — from /admin/users' totalCount
+                                        // field. Powers AdminSelectionToolbar's "select all N matching" UI
+                                        // and the selectAllMode `selectedCount` computed in AdminUsersView.
+                                        // Not used by anything read-only-only; default 0.
   currentUser: AdminUserDetail | null,
   groups: AdminGroupSummary[],
   groupsNextCursor: string | null,     // from the last /admin/groups response
@@ -141,12 +148,17 @@ No other change. `role` arrives for free once the backend's `safeUser()` update 
 
   // Actions — all replace, none append (each page fetch is a full replace of the list)
   setStats(stats),
-  setUsers(users, nextCursor),
+  setUsers(users, nextCursor, totalCount = 0),   // totalCount param added for Admin Mail Users
   setCurrentUser(user),
   setGroups(groups, nextCursor),
   setCurrentGroup(group),
 }
 ```
+
+**No `addX`/`updateX`/`removeX` actions were added for Admin Mail Users either** — sending mail has no
+effect on any admin-store-held entity; the store still only ever replaces list/detail snapshots fetched
+from the read endpoints. Selection state and the mail send result live in `AdminUsersView`'s own local
+refs (see § Admin Mail Users below), not in this store — they are page-local UI state, not fetched data.
 
 ---
 
@@ -188,6 +200,13 @@ Follows the `useGroups.js` pattern exactly: calls `apiClient` (`@/lib/axios.js`)
 // src/composables/useAdminUsers.js
 {
   users: Ref<AdminUserSummary[]>,
+  usersTotalCount: Ref<number>,            // (added for Admin Mail Users) total matching the current
+                                            // filter across all pages, from the store — see useAdminStore
+  currentQuery: Ref<string>,               // (added for Admin Mail Users) the active `q`, exposed read-only
+                                            // so AdminUsersView can pass it back verbatim as the `q` in a
+                                            // { selectAll: true, q } mail request — never reconstructed
+                                            // from the search input directly, to guarantee it matches
+                                            // exactly what the last fetch actually used
   currentUser: Ref<AdminUserDetail | null>,
   loading: Ref<boolean>,
   error: Ref<string | null>,
@@ -279,12 +298,30 @@ All five follow `DashboardView.vue`'s fetch-on-mount / loading / error / empty-s
 
 ### AdminUsersView — **Atomic Level: Page**
 - Route: `/admin/users` (`admin-users`)
-- `BaseInput` search box (debounced ~300ms) bound to local `q`; on change calls `fetchUsers({ q })` (resets to page 1)
-- `BaseTable` columns: e-mail, naam, rol (`cell-role` slot → `BaseBadge`), aangemeld (`createdAt`, formatted), groepen (`groupCount`), laatste activiteit (`lastActivityAt`, formatted)
+- `BaseInput` search box (debounced ~300ms) bound to local `q`; on change calls `fetchUsers({ q })` (resets to page 1) and, per Admin Mail Users below, also clears any active row selection / select-all-mode — a changed search term invalidates the previous selection immediately rather than leaving it stale.
+- `AdminSelectionToolbar` (see § Admin Mail Users) rendered above `BaseTable`, wired to the selection state described below.
+- `BaseTable` columns: e-mail, naam, rol (`cell-role` slot → `BaseBadge`), aangemeld (`createdAt`, formatted), groepen (`groupCount`), laatste activiteit (`lastActivityAt`, formatted). Since Admin Mail Users: also passed `selectable`, `:selected-keys="effectiveSelectedKeys"`, `@update:selected-keys="handleSelectionChange"` (see below).
 - `@row-click` → `router.push(`/admin/users/${row.id}`)`
 - `BasePagination` wired to `useAdminUsers`'s `hasNext`/`hasPrevious`/`fetchNextPage`/`fetchPreviousPage`
 - Loading/error/empty states per `DashboardView` convention; empty state uses `admin.users.emptyTitle`/`emptyDesc` (distinguishes "no users at all" is not realistic post-launch, but "no results for this search" is — same empty state copy covers both, phrased generically)
-- `useHead`, i18n: `admin.users.*`, `seo.adminUsers.*`
+- `useHead`, i18n: `admin.users.*`, `seo.adminUsers.*`, `admin.mail.*` (see below)
+
+**Selection state added for Admin Mail Users** (local to this view, not the store — see § New Store above):
+```js
+const selectedIds = ref(new Set())      // explicit row selection, persists across pagination within a session
+const selectAllMode = ref(false)        // mutually exclusive with selectedIds — true means "every user
+                                         // matching currentQuery.value, resolved server-side on send"
+const effectiveSelectedKeys = computed(() =>
+  selectAllMode.value ? users.value.map(u => u.id) : [...selectedIds.value]
+)                                        // what BaseTable actually renders as checked — in selectAllMode
+                                         // this only reflects the CURRENT page's rows as checked, since
+                                         // BaseTable has no concept of rows it isn't rendering
+const selectedCount = computed(() =>
+  selectAllMode.value ? usersTotalCount.value : selectedIds.value.size
+)
+```
+- Manually toggling any checkbox (`handleSelectionChange`) unconditionally sets `selectAllMode.value = false` — exiting select-all-mode is implicit, not a separate action, so there's no way to end up with both a stale "all N" claim and a manually-edited subset.
+- Changing the search query resets both `selectedIds` and `selectAllMode` (see above) — the staleness guard called for in `admin-api.spec.md`'s `POST /admin/mail`, enforced on the frontend as defense-in-depth even though the backend re-validates the filter itself.
 
 ### AdminUserDetailView — **Atomic Level: Page**
 - Route: `/admin/users/:id` (`admin-user-detail`)
@@ -306,6 +343,123 @@ All five follow `DashboardView.vue`'s fetch-on-mount / loading / error / empty-s
 - Content: group info `BaseCard` (`BaseAvatar` using `pictureUrl`/`name` fallback, `name`, initiator name/email — linking to `/admin/users/:initiatorId` — `taskCount`, `memberCount`, `createdAt`), then a `BaseTable` of `tasks[]` (`title`, `order`, `claimCount`)
 - Back link/button to `/admin/groups` (`admin.groupDetail.back`)
 - `useHead`, i18n: `admin.groupDetail.*`, `seo.adminGroupDetail.*`
+
+---
+
+## Admin Mail Users
+
+**Status: SPEC/DESIGN/IMPLEMENT/TEST complete. REVIEW/VALIDATE/COMMIT pending.**
+Branch: `feature/admin-mail-users`.
+
+Lets an admin compose a rich-text (HTML) email and send it, server-side via AWS SES through the
+`wiedoethet-admin` Lambda, to a bulk-selected set of users chosen from `AdminUsersView`'s existing table —
+either an explicit checkbox selection or "select all N matching the current filter" (server re-resolved,
+never a client-supplied ID list — see `admin-api.spec.md`'s `POST /admin/mail`). Not a `mailto:` link. No
+CC, no saved templates in v1 — explicit, final scope decisions carried into this run.
+
+### Composable: useAdminMail
+
+```js
+// src/composables/useAdminMail.js
+{
+  loading: Ref<boolean>,
+  error: Ref<string | null>,
+  sendMail({ userIds, selectAll, q, subject, html }): Promise<AdminMailResult | null>,
+    // POST /admin/mail
+    // selectAll truthy  -> body { selectAll: true, q, subject, html }   (userIds, if passed, is IGNORED —
+    //                       enforced in the composable itself so a caller mistake can never leak a client
+    //                       list into a selectAll request)
+    // selectAll falsy   -> body { userIds, subject, html }
+    // Returns the aggregate { sent, failed, failures } on 200, or null with `error` set on request failure
+    // (network error, 400/401/403) — same loading/error convention as every other admin composable.
+}
+```
+`AdminMailResult` is defined in `product/data-model.md` § Admin Read Models (added alongside this feature).
+
+### Molecule: AdminSelectionToolbar
+
+`src/components/molecules/AdminSelectionToolbar.vue` — **Atomic Level: Molecule**
+```
+Props:
+  selectedCount: number   (required)
+  totalCount: number      (required)
+  disabled: boolean        (default: false)   — true while a send is in flight; disables Clear/Send
+Emits:
+  select-all-matching
+  clear
+  send-email
+Slots: none
+```
+- Renders nothing (`v-if="selectedCount > 0"`) until at least one row is selected — stays out of the way
+  of the read-only browsing flow otherwise.
+- The "select all N matching" link/button is itself conditional on `selectedCount < totalCount` — once
+  every matching row is already selected (by any means), the link has nothing left to offer and disappears.
+- Composes only `BaseButton` (atom) + `useI18n` — no store/composable imports, consistent with the
+  molecule tier's role of composing atoms with light presentational logic, no data fetching.
+- Atomic Rationale: a Molecule, not an Atom, because it combines multiple atoms (two `BaseButton`s plus a
+  bare toggle-link) into one semantically-specific unit ("bulk selection toolbar") that only makes sense in
+  this admin-list context — unlike `BaseTable`/`BasePagination`, it is not reusable as a generic primitive.
+
+### Organism: AdminMailComposeModal
+
+`src/components/organisms/AdminMailComposeModal.vue` — **Atomic Level: Organism**
+```
+Props:
+  open: boolean                 (required)
+  recipientCount: number        (required)  — rendered as "This message will be sent to N recipient(s)."
+  loading: boolean              (default: false)
+  result: { sent, failed, failures } | null   (default: null)  — last send's aggregate result
+  error: string | null          (default: null)                — request-level failure message
+Emits:
+  send({ subject: string, html: string })   — subject trimmed, html raw from BaseRichTextEditor
+  close
+Slots: none
+```
+- Composes `BaseModal`, `BaseInput` (subject), `BaseRichTextEditor` (body), `BaseButton` ×2, `BaseAlert`
+  (error, or result summary once the send completes — success/warning variant depending on `failed > 0`).
+- Local validation before emitting `send`: subject non-empty (trimmed), body non-empty and not just an
+  empty Tiptap paragraph (`'<p></p>'`) — i18n'd inline errors (`admin.mail.subjectRequired`/`bodyRequired`),
+  no network round-trip needed to catch these.
+- Resets `subject`/`html`/`errors` whenever `open` transitions to `true` — reopening for a second send
+  always starts from a blank compose box, it never carries over the previous message.
+- Atomic Rationale: Organism, not Molecule, because it composes multiple Molecules-and-Atoms-level pieces
+  (a full form inside a modal shell) into one self-contained feature unit with its own validation and
+  submit lifecycle — the same tier `GroupCreateModal`-style organisms already occupy in this codebase.
+
+### AdminUsersView changes
+
+See § AdminUsersView above (Views section) for the selection-state additions. In addition, `AdminUsersView`
+owns the send flow itself:
+```js
+async function handleComposeSend({ subject, html }) {
+  const payload = selectAllMode.value
+    ? { selectAll: true, q: currentQuery.value, subject, html }
+    : { userIds: [...selectedIds.value], subject, html }
+  const result = await sendMail(payload)
+  mailResult.value = result
+  if (result) { selectAllMode.value = false; selectedIds.value = new Set() }  // clear selection on success
+}
+```
+`currentQuery.value` (from `useAdminUsers`, see above) is passed verbatim — never re-read from the raw
+search `<BaseInput>` — so the `q` sent to the server always matches the filter that produced the currently
+displayed `usersTotalCount`.
+
+### Judgment calls made during IMPLEMENT (flagged for REVIEW)
+
+- **`BaseRichTextEditor` + Tiptap dependency** — the brief called for "rich text/HTML body," not a specific
+  library. Tiptap (`@tiptap/vue-3`, `@tiptap/starter-kit`, `@tiptap/pm`, `@tiptap/extension-placeholder`)
+  was chosen as a well-maintained, Vue-3-native, headless rich-text editor with a manageable bundle size
+  versus alternatives (Quill, TinyMCE) that either bring their own CSS framework or are jQuery-era. This is
+  a new production dependency — flag for explicit sign-off.
+- **`selectAllMode` boolean flag vs. a literal resolved-IDs array** — chosen because the backend contract
+  supports two distinct request shapes (`{userIds}` vs `{selectAll, q}`) and this avoids ever materializing
+  all N ids client-side (could be hundreds, per `MAX_MAIL_RECIPIENTS`). See `admin-api.spec.md`.
+- **`usersTotalCount` added to the store/composable/backend response** — not originally in the read-only
+  spec; required to render "select all N matching" and to size the selectAllMode `selectedCount`. Costs one
+  extra bounded internal-loop count query per `/admin/users` request (see `admin-api.spec.md` § `countAllMatchingUsers`) — accepted as a deliberate scope addition for this feature, not silently absorbed.
+- **`MAX_MAIL_RECIPIENTS = 500` per send** — a safety cap invented for this feature (backend), not specified
+  in the original brief; flagged for explicit approval since it is a real product-behavior limit (a send
+  targeting more than 500 matching users is rejected with `400`, not silently truncated).
 
 ---
 
@@ -379,6 +533,21 @@ admin.roles.user                       // ("Gebruiker")
 admin.pagination.previous              // BasePagination consumer label ("Vorige")
 admin.pagination.next                  // ("Volgende")
 
+admin.mail.selectedCount               // AdminSelectionToolbar ("{count} geselecteerd")
+admin.mail.selectAllMatching           // ("Alle {count} resultaten selecteren")
+admin.mail.clearSelection               // ("Selectie wissen")
+admin.mail.sendEmail                    // ("E-mail versturen")
+admin.mail.composeTitle                 // AdminMailComposeModal title ("E-mail opstellen")
+admin.mail.recipientSummary             // ("Dit bericht wordt verstuurd naar {count} ontvanger(s).")
+admin.mail.subjectLabel                 // ("Onderwerp")
+admin.mail.subjectPlaceholder           // ("Onderwerp van de e-mail")
+admin.mail.subjectRequired              // ("Onderwerp is verplicht.")
+admin.mail.bodyLabel                    // ("Bericht")
+admin.mail.bodyPlaceholder              // ("Schrijf hier je bericht...")
+admin.mail.bodyRequired                 // ("Bericht is verplicht.")
+admin.mail.sendCta                      // ("Versturen")
+admin.mail.resultSummary                // ("{sent} verstuurd, {failed} mislukt.")
+
 seo.adminDashboard.title
 seo.adminUsers.title
 seo.adminUserDetail.title
@@ -413,4 +582,27 @@ All five `seo.admin*` entries are `title`-only (no `description`) — matches th
 - [ ] All user-visible strings on every new view/component go through `useI18n()` — no hardcoded Dutch or English text
 - [ ] `nl.json` and `en.json` contain every key listed above in both files
 
-**Last Updated:** 2026-08-20 — initial version.
+### Admin Mail Users — additional Acceptance Criteria
+
+- [ ] Checking rows in `AdminUsersView`'s table shows `AdminSelectionToolbar` with the correct selected count; unchecking the last row hides it again
+- [ ] "Select all N matching" resolves to the current search filter server-side, not a client-side snapshot of ids — verified via `useAdminMail.test.js`'s explicit assertion that a `selectAll` send never includes a `userIds` array, even when one is passed in
+- [ ] Changing the search box clears any active selection and exits select-all-mode (staleness guard)
+- [x] While select-all-mode is active, `BaseTable`'s header and row checkboxes render disabled
+  (`selection-disabled` prop) rather than being toggleable — fixes a data-safety bug found in code review
+  where unchecking a single row while in select-all mode silently collapsed "all N matching" down to "this
+  page minus one," with no warning to the admin. To select a different set, the admin must use "Clear
+  selection" first (exits select-all-mode), then check rows manually.
+- [ ] Compose modal blocks submission with inline errors when subject or body is empty; does not call `sendMail`
+- [ ] Successful send clears the selection and shows the aggregate `{sent, failed}` result, with per-recipient failure detail when `failed > 0`
+- [ ] A request-level failure (network/4xx) shows `error`, not a silent no-op
+- [ ] `BaseTable`'s selection column and `BaseRichTextEditor` have zero imports from `src/stores/`, `src/composables/`, or `@/lib/` (Atom purity maintained)
+- [ ] All `admin.mail.*` keys present in both `nl.json` and `en.json`
+- [ ] Unit/component tests exist and pass for: `BaseTable` selection behavior, `BaseRichTextEditor`, `AdminSelectionToolbar`, `AdminMailComposeModal`, `useAdminMail` (118/118 tests passing across 15 files as of this Last Updated date)
+- [x] Cypress E2E coverage exists and passes for the selection + mail-send flow in `cypress/e2e/admin.cy.js`'s `user selection and mail sending` describe block: toolbar show/hide on check/uncheck, "select all N matching" resolving the full total, checkboxes disabled during select-all-mode (regression test for the collapse bug below), selection clearing on query change, sending to explicitly-checked recipients, sending with `selectAll:true`, empty subject/body validation blocking the send, partial-failure result summary, and request-level failure surfacing (9 new tests; 21/21 total passing in `admin.cy.js` as of this Last Updated date)
+
+**Known issue, flagged for follow-up (not fixed here — policy decision, not a bug):** `POST /admin/mail` has a
+per-call cap (`MAX_MAIL_RECIPIENTS`) but no per-admin/day send cooldown or quota, so a valid admin session
+could call it repeatedly with no throttling. Deliberately left unimplemented pending a product decision on
+an acceptable cooldown/quota; tracked in `product/backlog.md`.
+
+**Last Updated:** 2026-09-15 — added Admin Mail Users feature (see § Admin Mail Users), including the Cypress E2E suite for the selection + mail-send flow (`cypress/e2e/admin.cy.js`, 21/21 passing); fixed a code-review-found data-safety bug where unchecking one row during "select all N matching" silently shrank the send to a page-scoped subset (see `BaseTable`'s new `selectionDisabled` prop in `components-ui.spec.md`); logged the missing send-cooldown/quota as a flagged backlog follow-up rather than guessing at a number. Original 2026-08-20 read-only-section content otherwise unchanged.

@@ -21,6 +21,7 @@ const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`
 export function useHead(metaConfig) {
   const route = useRoute()
   const injected = new Map()
+  const adopted = new Map() // static element -> href it had before we touched it
 
   function resolveConfig() {
     return toValue(metaConfig)
@@ -44,9 +45,16 @@ export function useHead(metaConfig) {
     if (!href) return
     let el = injected.get(`link-${rel}`)
     if (!el) {
-      el = document.createElement('link')
-      el.setAttribute('rel', rel)
-      document.head.appendChild(el)
+      // Adopt a static tag from index.html rather than adding a second,
+      // possibly conflicting one (two canonicals with different hrefs).
+      el = document.head.querySelector(`link[rel="${rel}"]`)
+      if (el) {
+        adopted.set(el, el.getAttribute('href'))
+      } else {
+        el = document.createElement('link')
+        el.setAttribute('rel', rel)
+        document.head.appendChild(el)
+      }
       injected.set(`link-${rel}`, el)
     }
     el.setAttribute('href', href)
@@ -54,9 +62,15 @@ export function useHead(metaConfig) {
 
   function removeInjected() {
     for (const el of injected.values()) {
-      el.parentNode?.removeChild(el)
+      if (adopted.has(el)) {
+        // Hand the static tag back the way we found it
+        el.setAttribute('href', adopted.get(el))
+      } else {
+        el.parentNode?.removeChild(el)
+      }
     }
     injected.clear()
+    adopted.clear()
   }
 
   const stop = watchEffect(() => {

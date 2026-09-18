@@ -16,6 +16,10 @@
     "generate:og-image": "node scripts/generate-og-image.js"
   },
   "dependencies": {
+    "@tiptap/extension-placeholder": "^2.27.3",
+    "@tiptap/pm": "^2.27.3",
+    "@tiptap/starter-kit": "^2.27.3",
+    "@tiptap/vue-3": "^2.27.3",
     "axios": "^1.13.6",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",

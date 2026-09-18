@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/mail",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"userIds\":[\"REPLACE_WITH_USER_ID\"],\"subject\":\"Belangrijke mededeling\",\"html\":\"<p>Beste gebruiker,</p><p>Dit is een testbericht vanuit het admin-paneel.</p>\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/admin/mail",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}
