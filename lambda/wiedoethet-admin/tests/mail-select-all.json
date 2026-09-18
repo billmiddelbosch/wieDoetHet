@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/mail",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"selectAll\":true,\"q\":\"example.nl\",\"subject\":\"Belangrijke mededeling\",\"html\":\"<p>Beste gebruiker,</p><p>Dit bericht gaat naar iedereen die overeenkomt met het huidige filter.</p>\"}",
+  "pathParameters": null,
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/admin/mail",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

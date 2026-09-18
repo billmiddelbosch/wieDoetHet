@@ -209,6 +209,18 @@
     },
     "adminGroupDetail": {
       "title": "Admin – Group detail – Wie Doet Het"
+    },
+    "about": {
+      "title": "About Wie Doet Het – Assign tasks without the hassle",
+      "description": "Wie Doet Het is a free web app for assigning tasks across a group of people, without everyone needing an account."
+    },
+    "contact": {
+      "title": "Contact – Wie Doet Het",
+      "description": "Where to go with questions about a task list, a bug, or deleting your data at Wie Doet Het."
+    },
+    "privacy": {
+      "title": "Privacy – Wie Doet Het",
+      "description": "Which data Wie Doet Het stores about organisers and participants, why, and how to get rid of it."
     }
   },
   "faq": {
@@ -302,6 +314,266 @@
     "pagination": {
       "previous": "Previous",
       "next": "Next"
+    },
+    "mail": {
+      "selectedCount": "{count} selected",
+      "selectAllMatching": "Select all {count} matching results",
+      "clearSelection": "Clear selection",
+      "sendEmail": "Send email",
+      "composeTitle": "Compose email",
+      "recipientSummary": "This message will be sent to {count} recipient(s).",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Email subject",
+      "subjectRequired": "Subject is required.",
+      "bodyLabel": "Message",
+      "bodyPlaceholder": "Write your message here...",
+      "bodyRequired": "Message is required.",
+      "sendCta": "Send",
+      "resultSummary": "{sent} sent, {failed} failed."
     }
+  },
+  "footer": {
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy"
+  },
+  "about": {
+    "title": "About Wie Doet Het",
+    "intro": "Wie Doet Het is a free web app for assigning tasks across a group of people, without everyone needing an account.",
+    "sections": [
+      {
+        "title": "The problem",
+        "paragraphs": [
+          "Tasks usually get assigned in a WhatsApp group. Someone pastes a list, twenty messages later nobody has an overview: two people take the same task, three tasks are left undone, and the organiser has to keep track by hand. Existing project tools solve that with accounts, invitations and permissions — far too heavy for \"who is bringing the deposit bottles\"."
+        ]
+      },
+      {
+        "title": "How Wie Doet Het solves it",
+        "paragraphs": [
+          "The organiser creates a group, adds the tasks and shares one link. Everyone who opens the link sees the complete list and picks what they will do. A claimed task is immediately visible to everyone, so duplicated work cannot happen. Per task you can set how many people may sign up.",
+          "Participants do not create an account. They only enter their name on the task they take. Only the organiser needs an account, to find the group again later and change it."
+        ]
+      },
+      {
+        "title": "What it is used for",
+        "paragraphs": [
+          "Sports clubs dividing canteen shifts, class parents organising a school party, housemates getting the cleaning rota sorted, volunteers keeping an event running, and families dividing Christmas between the cook, the groceries and the washing-up."
+        ]
+      },
+      {
+        "title": "What it is not",
+        "paragraphs": [
+          "Not a project management tool, not a chat, not a calendar and not time tracking. Wie Doet Het does one thing: a list of tasks, a shared link, and making visible who takes what."
+        ]
+      },
+      {
+        "title": "About the project",
+        "paragraphs": [
+          "Wie Doet Het is an independent, free project. The source code of the web app is public on GitHub."
+        ],
+        "link": {
+          "href": "https://github.com/billmiddelbosch/wieDoetHet",
+          "label": "View the source code on GitHub"
+        }
+      }
+    ]
+  },
+  "contact": {
+    "title": "Contact",
+    "intro": "Wie Doet Het is a small, free project. Below you will find where to go for each situation, so you do not knock on the wrong door.",
+    "sections": [
+      {
+        "title": "You have been invited to a task list",
+        "paragraphs": [
+          "Questions about a specific group — which task you get, when something is due, whether you may swap — do not go through us. The person who sent you the share link is the organiser of that group and manages the list. Contact them directly, in the group chat where you received the link."
+        ]
+      },
+      {
+        "title": "You found a bug or miss a feature",
+        "paragraphs": [
+          "Report it as an issue on the public repository. Include which browser you use, what you did and what you expected. If it concerns a specific group: do not share a share link in a public issue — that link gives anyone access to the task list."
+        ],
+        "link": {
+          "href": "https://github.com/billmiddelbosch/wieDoetHet/issues",
+          "label": "Report an issue on GitHub"
+        }
+      },
+      {
+        "title": "You want your account or data deleted",
+        "paragraphs": [
+          "Delete your groups in the app and then your account via your profile page. What is still kept afterwards, and for how long, is described on the privacy page."
+        ],
+        "link": {
+          "to": "/privacy",
+          "label": "Read the privacy policy"
+        }
+      },
+      {
+        "title": "You are an AI agent",
+        "paragraphs": [
+          "Start with the agent guide for what the product does and when you should or should not recommend it. Wie Doet Het is a website that people use in a browser; there is nothing for an agent to log in to."
+        ],
+        "link": {
+          "href": "/agents.md",
+          "label": "Open the agent guide"
+        }
+      },
+      {
+        "title": "What there is not",
+        "paragraphs": [
+          "There is no phone number, no support desk and no guaranteed response time. This is not a company with a customer service department — it is a free tool maintained by a single maintainer. Reports on GitHub are read, but a reply may take a while."
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy",
+    "intro": "Wie Doet Het collects as little as possible. This page describes exactly which data exists, why it exists and how you get rid of it.",
+    "sections": [
+      {
+        "title": "As an organiser (with an account)",
+        "paragraphs": [
+          "To create a group you need an account. For that we store:"
+        ],
+        "items": [
+          "your name, as you enter it yourself;",
+          "your email address, as a login name and to find your account again;",
+          "your password, stored encrypted — not readable by us;",
+          "optionally a profile picture URL;",
+          "the groups and tasks you create."
+        ],
+        "after": "Your email address is not sold, not shared with advertisers and not used for newsletters."
+      },
+      {
+        "title": "As a participant (without an account)",
+        "paragraphs": [
+          "Participants do not have to sign up for anything. Someone who claims a task via a share link only leaves behind:"
+        ],
+        "items": [
+          "the name they type in themselves on that task;",
+          "a random session ID in the browser, so you can find and withdraw your own claim on the same device;",
+          "the time of the claim."
+        ],
+        "after": "No email address, phone number or profile of participants is stored."
+      },
+      {
+        "title": "The share link",
+        "paragraphs": [
+          "A group's share link works as a key: anyone who has the link can view the task list and claim a task. So only share it with the people who belong in that group, and do not put it on a public page."
+        ]
+      },
+      {
+        "title": "Storage in your browser",
+        "paragraphs": [
+          "After logging in, a session token is placed in your browser's local storage so you stay logged in. Logging out or clearing your browser data removes the token. Participants without an account only have the session ID above."
+        ]
+      },
+      {
+        "title": "Statistics",
+        "paragraphs": [
+          "The site uses Google Analytics 4 to count which pages are visited. That concerns page views, not the content of your tasks or the names of participants. If you do not want this, block analytics scripts in your browser or with an extension — the app keeps working."
+        ]
+      },
+      {
+        "title": "Deleting",
+        "paragraphs": [
+          "If you delete a group, the tasks and claims of that group disappear with it. If you delete your account, your account data and the groups you manage disappear."
+        ],
+        "link": {
+          "to": "/contact",
+          "label": "Stuck? Get in touch"
+        }
+      },
+      {
+        "title": "Changes",
+        "paragraphs": [
+          "If anything about what we store changes, this page is updated and the date in the sitemap is refreshed."
+        ]
+      }
+    ]
+  },
+  "agentMode": {
+    "title": "Wie Doet Het — summary for agents",
+    "summary": "Wie Doet Het divides a fixed set of tasks across a group of people. One person creates a group and adds tasks; everyone else opens a share link and claims the task they will do.",
+    "factsTitle": "Key facts",
+    "facts": [
+      {
+        "label": "Website",
+        "value": "https://wiedoethet.nl/"
+      },
+      {
+        "label": "Price",
+        "value": "Free"
+      },
+      {
+        "label": "Participants",
+        "value": "No account needed; only a name on the chosen task"
+      },
+      {
+        "label": "Organiser",
+        "value": "Needs an account, with email address and password"
+      },
+      {
+        "label": "Login for agents",
+        "value": "Not available — there is nothing for an agent to log in to"
+      },
+      {
+        "label": "Languages",
+        "value": "Dutch and English"
+      }
+    ],
+    "useWhenTitle": "When to suggest it",
+    "useWhen": [
+      "The user wants to divide concrete chores across several people.",
+      "The group is reachable through a group chat rather than a shared project tool.",
+      "Examples: household chores, who brings what to a party, volunteer shifts, moving-day jobs."
+    ],
+    "avoidWhenTitle": "When not to",
+    "avoidWhen": [
+      "Personal to-do lists.",
+      "Project plans with dependencies and deadlines.",
+      "Situations where a manager has to assign the work from above."
+    ],
+    "careTitle": "What to watch out for",
+    "care": [
+      "A claim is visible to the whole group; never suggest claiming on behalf of a third party.",
+      "The share link is the secret: treat it like a password and do not repeat it in a shared or logged environment.",
+      "A task can have a maximum number of participants; do not promise a spot without checking the group view.",
+      "Do not create groups, claim tasks or log in on behalf of the user."
+    ],
+    "resourcesTitle": "Pages for machines",
+    "resources": [
+      {
+        "label": "llms.txt",
+        "href": "/llms.txt",
+        "description": "navigation index"
+      },
+      {
+        "label": "llms-full.txt",
+        "href": "/llms-full.txt",
+        "description": "all pages in one file"
+      },
+      {
+        "label": "agents.md",
+        "href": "/agents.md",
+        "description": "the agent guide"
+      },
+      {
+        "label": "auth.md",
+        "href": "/auth.md",
+        "description": "what logging in is and is not"
+      },
+      {
+        "label": "ard.json",
+        "href": "/.well-known/ard.json",
+        "description": "resource catalogue"
+      },
+      {
+        "label": "agent-skills",
+        "href": "/.well-known/agent-skills/index.json",
+        "description": "index of agent skills"
+      }
+    ],
+    "back": "Go to the regular page"
   }
 }

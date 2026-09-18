@@ -1,8 +1,12 @@
 # Spec — `wiedoethet-admin` (Admin API, backend only)
 
-**Status:** SPEC complete. DESIGN/IMPLEMENT/TEST/REVIEW/PACKAGE/VALIDATE/COMMIT not yet started.
+**Status:** Read-only routes (`stats`/`users`/`groups`) — SPEC/DESIGN/IMPLEMENT complete, VALIDATE/COMMIT pending
+per `admin.spec.md`. `POST /admin/mail` (Admin Mail Users feature) — SPEC/DESIGN/IMPLEMENT/TEST complete,
+REVIEW/VALIDATE/COMMIT pending. See § POST /admin/mail below for its full backend contract.
 **Scope of this file:** backend only (one new Lambda + two small write-path changes to existing Lambdas + one new GSI). Frontend routes/views/nav-guard are out of scope — see `admin.spec.md` (separate, later session).
-**Last Updated:** 2026-08-20 — initial version.
+**Last Updated:** 2026-09-15 — added § POST /admin/mail (Admin Mail Users feature): route, request/response
+shapes, safety-cap constants, SES integration, IAM. Also documents `totalCount` added to `GET /admin/users`'s
+response. Original 2026-08-20 read-only-routes content otherwise unchanged.
 
 ---
 
@@ -38,14 +42,15 @@ Strictly read-only in v1: no create/update/delete routes, no promote-to-admin ro
 
 ## Event Source
 
-API Gateway REST API, proxy integration (`aws_proxy`) — identical mechanism to every other function in this repo. Synchronous request/response. All five routes are `GET`, no request body on any of them.
+API Gateway REST API, proxy integration (`aws_proxy`) — identical mechanism to every other function in this repo. Synchronous request/response. The original five routes are `GET`, no request body on any of them. `POST /admin/mail` (added for the Admin Mail Users feature, see § POST /admin/mail below) is the first write/side-effecting route on this function — it does not touch DynamoDB item state, but it does trigger an external side effect (sending email via SES).
 
 ```
-GET /admin/stats
-GET /admin/users
-GET /admin/users/{userId}
-GET /admin/groups
-GET /admin/groups/{groupId}
+GET  /admin/stats
+GET  /admin/users
+GET  /admin/users/{userId}
+GET  /admin/groups
+GET  /admin/groups/{groupId}
+POST /admin/mail
 ```
 
 ## Handler Signature
@@ -53,11 +58,12 @@ GET /admin/groups/{groupId}
 ```js
 /**
  * Admin Lambda — handles:
- *   GET /admin/stats
- *   GET /admin/users
- *   GET /admin/users/{userId}
- *   GET /admin/groups
- *   GET /admin/groups/{groupId}
+ *   GET  /admin/stats
+ *   GET  /admin/users
+ *   GET  /admin/users/{userId}
+ *   GET  /admin/groups
+ *   GET  /admin/groups/{groupId}
+ *   POST /admin/mail
  *
  * Function name: wiedoethet-admin
  * Runtime: nodejs24.x
@@ -74,13 +80,16 @@ export const handler = async (event) => { /* method+path regex router, same patt
 
 ```js
 async function getStats(event)                 // GET /admin/stats           -> AdminStats
-async function listUsers(event)                 // GET /admin/users           -> { items: AdminUserSummary[], nextCursor: string|null }
+async function listUsers(event)                 // GET /admin/users           -> { items: AdminUserSummary[], nextCursor: string|null, totalCount: number }
 async function getUserDetail(event)             // GET /admin/users/{userId}  -> AdminUserDetail
 async function listGroups(event)                // GET /admin/groups          -> { items: AdminGroupSummary[], nextCursor: string|null }
 async function getGroupDetail(event)            // GET /admin/groups/{groupId} -> AdminGroupDetail
+async function mailUsers(event)                 // POST /admin/mail           -> AdminMailResult
 ```
 
-`AdminStats`, `AdminUserSummary`, `AdminUserDetail`, `AdminGroupSummary`, `AdminGroupDetail` shapes are already defined in `product/data-model.md` § Admin Read Models — this spec does not redefine them, only how they're produced.
+`AdminStats`, `AdminUserSummary`, `AdminUserDetail`, `AdminGroupSummary`, `AdminGroupDetail` shapes are already defined in `product/data-model.md` § Admin Read Models — this spec does not redefine them, only how they're produced. `AdminMailRequest`/`AdminMailResult` (for `POST /admin/mail`) are defined in `product/data-model.md` § Admin Read Models alongside them.
+
+**`totalCount` added to `listUsers`'s response** (implementation deviation from the original SPEC, flagged for REVIEW): the Admin Mail Users feature's "select all N matching current filter" UI needs to show N before the admin commits to a send, so `listUsers` now runs `Promise.all([queryGsi3Paginated(...), countAllMatchingUsers(q)])` and returns `totalCount` alongside `items`/`nextCursor`. `countAllMatchingUsers` is a separate counting loop (see below), not a reuse of the paginated query's own `Count` — because the paginated query is bounded by `limit`/the internal 5-loop cap (see the `FilterExpression`-after-`Limit` gotcha above), so it cannot report the *total* filtered count across the whole GSI3 partition. This field is additive and does not affect `GET /admin/groups`, which has no analogous requirement in v1.
 
 **Deliberate deviation from existing convention:** every other list endpoint in this repo (`GET /groups`, `GET /groups/:id/tasks`) returns a bare array via `ok(array)`. The two admin list endpoints instead return `{ items, nextCursor }` because they are paginated (cursor-based, see DynamoDB Integration below) and every other list endpoint in this repo is not. Flag this explicitly in code review — it is intentional, not an oversight.
 
@@ -92,12 +101,23 @@ async function getGroupDetail(event)            // GET /admin/groups/{groupId} -
 | `cursor` | `/admin/users`, `/admin/groups` | opaque base64url string | none | Echoes back `nextCursor` from a prior page. Malformed/undecodable cursor → `400 Bad Request`. Opaque to clients — encodes DynamoDB's `LastEvaluatedKey`, see below. |
 | `q` | `/admin/users`, `/admin/groups` | string | none | Substring filter, see Known Limitations. Empty string treated as "not provided". |
 
+**`POST /admin/mail` request body** (not a query param — JSON body):
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `subject` | string | Yes | Rejected with `400` if empty/whitespace-only. |
+| `html` | string | Yes | Rejected with `400` if empty/whitespace-only. Rich-text HTML from the frontend's Tiptap editor — sent as-is to SES, no server-side sanitization in v1 (accepted risk: only admins can reach this route, see `admin.spec.md`'s judgment-call notes). |
+| `selectAll` | boolean | No (default `false`) | When `true`, `userIds` (if also present) is ignored entirely — recipients are always resolved server-side via `resolveAllMatchingUsers(q)`, never from a client-supplied id list. This is deliberate: a stale/tampered client list must never be able to piggyback on a `selectAll` request. |
+| `q` | string | No | Only consulted when `selectAll: true` — re-runs the same filter `GET /admin/users?q=` would, at send time, not from any cached client state. |
+| `userIds` | string[] | Conditionally | Required (non-empty after dedup) when `selectAll` is not `true`. Deduped via `Set` before fetching. |
+
 ## Environment Variables
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
 | `TABLE_NAME` | No | `wdh-main` (via `event.stageVariables?.tableName ?? process.env.TABLE_NAME ?? 'wdh-main'`) | Same fallback pattern as `wiedoethet-groups`/`wiedoethet-auth` — copy the exact line from either file's `handler`. |
 | `JWT_SECRET` | **Yes** | none — throws if unset | Consumed by `lambda/shared/jwt.js`'s `verifyJwt()`, which `requireAdmin` calls. This function only ever *verifies* tokens (never signs), so `JWT_EXPIRES_SEC` is irrelevant here. |
+| `SES_FROM_EMAIL` | **Yes** (only checked when `POST /admin/mail` is actually invoked) | none — `lambda/shared/ses.js`'s `sendMail()` throws if unset | The SES-verified sender identity used as `Source` on every `SendEmailCommand`. Must be a verified identity in the `eu-west-2` SES account per `lambda/iam-policy-ses.json`'s resource ARN pattern — see `lambda/SES_SETUP.md` for manual verification steps (out of scope for this Lambda's own code). |
 
 ## IAM Permissions
 
@@ -121,6 +141,8 @@ No other change to the policy file is needed — `GetItem` and `Query` on the ba
 | `dynamodb:Query` | `wdh-main/index/GSI1` | Claims in a group (`GCLAIM#{groupId}`) for group enrichment (task/member counts) |
 | `dynamodb:Query` | `wdh-main/index/GSI2` | Groups by initiator (`INITIATOR#{userId}`) for user `groupCount`/`lastActivityAt`/detail |
 | `dynamodb:Query` | `wdh-main/index/GSI3` (**new**) | Paginated user/group listings and stats counts |
+
+**`POST /admin/mail` needs a second, separate IAM grant — not an extension of the shared DynamoDB policy above.** SES is a different service with its own action namespace, so `lambda/iam-policy-ses.json` was added as its own file rather than appended to `lambda/iam-policy-dynamodb.json` — attaching a second policy to the same function's execution role is the correct AWS pattern here, not a deviation worth flagging in review. It grants `ses:SendEmail`/`ses:SendRawEmail` on `arn:aws:ses:eu-west-2:344050431068:identity/*` (single statement, `WdhSesSendAccess`). This function also still needs `dynamodb:GetItem` (`wdh-main`) to fetch recipient `User` items by id, and `dynamodb:Query` on `GSI3` when `selectAll: true` (via `resolveAllMatchingUsers`/`countAllMatchingUsers`) — both already covered by the existing shared DynamoDB policy, no change needed there for the mail route itself.
 
 ## DynamoDB Integration
 
@@ -189,6 +211,79 @@ function decodeCursor(cursor) {
 
 None of these access patterns issue a `Scan`. That is the entire point of GSI3 — flag any `Scan` introduced during IMPLEMENT as a spec violation.
 
+## POST /admin/mail
+
+Added for the **Admin Mail Users** feature (frontend: `admin.spec.md` § Admin Mail Users). Lets an admin send a
+rich-text HTML email, via SES, to either an explicit list of user ids or every user matching the current
+`/admin/users` search filter. This is the only write/side-effecting route on `wiedoethet-admin` — everything
+else in this file remains strictly read-only.
+
+### Safety-cap constants (module-level, `lambda/wiedoethet-admin/index.js`)
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `MAX_MAIL_RESOLVE_QUERIES` | `200` | Bounds the internal unpaginated GSI3 loop `countAllMatchingUsers`/`resolveAllMatchingUsers` use when `selectAll: true` — at page size 50 this covers up to ~10,000 users. Distinct from (much larger than) `MAX_INTERNAL_QUERIES = 5`, which bounds the already-`limit`-paginated `listUsers`/`listGroups` loops — `selectAll` resolution has no client-facing page size to respect, so it needs a much higher ceiling to actually reach "all matching users" for a large platform. |
+| `MAX_MAIL_RECIPIENTS` | `500` | Hard cap on resolved recipient count, checked **after** resolution (explicit ids deduped, or `selectAll` resolved) and **before** any SES call is made. Exceeding it returns `400`, sends nothing. Accepted v1 limitation, not a bug: a platform that grows past ~500 admin-mail recipients needs a queued/batched send design (e.g. SQS + a separate worker), which is out of scope for this feature — documented here so it's a deliberate, revisitable choice rather than a silent ceiling. |
+| `MAIL_SEND_CONCURRENCY` | `5` | Chunk size for `sendToRecipients`'s bounded-concurrency `Promise.all` loop. Sending is one `SendEmailCommand` per recipient (see below for why), so this bounds how many are in flight at once — protects against SES throttling and against holding the full recipient list's worth of concurrent Lambda-to-SES connections open at once. |
+
+### `mailUsers(event)` behavior
+
+```js
+async function mailUsers(event) {
+  // 1. requireAdmin(event) — same 401/403 contract as every other route.
+  // 2. Parse body; subject/html must both be non-empty (after trim) -> 400 otherwise.
+  // 3. Resolve recipients:
+  //    - body.selectAll === true  -> recipients = await resolveAllMatchingUsers(body.q)
+  //    - otherwise                -> dedupe body.userIds via Set, Promise.all(getItem(...)), filter out nulls
+  //      (a userId that no longer resolves to a User item is silently dropped, not a 404 — the id list may
+  //      be stale by the time the admin clicks Send; failing the whole request for one deleted user would
+  //      be worse UX than sending to the N-1 that still exist)
+  // 4. recipients.length === 0            -> 400 (nothing to send to)
+  //    recipients.length > MAX_MAIL_RECIPIENTS -> 400 (see constant table above)
+  // 5. { sent, failed, failures } = await sendToRecipients(recipients, subject, html)
+  // 6. return ok({ sent, failed, failures })
+}
+
+async function countAllMatchingUsers(q) {
+  // Loops queryGsi3('USER', { filterExpression: q ? ... : undefined, exclusiveStartKey, select: 'COUNT' })
+  // up to MAX_MAIL_RESOLVE_QUERIES times, summing Count, until lastEvaluatedKey is null or the cap is hit.
+  // Same FilterExpression-after-Limit gotcha as queryGsi3Paginated applies here — must accumulate across
+  // pages, cannot trust a single query's Count when q is present.
+}
+
+async function resolveAllMatchingUsers(q) {
+  // Same loop shape as countAllMatchingUsers, but accumulates actual items (not just Count) — used when a
+  // selectAll send actually needs the recipient list, not just the preview count `GET /admin/users`'s
+  // totalCount exposes to the frontend before the admin commits to sending.
+}
+
+async function sendToRecipients(recipients, subject, html) {
+  // Chunks `recipients` into groups of MAIL_SEND_CONCURRENCY, awaits Promise.all(chunk.map(sendMail)) per
+  // chunk sequentially across chunks. Each recipient's sendMail() call is wrapped in its own try/catch so
+  // one failure (bounce, malformed address, SES throttle) doesn't abort the batch — failures accumulate into
+  // a `failures: { userId, email, message }[]` array. Returns { sent: number, failed: number, failures }.
+}
+```
+
+**Why one `SendEmailCommand` per recipient, not one BCC'd call:** per-recipient calls give each send its own
+SES message id, so bounces/complaints/delivery status are attributable to a specific recipient in SES/SNS
+notifications (if that's wired up later) — a single BCC'd send would make that impossible to disambiguate.
+Cost/complexity trade-off accepted for a v1 admin tool sending to at most `MAX_MAIL_RECIPIENTS` recipients per
+request.
+
+### `AdminMailRequest` / `AdminMailResult`
+
+Full field-level shapes are defined in `product/data-model.md` § Admin Read Models (added alongside
+`AdminStats` etc.) — this section only documents the *behavior*, not the wire format, per this file's existing
+convention of not duplicating shapes defined in `data-model.md`.
+
+### `openapi.yaml`
+
+`/admin/mail` `POST` path added: `operationId: mailAdminUsers`, request schema `AdminMailRequest`, response
+schema `AdminMailResult`, documents `400` (validation failure or recipient-count cap exceeded), `401`, `403` —
+same `x-amazon-apigateway-integration` block format (pointing at the `wiedoethet-admin` function ARN) as the
+other five paths.
+
 ## Related Changes to Existing Functions (documented here, implemented in a later stage)
 
 These are not part of `wiedoethet-admin` itself but are hard dependencies of it — `product/specs/admin-api.spec.md` is the single source of truth for both until this feature ships, since neither `wiedoethet-groups` nor `wiedoethet-auth` has its own spec file today.
@@ -219,6 +314,10 @@ Add `...keys.groupGsi3(now, id)` to the item written in `createGroup()` (current
 | `GET /admin/groups/{groupId}` — `groupId` doesn't resolve to a `Group` item | `404` via `notFound()` | |
 | `limit` present but not an integer in `1–50` | `400` via `badRequest()` | |
 | `cursor` present but fails to base64url-decode / JSON-parse | `400` via `badRequest()` | |
+| `POST /admin/mail` — `subject` or `html` missing/empty after trim | `400` via `badRequest()` | |
+| `POST /admin/mail` — no `userIds` and `selectAll` not `true` (or resolves to zero recipients either way) | `400` via `badRequest()` | |
+| `POST /admin/mail` — resolved recipient count exceeds `MAX_MAIL_RECIPIENTS` (500) | `400` via `badRequest()` | Nothing is sent — checked before any SES call |
+| `POST /admin/mail` — some recipients succeed, some fail (bounce, throttle, bad address) | `200` with `{ sent, failed, failures }` | Partial failure is not a request-level error — see `sendToRecipients` |
 | Unmatched method/path | `404`, `{ message: 'Route niet gevonden' }` | Copy the exact fallback block from `wiedoethet-groups/index.js`'s router |
 | Any unexpected exception (DynamoDB throttling, etc.) | `500` via `serverError(err)` | Top-level `try/catch` in `handler`, identical to every other function in this repo |
 | `OPTIONS` (CORS preflight) | `204`, CORS headers, empty body | Copy the exact block from `wiedoethet-groups/index.js` line 164 |
@@ -274,9 +373,22 @@ This is a deliberate deviation from the existing synchronous `requireAuth(event)
 14. `openapi.yaml` contains all five `/admin/*` paths, each with an `x-amazon-apigateway-integration` block pointing at `arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin`, matching the existing per-path format used by `/groups`.
 15. **Deployment prerequisite, not a code acceptance criterion — confirm before shipping:** if `wdh-main` holds real production data, existing User/Group items predate GSI3 and are absent from GSI3 until a one-time backfill populates `GSI3PK`/`GSI3SK` on them. This must be confirmed with the user before VALIDATE; the backfill script itself is out of scope for this feature (per `vision.md`).
 
+### Admin Mail Users — additional Acceptance Criteria
+
+16. `GET /admin/users` additionally returns `totalCount` — the number of users matching the current `q` filter (or all users, if no `q`) — separate from `items.length`/`nextCursor`, which remain page-scoped.
+17. `POST /admin/mail` with an admin JWT, a non-empty `subject`/`html`, and a non-empty `userIds` array sends exactly one SES email per deduped, resolved user id and returns `{ sent, failed, failures }` reflecting per-recipient outcomes.
+18. `POST /admin/mail` with `selectAll: true` (and optional `q`) resolves recipients via `resolveAllMatchingUsers(q)` server-side — a `userIds` array present in the same request body is ignored entirely, never merged in or used as a fallback.
+19. `POST /admin/mail` rejects with `400` (no SES call made) when: `subject` or `html` is empty/whitespace-only; resolved recipients is zero; or resolved recipients exceeds `MAX_MAIL_RECIPIENTS` (500).
+20. A `role: 'user'` JWT on `POST /admin/mail` returns `403`, matching every other `/admin/*` route (Acceptance Criterion 2 applies here too — restated because this is the one route where a 403 must be verified before any external side effect, not just before a DynamoDB read).
+21. No response from `POST /admin/mail` or `GET /admin/users` contains `PK`, `SK`, `GSI1PK`, `GSI1SK`, `GSI2PK`, `GSI2SK`, `GSI3PK`, or `GSI3SK` (extends Acceptance Criterion 9 to the new/changed route).
+22. `lambda/iam-policy-ses.json` grants `ses:SendEmail`/`ses:SendRawEmail` scoped to `arn:aws:ses:eu-west-2:344050431068:identity/*`, attached to the `wiedoethet-admin` function's execution role alongside (not replacing) the existing shared DynamoDB policy.
+23. `openapi.yaml` documents `POST /admin/mail` with `operationId: mailAdminUsers`, `AdminMailRequest`/`AdminMailResult` schema refs, and `400`/`401`/`403` responses, matching the existing per-path format.
+
 ## Known Limitations (carried forward from `vision.md`, restated here for implementers who start at SPEC)
 
 - **Search is substring, not full-text**, and **case-sensitive**. `email` values are always lowercase at write time (`register()` lowercases them), so email search works reliably only if the caller lowercases `q` first; `name` is stored as originally entered, so name search can miss differently-cased matches. Not solved in v1 — documented, not silently broken.
 - **`lastActivityAt` is best-effort.** It is `max(user.createdAt, most recent initiated group's createdAt)` — it does **not** account for task-claiming activity, since claims aren't indexed by user (would require a new access pattern / GSI, out of scope for v1).
 - **`totalTasks`/`totalClaims` are absent from `/admin/stats`** — no GSI3 partition exists for those entity types; adding them would require either a new index or a table `Scan`, both out of scope for v1.
 - **GSI3 backfill for pre-existing data is not built in this run** — see Acceptance Criterion 15.
+- **`POST /admin/mail` has no queue/retry infrastructure.** A failed recipient (bounce, malformed address, transient SES throttle) is reported in `failures[]` and never automatically retried — the admin must re-send manually to the failed subset. Sends are also synchronous within the Lambda's own timeout window; a very large `selectAll` resolution (near the `MAX_MAIL_RECIPIENTS` cap) adds real latency to the request. Both are accepted v1 trade-offs — a production-grade version would move sending to SQS + a worker Lambda, out of scope here.
+- **No HTML sanitization on `POST /admin/mail`'s `html` field.** The body is taken as authored in the admin's Tiptap editor and passed to SES as-is. Acceptable because only users with `role === 'admin'` can reach this route (re-checked server-side, see `requireAdmin`) — there is no untrusted-input path into this field in v1.

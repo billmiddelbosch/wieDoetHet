@@ -190,7 +190,7 @@ Copy the `id` from the response — this is your `taskId`.
 
 All `/admin/*` routes require the calling user's DynamoDB `USER#<id>` / `PROFILE` item to have `role: "admin"` set. There is no self-serve promotion in v1 — set this attribute manually in the DynamoDB console for the account you want to test with, then log in again (or reuse an existing token — `role` is read fresh from DynamoDB on every request, not from the JWT) to get an admin-authorized token.
 
-All admin routes are `GET` only and return `401` with no `Authorization` header, `403` for a valid token belonging to a non-admin user, and `200` for a valid admin token.
+All admin routes return `401` with no `Authorization` header, `403` for a valid token belonging to a non-admin user, and `200` for a valid admin token. Every route is `GET` (read-only) except `POST /admin/mail`, which sends email via SES and is the one side-effecting admin route.
 
 ---
 
@@ -257,3 +257,25 @@ Copy `nextCursor` from the response and pass it as `?cursor=<value>` to fetch th
 **Path Parameters:** `groupId = <id from step 23>`
 **Headers:** `Authorization: Bearer <admin token>`
 **Body:** *(empty)*
+
+---
+
+## Step 26 — Admin: Mail Users (explicit recipient list)
+
+**Route:** `POST /admin/mail`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** `mail-users.json`
+
+Requires SES setup to actually deliver — see `lambda/SES_SETUP.md`. Without it (or while the sending account is still in the SES sandbox and the recipient isn't a verified identity), the call still returns `200` but the recipient shows up in the response's `failures[]` array rather than counting toward `sent`.
+
+Response shape: `{ "sent": number, "failed": number, "failures": [{ "userId", "email", "message" }] }`.
+
+---
+
+## Step 27 — Admin: Mail Users (select all matching filter)
+
+**Route:** `POST /admin/mail`
+**Headers:** `Authorization: Bearer <admin token>`
+**Body:** `mail-select-all.json`
+
+`selectAll: true` re-runs the same `q` filter as `GET /admin/users` server-side to resolve the full recipient set — it never trusts a client-supplied ID list for this case. Adjust `q` in the body to match a real substring of a name/email in your table, or remove it to target every user.

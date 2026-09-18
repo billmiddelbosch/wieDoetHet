@@ -1,6 +1,63 @@
+# robots.txt — wiedoethet.nl
+# Tiered crawler policy: open to search engines and answer engines,
+# closed to training-only scrapers. Private app routes are off-limits
+# to every crawler, in every tier.
+
+# ---------------------------------------------------------------------
+# Default tier — search engines and any crawler not named below.
+# Content-Signal states intent for crawlers that honour it: indexing and
+# answer-engine grounding are welcome, model training is not.
+# ---------------------------------------------------------------------
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /groups/*/settings
-Sitemap: https://www.wiedoethet.nl/sitemap.xml
+
+# ---------------------------------------------------------------------
+# Answer-engine tier — explicitly allowed.
+# These crawlers fetch pages to answer user questions and cite the source,
+# which is how the site gets found by AI assistants.
+# ---------------------------------------------------------------------
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+Content-Signal: search=yes, ai-input=yes
+Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /groups/*/settings
+
+# ---------------------------------------------------------------------
+# Training-only tier — disallowed.
+# Bulk scrapers that collect content for model training without sending
+# readers or citations back to the site.
+# ---------------------------------------------------------------------
+User-agent: CCBot
+User-agent: ByteSpider
+User-agent: Bytespider
+User-agent: anthropic-ai
+User-agent: Applebot-Extended
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+User-agent: Amazonbot
+User-agent: Omgilibot
+User-agent: Diffbot
+User-agent: Timpibot
+Content-Signal: ai-train=no
+Disallow: /
+
+# ---------------------------------------------------------------------
+# Feeds
+# sitemap:   the pages a crawler should read.
+# schemamap: the structured-data feeds (NLWeb Schema Feeds) behind them.
+# ---------------------------------------------------------------------
+Sitemap: https://wiedoethet.nl/sitemap.xml
+schemamap: https://wiedoethet.nl/schemamap.xml

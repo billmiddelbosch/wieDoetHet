@@ -1,0 +1,51 @@
+{
+  "entries": [
+    {
+      "identifier": "urn:air:wiedoethet.nl:docs:agent-guide",
+      "displayName": "Wie Doet Het — agentgids",
+      "type": "text/markdown",
+      "url": "https://wiedoethet.nl/agents.md",
+      "description": "Wat Wie Doet Het doet, wanneer je het voorstelt en hoe je een gebruiker helpt een set taken over een groep te verdelen. Wie Doet Het is een website die mensen in een browser gebruiken; deze gids is de bron waar een agent uit moet lezen.",
+      "capabilities": [
+        "Een groep met taken aanmaken",
+        "Taken toevoegen met een optioneel maximum aan deelnemers",
+        "Een groep delen via een link, zonder account voor deelnemers",
+        "Een taak claimen onder je eigen naam",
+        "Zien wie wat doet, inclusief nog niet geclaimde taken",
+        "Als organisator taken en de zichtbaarheid van de scorekaart beheren"
+      ],
+      "representativeQueries": [
+        "verdeel de schoonmaaktaken over onze huisgenoten",
+        "welke taken in onze groep zijn nog niet opgepakt?",
+        "verdeel de klusjes voor dit weekend en deel de link",
+        "hoe verdeel ik de kantinediensten over de ouders?"
+      ],
+      "tags": ["taken", "klusjes", "groepen", "samenwerken", "whatsapp", "nl"],
+      "version": "1.0",
+      "updatedAt": "2026-09-18T00:00:00Z",
+      "trustManifest": {
+        "identity": "wiedoethet.nl"
+      },
+      "metadata": {
+        "website": "https://wiedoethet.nl/",
+        "documentation": "https://wiedoethet.nl/llms.txt",
+        "auth": "geen — er is niets voor agents om mee in te loggen; zie https://wiedoethet.nl/auth.md",
+        "languages": ["nl", "en"],
+        "pricing": "gratis"
+      }
+    },
+    {
+      "identifier": "urn:air:wiedoethet.nl:docs:llms-index",
+      "displayName": "Wie Doet Het — llms.txt-index",
+      "type": "text/plain",
+      "url": "https://wiedoethet.nl/llms.txt",
+      "description": "Navigatie-index van alle voor agents leesbare pagina's op wiedoethet.nl: het productoverzicht, de agentgids, inloggen en de context per onderdeel voor organisatoren en deelnemers.",
+      "tags": ["documentatie", "llms.txt", "index"],
+      "version": "1.0",
+      "updatedAt": "2026-09-18T00:00:00Z",
+      "trustManifest": {
+        "identity": "wiedoethet.nl"
+      }
+    }
+  ]
+}

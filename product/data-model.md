@@ -1,6 +1,8 @@
 # Data Model — wieDoetHet
 
-**Last Updated:** 2026-08-20 (added `User.role`, Admin read models)
+**Last Updated:** 2026-09-15 (added `AdminMailRequest`/`AdminMailResult` and `totalCount` on the `/admin/users`
+endpoint map row, for the Admin Mail Users feature — see `product/specs/admin.spec.md` and
+`product/specs/admin-api.spec.md`. Prior 2026-08-20 entry: added `User.role`, Admin read models.)
 
 ---
 
@@ -179,6 +181,35 @@ Returned by `GET /admin/stats`.
 ```
 **Note:** `totalTasks`/`totalClaims` are intentionally NOT included in v1 — Tasks and Claims have no GSI3 partition, so counting them would require a full-table `Scan`, which GSI3 exists specifically to avoid. Adding them later would need a dedicated index or a streaming counter, not a v1 concern.
 
+### AdminMailRequest
+Request body for `POST /admin/mail` (Admin Mail Users feature). `userIds` and `selectAll`/`q` are mutually
+exclusive in practice — when `selectAll` is `true`, any `userIds` present is ignored server-side, never merged
+in. See `product/specs/admin-api.spec.md` § POST /admin/mail for the full validation/resolution behavior.
+```js
+{
+  subject: string,           // non-empty after trim, else 400
+  html: string,               // non-empty after trim, else 400 — rich-text HTML from BaseRichTextEditor (Tiptap)
+  selectAll: boolean | undefined,  // default false
+  q: string | undefined,           // only consulted when selectAll is true — re-run server-side, not cached
+  userIds: string[] | undefined,   // required (non-empty after dedup) when selectAll is not true; ignored when it is
+}
+```
+
+### AdminMailResult
+Response body for `POST /admin/mail`. Always `200` once validation/recipient-count checks pass — per-recipient
+send failures are reported here, not as a request-level error.
+```js
+{
+  sent: number,                // count of recipients whose SendEmailCommand succeeded
+  failed: number,               // count of recipients whose SendEmailCommand threw
+  failures: {                   // one entry per failed recipient, empty array when failed === 0
+    userId: string,
+    email: string,
+    message: string,            // caught error message, for admin-facing display
+  }[],
+}
+```
+
 ---
 
 ## API Endpoint Map (consumed by Vue frontend via Axios)
@@ -203,9 +234,10 @@ Returned by `GET /admin/stats`.
 | POST | `/groups/:id/tasks/:tid/claim` | Optional | Claim task |
 | DELETE | `/groups/:id/tasks/:tid/claim` | Optional | Unclaim task |
 | GET | `/admin/stats` | JWT (admin) | Platform-wide counts and recent activity |
-| GET | `/admin/users` | JWT (admin) | Paginated/searchable user list |
+| GET | `/admin/users` | JWT (admin) | Paginated/searchable user list — response also includes `totalCount` (matches of current `q`, independent of page `limit`), added for the Admin Mail Users "select all N matching" flow |
 | GET | `/admin/users/:id` | JWT (admin) | User detail |
 | GET | `/admin/groups` | JWT (admin) | Paginated/searchable group list |
 | GET | `/admin/groups/:id` | JWT (admin) | Group detail |
+| POST | `/admin/mail` | JWT (admin) | Send a rich-text HTML email via SES to explicit `userIds` or every user matching `q` (`selectAll: true`) — see `AdminMailRequest`/`AdminMailResult` above |
 
 "JWT (admin)" = valid JWT required, AND the token's `sub` must resolve to a `User` with `role === 'admin'` (re-checked server-side on every request — the JWT itself carries no role claim).
