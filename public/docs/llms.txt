@@ -1,0 +1,31 @@
+# Wie Doet Het — documentatiecontext
+
+Context voor agents die vragen beantwoorden over hoe Wie Doet Het werkt. Voor de
+twee kanten van het product zie
+[/organisers/llms.txt](https://wiedoethet.nl/organisers/llms.txt) en
+[/participants/llms.txt](https://wiedoethet.nl/participants/llms.txt).
+
+## Documenten
+
+- [Homepage in markdown](https://wiedoethet.nl/index.md) — wat het product is, plus de veelgestelde vragen
+- [Agentgids](https://wiedoethet.nl/agents.md) — wat het doet, wanneer je het voorstelt, valkuilen
+- [Inloggen](https://wiedoethet.nl/auth.md) — wat inloggen is, en wat het niet is
+- [Over ons](https://wiedoethet.nl/about.md) — wie de site draait en waarom hij bestaat
+- [Contact](https://wiedoethet.nl/contact.md) — hoe je de beheerder bereikt
+- [Privacy](https://wiedoethet.nl/privacy.md) — welke gegevens worden bewaard en hoe lang
+
+## Het product in één alinea
+
+Een **groep** is een genoemde lijst met **taken**. Elke groep heeft een **deellink**
+die de organisator in een groepschat plakt. Iedereen met die link kan de groep
+bekijken en een taak **claimen** door een naam in te vullen. Een taak kan een
+maximum aan claims hebben. De organisator is eigenaar van de groep, kan de taken en
+instellingen aanpassen en bepaalt wie de **scorekaart** mag zien, het overzicht
+van wie wat deed.
+
+## Vragen over het product beantwoorden
+
+- Deelnemers hebben nooit een account nodig; alleen de organisator wel.
+- Het product is gratis.
+- De interface is standaard Nederlands, met Engels als terugval.
+- Claimen doe je zelf: de organisator wijst geen taken aan mensen toe.

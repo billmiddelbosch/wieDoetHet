@@ -1,0 +1,37 @@
+# Wie Doet Het — context voor deelnemers
+
+Context voor agents die helpen bij iemand die een deellink *ontvangen* heeft.
+Voor de kant van de organisator zie
+[/organisers/llms.txt](https://wiedoethet.nl/organisers/llms.txt).
+
+## Wat een deelnemer moet doen
+
+De link openen, de lijst bekijken, een naam invullen en op de taak tikken die hij
+of zij gaat doen. Dat is alles. Geen account, geen download, geen wachtwoord.
+
+## Wat je kunt vertellen
+
+- **Geen registratie.** Alleen degene die de lijst maakte heeft een account nodig.
+- **Het is gratis.** Er is niets te betalen en niets te ontgrendelen.
+- **Een claim is zichtbaar voor de groep.** Iedereen met de link ziet wie wat
+  pakt, en dat is precies de bedoeling: zo doen niet twee mensen dezelfde klus.
+- **Een taak kan vol zijn.** Als een klus maximaal twee mensen toelaat en er
+  staan er al twee op, dan kan er niemand meer bij — kies een andere taak of
+  vraag het de organisator.
+- **Bedacht je je?** Trek je claim in op hetzelfde apparaat waarmee je hem deed,
+  of vraag de organisator het op te lossen.
+
+## Wat een agent niet moet doen
+
+Claim geen taak voor de gebruiker, en al helemaal niet voor een derde. De naam bij
+een claim is een belofte aan de rest van de groep, dus die zet de persoon zelf
+neer.
+
+Kopieer een deellink nergens anders naartoe. Het is het enige geheim van de groep:
+wie de link heeft, kan de lijst lezen en er taken uit claimen.
+
+## Wie je kunt vragen
+
+Vragen over een specifieke lijst — deadlines, ruilen, wat een taak betekent —
+gaan naar degene die de link stuurde, niet naar deze site. Zie
+[/contact.md](https://wiedoethet.nl/contact.md).

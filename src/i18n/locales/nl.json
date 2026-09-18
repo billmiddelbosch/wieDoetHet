@@ -209,6 +209,18 @@
     },
     "adminGroupDetail": {
       "title": "Admin – Groepsdetail – Wie Doet Het"
+    },
+    "about": {
+      "title": "Over Wie Doet Het – Taken verdelen zonder gedoe",
+      "description": "Wie Doet Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft."
+    },
+    "contact": {
+      "title": "Contact – Wie Doet Het",
+      "description": "Waar je terechtkunt met vragen over een takenlijst, een bug of het verwijderen van je gegevens bij Wie Doet Het."
+    },
+    "privacy": {
+      "title": "Privacy – Wie Doet Het",
+      "description": "Welke gegevens Wie Doet Het bewaart van organisatoren en deelnemers, waarom, en hoe je ze weer kwijtraakt."
     }
   },
   "faq": {
@@ -319,5 +331,249 @@
       "sendCta": "Versturen",
       "resultSummary": "{sent} verstuurd, {failed} mislukt."
     }
+  },
+  "footer": {
+    "about": "Over",
+    "contact": "Contact",
+    "privacy": "Privacy"
+  },
+  "about": {
+    "title": "Over Wie Doet Het",
+    "intro": "Wie Doet Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft.",
+    "sections": [
+      {
+        "title": "Het probleem",
+        "paragraphs": [
+          "Taken verdelen gebeurt meestal in een WhatsApp-groep. Iemand plakt een lijstje, twintig berichten later heeft niemand meer overzicht: twee mensen nemen dezelfde taak, drie taken blijven liggen, en de organisator moet alles handmatig bijhouden. Bestaande projecttools lossen dat op met accounts, uitnodigingen en permissies — veel te zwaar voor \"wie neemt de statiegeldflessen mee\"."
+        ]
+      },
+      {
+        "title": "Hoe Wie Doet Het het oplost",
+        "paragraphs": [
+          "De organisator maakt een groep, voegt de taken toe en deelt één link. Iedereen die de link opent ziet de complete lijst en kiest zelf wat zij doen. Een geclaimde taak is direct voor iedereen zichtbaar, dus dubbel werk kan niet. Per taak kun je instellen hoeveel mensen zich mogen aanmelden.",
+          "Deelnemers maken geen account aan. Zij vullen alleen hun naam in bij de taak die zij pakken. Alleen de organisator heeft een account nodig, om de groep later terug te kunnen vinden en aan te passen."
+        ]
+      },
+      {
+        "title": "Waar het voor gebruikt wordt",
+        "paragraphs": [
+          "Sportclubs die kantinediensten verdelen, klassenouders die een schoolfeest organiseren, huisgenoten die het schoonmaakrooster rondkrijgen, vrijwilligers die een evenement draaiend houden, en families die kerst verdelen over de kok, de boodschappen en de afwas."
+        ]
+      },
+      {
+        "title": "Wat het niet is",
+        "paragraphs": [
+          "Geen projectmanagementtool, geen chat, geen agenda en geen urenregistratie. Wie Doet Het doet één ding: een lijst taken, een gedeelde link, en zichtbaar maken wie wat oppakt."
+        ]
+      },
+      {
+        "title": "Over het project",
+        "paragraphs": [
+          "Wie Doet Het is een onafhankelijk, gratis project. De broncode van de webapp staat publiek op GitHub."
+        ],
+        "link": {
+          "href": "https://github.com/billmiddelbosch/wieDoetHet",
+          "label": "Bekijk de broncode op GitHub"
+        }
+      }
+    ]
+  },
+  "contact": {
+    "title": "Contact",
+    "intro": "Wie Doet Het is een klein, gratis project. Hieronder staat per situatie waar je moet zijn, zodat je niet op het verkeerde adres aanklopt.",
+    "sections": [
+      {
+        "title": "Je bent uitgenodigd voor een takenlijst",
+        "paragraphs": [
+          "Vragen over een specifieke groep — welke taak je krijgt, wanneer iets af moet, of je mag ruilen — gaan niet via ons. De persoon die jou de deellink stuurde is de organisator van die groep en beheert de lijst. Neem daarvoor rechtstreeks contact met diegene op, in de groepsapp waar je de link kreeg."
+        ]
+      },
+      {
+        "title": "Je hebt een bug gevonden of mist een functie",
+        "paragraphs": [
+          "Meld het als issue op de publieke repository. Zet erbij welke browser je gebruikt, wat je deed en wat je verwachtte. Als het om een specifieke groep gaat: deel geen deellink in een openbaar issue — die link geeft iedereen toegang tot de takenlijst."
+        ],
+        "link": {
+          "href": "https://github.com/billmiddelbosch/wieDoetHet/issues",
+          "label": "Meld een issue op GitHub"
+        }
+      },
+      {
+        "title": "Je wilt je account of je gegevens laten verwijderen",
+        "paragraphs": [
+          "Verwijder je groepen in de app en daarna je account via je profielpagina. Wat er daarna nog bewaard wordt en hoe lang, staat beschreven op de privacypagina."
+        ],
+        "link": {
+          "to": "/privacy",
+          "label": "Lees het privacybeleid"
+        }
+      },
+      {
+        "title": "Je bent een AI-agent",
+        "paragraphs": [
+          "Begin bij de agentgids voor wat het product doet en wanneer je het wel of niet moet aanraden. Wie Doet Het is een website die mensen in een browser gebruiken; er is niets voor een agent om mee in te loggen."
+        ],
+        "link": {
+          "href": "/agents.md",
+          "label": "Open de agentgids"
+        }
+      },
+      {
+        "title": "Wat er niet is",
+        "paragraphs": [
+          "Er is geen telefoonnummer, geen supportbalie en geen gegarandeerde reactietijd. Dit is geen bedrijf met een klantenservice — het is een gratis tool die door één maintainer wordt onderhouden. Meldingen via GitHub worden gelezen, maar een antwoord kan even duren."
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy",
+    "intro": "Wie Doet Het verzamelt zo min mogelijk. Deze pagina beschrijft precies welke gegevens er zijn, waarom ze er zijn en hoe je ze weer kwijtraakt.",
+    "sections": [
+      {
+        "title": "Als organisator (met account)",
+        "paragraphs": [
+          "Om een groep aan te maken heb je een account nodig. Daarvoor bewaren we:"
+        ],
+        "items": [
+          "je naam, zoals je die zelf invult;",
+          "je e-mailadres, als inlognaam en om je account terug te vinden;",
+          "je wachtwoord, versleuteld opgeslagen — niet leesbaar voor ons;",
+          "optioneel een profielfoto-URL;",
+          "de groepen en taken die je aanmaakt."
+        ],
+        "after": "Je e-mailadres wordt niet verkocht, niet gedeeld met adverteerders en niet gebruikt voor nieuwsbrieven."
+      },
+      {
+        "title": "Als deelnemer (zonder account)",
+        "paragraphs": [
+          "Deelnemers hoeven zich nergens voor aan te melden. Wie via een deellink een taak claimt, laat alleen achter:"
+        ],
+        "items": [
+          "de naam die diegene zelf intypt bij die taak;",
+          "een willekeurig sessie-ID in de browser, zodat je je eigen claim kunt terugvinden en intrekken op hetzelfde apparaat;",
+          "het tijdstip van de claim."
+        ],
+        "after": "Er wordt geen e-mailadres, telefoonnummer of profiel van deelnemers opgeslagen."
+      },
+      {
+        "title": "De deellink",
+        "paragraphs": [
+          "De deellink van een groep werkt als sleutel: iedereen die de link heeft, kan de takenlijst bekijken en een taak claimen. Deel hem dus alleen met de mensen die in die groep horen, en zet hem niet op een openbare pagina."
+        ]
+      },
+      {
+        "title": "Opslag in je browser",
+        "paragraphs": [
+          "Na het inloggen wordt een sessietoken in de lokale opslag van je browser gezet, zodat je ingelogd blijft. Uitloggen of het wissen van je browsergegevens verwijdert het token. Deelnemers zonder account hebben alleen het sessie-ID hierboven."
+        ]
+      },
+      {
+        "title": "Statistieken",
+        "paragraphs": [
+          "De site gebruikt Google Analytics 4 om te tellen welke pagina's bezocht worden. Dat gaat om paginaweergaven, niet om de inhoud van je taken of de namen van deelnemers. Wil je dit niet, blokkeer dan analytics-scripts in je browser of via een extensie — de app blijft gewoon werken."
+        ]
+      },
+      {
+        "title": "Verwijderen",
+        "paragraphs": [
+          "Verwijder je een groep, dan verdwijnen de taken en claims van die groep mee. Verwijder je je account, dan verdwijnen je accountgegevens en de groepen die je beheert."
+        ],
+        "link": {
+          "to": "/contact",
+          "label": "Kom je er niet uit? Neem contact op"
+        }
+      },
+      {
+        "title": "Wijzigingen",
+        "paragraphs": [
+          "Verandert er iets aan wat we opslaan, dan wordt deze pagina aangepast en de datum in de sitemap bijgewerkt."
+        ]
+      }
+    ]
+  },
+  "agentMode": {
+    "title": "Wie Doet Het — samenvatting voor agents",
+    "summary": "Wie Doet Het verdeelt een vaste set taken over een groep mensen. Eén persoon maakt een groep aan en voegt taken toe; alle anderen openen een deellink en claimen de taak die zij gaan doen.",
+    "factsTitle": "Kerngegevens",
+    "facts": [
+      {
+        "label": "Website",
+        "value": "https://wiedoethet.nl/"
+      },
+      {
+        "label": "Prijs",
+        "value": "Gratis"
+      },
+      {
+        "label": "Deelnemers",
+        "value": "Geen account nodig; alleen een naam bij de gekozen taak"
+      },
+      {
+        "label": "Organisator",
+        "value": "Heeft een account nodig, met e-mailadres en wachtwoord"
+      },
+      {
+        "label": "Inloggen voor agents",
+        "value": "Niet beschikbaar — er is niets voor agents om mee in te loggen"
+      },
+      {
+        "label": "Talen",
+        "value": "Nederlands en Engels"
+      }
+    ],
+    "useWhenTitle": "Wanneer stel je het voor",
+    "useWhen": [
+      "De gebruiker wil concrete klussen verdelen over meerdere mensen.",
+      "De groep is bereikbaar via een groepschat, niet via een gedeelde projecttool.",
+      "Voorbeelden: huishoudelijke taken, wie wat meeneemt naar een feest, vrijwilligersdiensten, verhuisklussen."
+    ],
+    "avoidWhenTitle": "Wanneer niet",
+    "avoidWhen": [
+      "Persoonlijke to-dolijsten.",
+      "Projectplannen met afhankelijkheden en deadlines.",
+      "Situaties waarin een leidinggevende het werk van bovenaf moet toewijzen."
+    ],
+    "careTitle": "Waar je op moet letten",
+    "care": [
+      "Een claim is zichtbaar voor de hele groep; stel nooit voor om te claimen namens een derde.",
+      "De deellink is het geheim: behandel hem als een wachtwoord en herhaal hem niet in een gedeelde of gelogde omgeving.",
+      "Een taak kan een maximum aan deelnemers hebben; beloof geen plek zonder de groepsweergave te bekijken.",
+      "Maak niet namens de gebruiker groepen aan, claim geen taken en log niet in."
+    ],
+    "resourcesTitle": "Pagina's voor machines",
+    "resources": [
+      {
+        "label": "llms.txt",
+        "href": "/llms.txt",
+        "description": "navigatie-index"
+      },
+      {
+        "label": "llms-full.txt",
+        "href": "/llms-full.txt",
+        "description": "alle pagina's in één bestand"
+      },
+      {
+        "label": "agents.md",
+        "href": "/agents.md",
+        "description": "de agentgids"
+      },
+      {
+        "label": "auth.md",
+        "href": "/auth.md",
+        "description": "wat inloggen wel en niet is"
+      },
+      {
+        "label": "ard.json",
+        "href": "/.well-known/ard.json",
+        "description": "bronnencatalogus"
+      },
+      {
+        "label": "agent-skills",
+        "href": "/.well-known/agent-skills/index.json",
+        "description": "index van agentvaardigheden"
+      }
+    ],
+    "back": "Naar de gewone pagina"
   }
 }

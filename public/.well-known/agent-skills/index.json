@@ -1,0 +1,40 @@
+{
+  "name": "Wie Doet Het",
+  "description": "Verdeel een vaste set taken over een groep mensen. Een organisator maakt een groep aan en voegt taken toe; deelnemers openen één deellink en claimen de taak die zij gaan doen, zonder account.",
+  "homepage": "https://wiedoethet.nl/",
+  "documentation": "https://wiedoethet.nl/agents.md",
+  "authentication": "https://wiedoethet.nl/auth.md",
+  "interface": "web",
+  "skills": [
+    {
+      "name": "takenverdeling-opstellen",
+      "description": "Maak van een vage klus — een verhuizing, een feest, een schoonmaakrooster — een concrete lijst taken die de gebruiker in een nieuwe groep kan plakken, met heldere titels en verstandige maxima.",
+      "surface": "https://wiedoethet.nl/groups/new",
+      "authentication": "de gebruiker logt in"
+    },
+    {
+      "name": "werking-uitleggen",
+      "description": "Leg uit hoe een groep werkt: de organisator maakt hem aan en voegt taken toe, deelt één link, en deelnemers claimen de taak die zij gaan doen zonder zich te registreren.",
+      "surface": "https://wiedoethet.nl/index.md",
+      "authentication": "geen"
+    },
+    {
+      "name": "maximum-per-taak-adviseren",
+      "description": "Help bepalen hoeveel mensen een taak moet toelaten, zodat zware klussen genoeg handen krijgen en lichte klussen niet overvol raken.",
+      "surface": "https://wiedoethet.nl/agents.md",
+      "authentication": "geen"
+    },
+    {
+      "name": "groep-lezen-via-deellink",
+      "description": "Open een groep via de deellink die de gebruiker kreeg en lees de taken en huidige claims, om te beantwoorden wie wat heeft opgepakt en wat er nog openstaat. De link is geheim: bewaar hem niet en herhaal hem niet.",
+      "surface": "https://wiedoethet.nl/",
+      "authentication": "deellink in bezit van de gebruiker"
+    },
+    {
+      "name": "productvragen-beantwoorden",
+      "description": "Beantwoord vragen over prijs, accounts, privacy en wat het product niet doet vanuit de gepubliceerde pagina's in plaats van uit gissen.",
+      "surface": "https://wiedoethet.nl/llms-full.txt",
+      "authentication": "geen"
+    }
+  ]
+}

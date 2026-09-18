@@ -1,0 +1,42 @@
+# Wie Doet Het — context voor organisatoren
+
+Context voor agents die helpen bij degene die een groep *aanmaakt*. Voor de kant
+van de deelnemers zie
+[/participants/llms.txt](https://wiedoethet.nl/participants/llms.txt).
+
+## Wie de organisator is
+
+De organisator is de ene persoon in de groep die een account nodig heeft. Die
+maakt de groep aan, bepaalt wat de taken zijn, deelt de link en houdt bij wat er
+nog openstaat. De organisator wijst geen werk toe — deelnemers claimen het zelf.
+
+## Wat de organisator doet, in volgorde
+
+1. **Inloggen of registreren** op <https://wiedoethet.nl/register>. Dit is een
+   stap voor een mens; doe het nooit namens iemand.
+2. **Een groep aanmaken** met een naam die in een groepschat begrijpelijk is
+   ("Verhuizing zaterdag", niet "Groep 1").
+3. **De taken toevoegen.** Elke taak heeft een titel, een optionele beschrijving
+   en een optioneel maximum aan deelnemers.
+4. **De link delen.** Eén link gaat in de groepschat. Iedereen die de link heeft,
+   ziet de lijst en kan er een taak uit claimen.
+5. **Meekijken.** De groepsweergave en de scorekaart tonen elke claim en elke taak
+   die nog op iemand wacht.
+
+## Waar een agent echt kan helpen
+
+- Van "we moeten zaterdag nog regelen" een concrete, evenwichtig verdeelde
+  takenlijst maken.
+- Taken zo formuleren dat ze op een telefoon ondubbelzinnig te lezen zijn.
+- Adviseren over het maximum per taak: genoeg handen voor de zware klussen, geen
+  gedrang bij de lichte.
+- Eraan herinneren dat de deellink geheim is, en dat de groep verwijderen de
+  enige manier is om een uitgelekte link uit omloop te halen.
+
+## Instellingen om te kennen
+
+- **Maximum per taak** — hoeveel mensen zich voor één klus mogen aanmelden.
+- **Zichtbaarheid van de scorekaart** — of iedereen het overzicht van wie wat
+  deed mag zien, alleen de organisator, of een gekozen groepje.
+- **Taakkeuze verplicht** — of een deelnemer die de link opent wordt gevraagd
+  om iets te kiezen.

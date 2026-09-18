@@ -3,5 +3,5 @@ import ContentPage from '@/components/organisms/ContentPage.vue'
 </script>
 
 <template>
-  <ContentPage page="about" />
+  <ContentPage page="privacy" />
 </template>
