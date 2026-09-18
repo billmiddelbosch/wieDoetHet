@@ -5,7 +5,7 @@ import { useAdminStore } from '@/stores/admin'
 
 export function useAdminUsers() {
   const adminStore = useAdminStore()
-  const { users, currentUser, usersNextCursor } = storeToRefs(adminStore)
+  const { users, currentUser, usersNextCursor, usersTotalCount } = storeToRefs(adminStore)
   const loading = ref(false)
   const error = ref(null)
 
@@ -24,7 +24,7 @@ export function useAdminUsers() {
       if (cursor) params.cursor = cursor
       if (currentQuery.value) params.q = currentQuery.value
       const { data } = await apiClient.get('/admin/users', { params })
-      adminStore.setUsers(data.items, data.nextCursor)
+      adminStore.setUsers(data.items, data.nextCursor, data.totalCount ?? 0)
     } catch (err) {
       error.value = err?.response?.data?.message ?? err.message
     } finally {
@@ -70,6 +70,8 @@ export function useAdminUsers() {
   return {
     users,
     currentUser,
+    usersTotalCount,
+    currentQuery,
     loading,
     error,
     hasNext,

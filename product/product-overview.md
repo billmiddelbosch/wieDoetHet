@@ -1,6 +1,7 @@
 # Product Overview — wieDoetHet
 
-**Last Updated:** 2026-08-20 (added Admin Section)
+**Last Updated:** 2026-09-15 (added Admin Mail Users — the Admin Section's first non-read-only capability; see
+§ 8 below. Prior 2026-08-20 entry: added Admin Section.)
 **Version:** 0.1.0 (MVP)
 
 ---
@@ -82,7 +83,14 @@ When groups need to divide tasks, coordination typically happens chaotically thr
 - **Stats dashboard**: platform-wide counts (users, groups) and recent signup/group-creation activity, at a glance
 - **User browser**: searchable, paginated list of registered users (email, name, signup date, group count, last activity) with a detail view per user
 - **Group browser**: searchable, paginated list of groups with a detail view per group
-- v1 is strictly **read-only** — no editing, deactivating, or deleting users/groups from the panel
+- **Mail Users** (branch `feature/admin-mail-users`, status: implementation complete, pending review/validation):
+  from the user list, an admin selects one or more users via checkboxes — or a server-resolved "select all N
+  matching current filter" — and composes a rich-text (HTML) email sent via AWS SES to every selected
+  recipient. This is the panel's one deliberate exception to read-only v1: it does not edit/deactivate/delete
+  any user or group record, it only sends outbound email, so it does not reopen the "no editing" scope
+  decision below.
+- Otherwise v1 remains **read-only** with respect to user/group *data* — no editing, deactivating, or deleting
+  users/groups from the panel (Mail Users sends email, it does not touch stored records)
 
 ---
 

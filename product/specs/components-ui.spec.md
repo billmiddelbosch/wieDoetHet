@@ -1,6 +1,8 @@
 # Spec — UI Atoms (Base Components)
 
-**Last Updated:** 2026-03-03
+**Last Updated:** 2026-09-15 — added `BaseTable`'s selection-mode props/emit (was missing from this file
+despite already being implemented) and the new `BaseRichTextEditor` atom (Admin Mail Users feature); added
+`BaseTable`'s `selectionDisabled` prop, a code-review-driven fix for a select-all-matching data-safety bug.
 
 All atoms live in `src/components/ui/`. They have NO store, composable, or project-specific imports. Pure presentational.
 
@@ -96,3 +98,51 @@ Props:
 - `dismissible: boolean` (default: false)
 Slots: default
 Emits: `dismiss`
+
+## BaseTable [ATOM]
+Props:
+- `columns: { key: string, label: string, align?: 'left'|'right'|'center' }[]` (required)
+- `rows: object[]` (required)
+- `rowKey: string` (default: `'id'`)
+- `loading: boolean` (default: false)
+- `emptyMessage: string` (default: `''`)
+- `selectable: boolean` (default: false) — turns on a checkbox column
+- `selectedKeys: (string|number)[]` (default: `[]`) — fully controlled selection: this component owns no
+  selection state itself, it only reads `selectedKeys` and emits `update:selectedKeys`. Preserves ids not
+  present in the current `rows` (e.g. selections from another page) rather than dropping them on toggle.
+- `selectionDisabled: boolean` (default: false) — renders the header and row checkboxes disabled and makes
+  `toggleRow`/`toggleAllOnPage` no-ops. Added to fix a bug (see `admin.spec.md` § Admin Mail Users) where a
+  consumer representing selection as "all N matching a filter" (not enumerable client-side) could have that
+  selection silently collapsed to a page-scoped subset by a single checkbox click, because this component's
+  toggle handlers only ever operate on the currently-rendered rows' keys.
+Slots:
+- `cell-<columnKey>` — scoped, receives `{ row, value }`
+- `empty` — overrides the default empty-message rendering
+Emits:
+- `row-click(row)`
+- `update:selectedKeys(keys)` — emitted on individual row toggle and on the header "select all on this
+  page" checkbox (which toggles only the rows currently rendered, not every row matching a filter —
+  "select all N matching filter" across pages is a consumer-level concern, see `AdminSelectionToolbar` in
+  `admin.spec.md`)
+Atomic Rationale: still a generic tabular-data shell with zero domain knowledge — selection is expressed
+purely in terms of row keys the consumer defines via `rowKey`, same pattern as `cell-*` slots. No store,
+composable, or project-specific import was added to support this.
+
+## BaseRichTextEditor [ATOM]
+Props:
+- `modelValue: string` (default: `''`) — HTML string, controlled via v-model like `BaseInput`/`BaseTextarea`
+- `label: string` (default: `''`)
+- `placeholder: string` (default: `''`)
+- `error: string | null` (default: null)
+- `disabled: boolean` (default: false)
+- `required: boolean` (default: false)
+- `id: string | null` (default: null) — forwarded to the `<label for>` association
+Emits: `update:modelValue` (HTML string, via Tiptap's `getHTML()` on every edit)
+Slots: none
+Atomic Rationale: single rich-text form field, same v-model contract and error/disabled/label treatment as
+`BaseInput`/`BaseTextarea` — just a larger value type (HTML instead of plain text). Built on Tiptap
+(`@tiptap/vue-3`, `@tiptap/starter-kit`, `@tiptap/pm`, `@tiptap/extension-placeholder`); Tiptap's own
+`useEditor`/`EditorContent` are a third-party library API, not project logic, so importing them does not
+violate the "no store/composable/project-specific imports" rule — same category as any other UI library an
+atom might wrap (e.g. a date-picker library). Toolbar (bold/italic/H2/bullet/ordered list) is fixed, not
+slot-configurable — v1 has no requirement for a variable toolbar.

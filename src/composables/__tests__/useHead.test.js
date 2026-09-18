@@ -97,6 +97,29 @@ describe('useHead', () => {
     await nextTick()
     expect(document.querySelector('link[rel="canonical"]')).toBeNull()
   })
+
+  it('adopts a static canonical link instead of adding a second one', async () => {
+    const staticLink = document.createElement('link')
+    staticLink.setAttribute('rel', 'canonical')
+    staticLink.setAttribute('href', 'https://wiedoethet.nl/')
+    document.head.appendChild(staticLink)
+
+    const wrapper = makeWrapper(() =>
+      useHead({ title: 'T', description: 'D', ogUrl: 'https://wiedoethet.nl/login' }),
+    )
+    await nextTick()
+
+    const links = document.querySelectorAll('link[rel="canonical"]')
+    expect(links).toHaveLength(1)
+    expect(links[0].getAttribute('href')).toBe('https://wiedoethet.nl/login')
+
+    // The static tag is handed back as it was, not removed
+    wrapper.unmount()
+    await nextTick()
+    const restored = document.querySelectorAll('link[rel="canonical"]')
+    expect(restored).toHaveLength(1)
+    expect(restored[0].getAttribute('href')).toBe('https://wiedoethet.nl/')
+  })
 })
 
 describe('useJsonLd', () => {

@@ -136,6 +136,30 @@ describe('SEO — robots.txt (AC-06)', () => {
       expect(response.body).to.include('Sitemap:')
     })
   })
+
+  it('allows answer-engine crawlers and blocks training-only crawlers', () => {
+    cy.request('/robots.txt').then((response) => {
+      const body = response.body
+
+      // Answer engines are named explicitly so the policy is unambiguous
+      ;['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot'].forEach((bot) => {
+        expect(body, bot + ' is declared').to.include('User-agent: ' + bot)
+      })
+
+      // Training-only scrapers sit in the disallowed tier
+      ;['CCBot', 'ByteSpider'].forEach((bot) => {
+        expect(body, bot + ' is declared').to.include('User-agent: ' + bot)
+      })
+
+      // The training tier ends in a site-wide Disallow
+      const trainingTier = body.slice(body.indexOf('User-agent: CCBot'))
+      expect(trainingTier).to.include('Disallow: /')
+
+      // Content signals declare intent for crawlers that honour them
+      expect(body).to.include('Content-Signal:')
+      expect(body).to.include('ai-train=no')
+    })
+  })
 })
 
 describe('SEO — sitemap.xml (AC-07)', () => {
@@ -176,5 +200,30 @@ describe('SEO — meta tags on auth pages', () => {
     cy.visit('/register')
     cy.get('form', { timeout: 8000 }).should('exist')
     cy.title().should('include', 'Wie Doet Het')
+  })
+})
+
+describe('Agent discovery — ARD catalog', () => {
+  it('publishes /.well-known/ard.json with resolvable entries', () => {
+    cy.request('/.well-known/ard.json').then((response) => {
+      expect(response.status).to.eq(200)
+
+      const catalog =
+        typeof response.body === 'string' ? JSON.parse(response.body) : response.body
+      expect(catalog.entries).to.be.an('array').and.not.be.empty
+
+      catalog.entries.forEach((entry) => {
+        // Fields the ARD spec requires on every entry
+        expect(entry.identifier, 'identifier').to.match(/^urn:air:wiedoethet.nl:/)
+        expect(entry.displayName, 'displayName').to.be.a('string').and.not.be.empty
+        expect(entry.type, 'type').to.be.a('string').and.not.be.empty
+        expect(Boolean(entry.url) !== Boolean(entry.data), 'exactly one of url/data').to.be.true
+
+        // A catalog is only useful if what it points at actually resolves
+        if (entry.url) {
+          cy.request(entry.url).its('status').should('eq', 200)
+        }
+      })
+    })
   })
 })

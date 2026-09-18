@@ -1,17 +1,23 @@
 <script setup>
 // SEO-SYNC: H1 text (landing.headline + landing.headlineAccent), subheadline
 // (landing.subheadline), and FAQ content (faq.*) must stay in sync with the
-// #seo-static block in index.html. Update both files in the same commit.
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// #seo-static block and the JSON-LD (WebApplication, FAQPage) in index.html.
+// Update both files in the same commit.
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { useHead, useJsonLd } from '@/composables/useHead'
+import { useHead } from '@/composables/useHead'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import AgentModeView from '@/components/organisms/AgentModeView.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// /?mode=agent swaps the marketing page for a plain structured summary
+const isAgentMode = computed(() => route.query.mode === 'agent')
 
 // --- SEO ---
 useHead({
@@ -19,56 +25,11 @@ useHead({
   description: t('seo.landing.description'),
 })
 
-const BASE_URL = import.meta.env.VITE_APP_BASE_URL ?? ''
-
-useJsonLd({
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Wie Doet Het',
-  url: BASE_URL || 'https://wiedoethet.nl',
-  description: t('seo.landing.description'),
-  applicationCategory: 'UtilityApplication',
-  operatingSystem: 'All',
-  inLanguage: 'nl',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'EUR',
-  },
-})
-
-useJsonLd({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: t('faq.q1'),
-      acceptedAnswer: { '@type': 'Answer', text: t('faq.a1') },
-    },
-    {
-      '@type': 'Question',
-      name: t('faq.q2'),
-      acceptedAnswer: { '@type': 'Answer', text: t('faq.a2') },
-    },
-    {
-      '@type': 'Question',
-      name: t('faq.q3'),
-      acceptedAnswer: { '@type': 'Answer', text: t('faq.a3') },
-    },
-    {
-      '@type': 'Question',
-      name: t('faq.q4'),
-      acceptedAnswer: { '@type': 'Answer', text: t('faq.a4') },
-    },
-  ],
-})
-
 const deferredPrompt = ref(null)
 const showInstallBanner = ref(false)
 
 onMounted(() => {
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && !isAgentMode.value) {
     router.replace('/dashboard')
     return
   }
@@ -114,7 +75,8 @@ const features = [
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <AgentModeView v-if="isAgentMode" />
+  <div v-else class="min-h-screen">
     <!-- PWA install banner -->
     <Transition name="slide-up">
       <div

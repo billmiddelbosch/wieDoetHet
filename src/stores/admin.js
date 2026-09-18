@@ -5,6 +5,7 @@ export const useAdminStore = defineStore('admin', () => {
   const stats = ref(null)
   const users = ref([])
   const usersNextCursor = ref(null)
+  const usersTotalCount = ref(0)
   const currentUser = ref(null)
   const groups = ref([])
   const groupsNextCursor = ref(null)
@@ -14,9 +15,10 @@ export const useAdminStore = defineStore('admin', () => {
     stats.value = data
   }
 
-  function setUsers(data, nextCursor = null) {
+  function setUsers(data, nextCursor = null, totalCount = 0) {
     users.value = data
     usersNextCursor.value = nextCursor
+    usersTotalCount.value = totalCount
   }
 
   function setCurrentUser(user) {
@@ -36,6 +38,7 @@ export const useAdminStore = defineStore('admin', () => {
     stats,
     users,
     usersNextCursor,
+    usersTotalCount,
     currentUser,
     groups,
     groupsNextCursor,
