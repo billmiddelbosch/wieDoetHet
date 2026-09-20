@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/admin/users/REPLACE_WITH_USER_ID/mail-opt-out",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"optOut\":true}",
+  "pathParameters": {
+    "userId": "REPLACE_WITH_USER_ID"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "path": "/admin/users/REPLACE_WITH_USER_ID/mail-opt-out",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

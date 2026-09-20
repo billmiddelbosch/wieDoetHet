@@ -58,6 +58,7 @@ async function createTask(event) {
     description: body.description ?? null,
     maxClaims: 'maxClaims' in body ? body.maxClaims : 1,
     order,
+    createdAt: new Date().toISOString(),
   }
 
   await putItem(task)

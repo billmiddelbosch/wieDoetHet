@@ -75,3 +75,18 @@ describe('AdminMailComposeModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 })
+
+describe('AdminMailComposeModal — opt-out skips', () => {
+  it('shows how many recipients were skipped because they opted out', () => {
+    const wrapper = mountModal({ result: { sent: 1, failed: 0, failures: [], skippedOptOut: 2 } })
+    expect(wrapper.text()).toContain('2 overgeslagen (afgemeld)')
+  })
+
+  it('shows no skipped line when nobody was skipped or the field is absent', () => {
+    const none = mountModal({ result: { sent: 1, failed: 0, failures: [], skippedOptOut: 0 } })
+    expect(none.text()).not.toContain('overgeslagen')
+
+    const absent = mountModal({ result: { sent: 1, failed: 0, failures: [] } })
+    expect(absent.text()).not.toContain('overgeslagen')
+  })
+})

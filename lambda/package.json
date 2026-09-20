@@ -17,8 +17,10 @@
     "bundle:tasks":  "esbuild wiedoethet-tasks/index.js  --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-tasks/index.js  --format=cjs",
     "bundle:claims": "esbuild wiedoethet-claims/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-claims/index.js --format=cjs",
     "bundle:admin":  "esbuild wiedoethet-admin/index.js  --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-admin/index.js  --format=cjs",
-    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims && npm run bundle:admin",
+    "bundle:lifecycle": "esbuild wiedoethet-lifecycle/index.js --bundle --platform=node --target=node24 --external:@aws-sdk/* --outfile=dist/wiedoethet-lifecycle/index.js --format=cjs",
+    "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims && npm run bundle:admin && npm run bundle:lifecycle",
     "deploy:admin": "npm run bundle:admin && node scripts/deploy-admin.js",
+    "deploy:lifecycle": "npm run bundle:lifecycle && node scripts/deploy-lifecycle.js",
     "set-admin": "node scripts/set-admin-role.js",
     "set-password": "node scripts/set-password.js"
   },

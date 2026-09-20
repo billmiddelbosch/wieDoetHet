@@ -221,6 +221,12 @@
     "privacy": {
       "title": "Privacy – Wie Doet Het",
       "description": "Welke gegevens Wie Doet Het bewaart van organisatoren en deelnemers, waarom, en hoe je ze weer kwijtraakt."
+    },
+    "adminAutomation": {
+      "title": "Mail-automatisering"
+    },
+    "adminMailLog": {
+      "title": "Verzendlog"
     }
   },
   "faq": {
@@ -256,7 +262,8 @@
     "subnav": {
       "dashboard": "Overzicht",
       "users": "Gebruikers",
-      "groups": "Groepen"
+      "groups": "Groepen",
+      "automation": "Automatisering"
     },
     "dashboard": {
       "title": "Admin overzicht",
@@ -279,12 +286,22 @@
       "columnGroupCount": "Groepen",
       "columnLastActivity": "Laatste activiteit",
       "emptyTitle": "Geen gebruikers gevonden",
-      "emptyDesc": "Probeer een andere zoekterm."
+      "emptyDesc": "Probeer een andere zoekterm.",
+      "optedOut": "Afgemeld"
     },
     "userDetail": {
       "back": "Terug naar gebruikers",
       "groupsTitle": "Gestarte groepen",
-      "notFound": "Gebruiker niet gevonden."
+      "notFound": "Gebruiker niet gevonden.",
+      "mailPrefsTitle": "E-mailvoorkeuren",
+      "mailPrefsSubscribed": "Deze gebruiker ontvangt e-mails.",
+      "mailPrefsOptedOut": "Deze gebruiker is afgemeld voor e-mail sinds {date}.",
+      "optOutLabel": "Afgemeld voor e-mail",
+      "optOutDescription": "Ontvangt geen automatische mails en geen beheerdersmails meer.",
+      "resubscribeTitle": "Weer e-mails toestaan?",
+      "resubscribeMessage": "Deze gebruiker krijgt weer automatische mails en beheerdersmails. Doe dit alleen als de gebruiker daar zelf om heeft gevraagd.",
+      "resubscribeConfirm": "Ja, toestaan",
+      "optOutError": "Opslaan mislukt."
     },
     "groups": {
       "title": "Groepen",
@@ -329,7 +346,99 @@
       "bodyPlaceholder": "Schrijf hier je bericht...",
       "bodyRequired": "Bericht is verplicht.",
       "sendCta": "Versturen",
-      "resultSummary": "{sent} verstuurd, {failed} mislukt."
+      "resultSummary": "{sent} verstuurd, {failed} mislukt.",
+      "skippedOptOut": "{n} overgeslagen (afgemeld)"
+    },
+    "automation": {
+      "title": "Mail-automatisering",
+      "tabTemplates": "Templates",
+      "tabLog": "Verzendlog",
+      "neverRan": "De automatisering heeft nog nooit gedraaid.",
+      "masterOff": "De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates.",
+      "lastRun": "Laatste run: {at} — {sent} verstuurd, {failed} mislukt.",
+      "loadError": "Templates laden mislukt.",
+      "enabled": "Ingeschakeld",
+      "edit": "Bewerken",
+      "customised": "Aangepaste tekst",
+      "default": "Standaardtekst",
+      "timing": {
+        "timely": "Ma–vr om 10:00",
+        "normal": "Di–do om 10:00"
+      },
+      "toggleError": "Wijzigen mislukt.",
+      "templates": {
+        "welcome": {
+          "name": "Welkom",
+          "description": "Welkomstmail met de eerste stappen.",
+          "trigger": "Dag na registratie, alleen als er nog geen groep is"
+        },
+        "no_group": {
+          "name": "Nog geen groep",
+          "description": "Duwtje om de eerste groep aan te maken.",
+          "trigger": "48 uur na registratie, als er nog geen groep is"
+        },
+        "no_tasks": {
+          "name": "Groep zonder taken",
+          "description": "Herinnering om taken toe te voegen aan een nieuwe groep.",
+          "trigger": "24 uur na het aanmaken van een groep zonder taken"
+        },
+        "no_claims": {
+          "name": "Taken zonder claims",
+          "description": "Tip om de link te delen als niemand een taak heeft gekozen.",
+          "trigger": "4 dagen na de eerste taak, als niemand een taak heeft geclaimd"
+        },
+        "day_after_event": {
+          "name": "Dag na het evenement",
+          "description": "Terugblik en uitnodiging voor een nieuwe groep.",
+          "trigger": "De dag na de evenementdatum van een groep"
+        },
+        "dormant_30": {
+          "name": "Inactief (30 dagen)",
+          "description": "Eerste win-back mail.",
+          "trigger": "30 dagen zonder activiteit"
+        },
+        "dormant_60": {
+          "name": "Inactief (60 dagen)",
+          "description": "Tweede en laatste win-back mail.",
+          "trigger": "60 dagen zonder activiteit, na de 30-dagenmail"
+        }
+      },
+      "editModal": {
+        "title": "Template bewerken",
+        "subject": "Onderwerp",
+        "body": "Tekst",
+        "variables": "Beschikbare velden:",
+        "footerNote": "De voettekst met de uitnodiging voor suggesties en de uitleg over afmelden wordt automatisch onder elke mail geplaatst.",
+        "save": "Opslaan",
+        "reset": "Terug naar standaardtekst",
+        "test": "Testmail naar mezelf",
+        "testSent": "Testmail verstuurd naar {email}.",
+        "subjectRequired": "Onderwerp is verplicht.",
+        "bodyRequired": "Tekst is verplicht.",
+        "saveError": "Opslaan mislukt."
+      }
+    },
+    "mailLog": {
+      "title": "Verzendlog",
+      "filterTemplate": "Template",
+      "filterStatus": "Status",
+      "allTemplates": "Alle templates",
+      "allStatuses": "Alle statussen",
+      "searchPlaceholder": "Zoek op e-mailadres...",
+      "columnSentAt": "Verzonden op",
+      "columnRecipient": "Ontvanger",
+      "columnTemplate": "Template",
+      "columnSubject": "Onderwerp",
+      "columnStatus": "Status",
+      "columnAttempts": "Pogingen",
+      "status": {
+        "sent": "Verzonden",
+        "failed": "Mislukt",
+        "sending": "Bezig"
+      },
+      "empty": "Nog geen mails verstuurd",
+      "noResults": "Geen resultaten",
+      "loadError": "Verzendlog laden mislukt."
     }
   },
   "footer": {

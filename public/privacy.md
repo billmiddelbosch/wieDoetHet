@@ -11,10 +11,17 @@ Om een groep aan te maken heb je een account nodig. Daarvoor bewaren we:
 - je e-mailadres, als inlognaam en om je account terug te vinden;
 - je wachtwoord, versleuteld opgeslagen — niet leesbaar voor ons;
 - optioneel een profielfoto-URL;
-- de groepen en taken die je aanmaakt.
+- de groepen en taken die je aanmaakt;
+- of je je hebt afgemeld voor e-mail, en het moment waarop je voor het laatst
+  bent geweest.
 
-Je e-mailadres wordt niet verkocht, niet gedeeld met adverteerders en niet
-gebruikt voor nieuwsbrieven.
+Je e-mailadres wordt niet verkocht en niet gedeeld met adverteerders. We
+gebruiken het voor het inloggen en om je af en toe een servicemail te sturen die
+je op weg helpt — bijvoorbeeld een welkomstmail, een tip als je nog geen groep
+hebt, een berichtje na afloop van je evenement of een herinnering als je een
+tijd niet bent geweest. Dat zijn geen nieuwsbrieven of reclame. In elke mail
+staat hoe je je afmeldt: antwoord op de mail met "afmelden", dan krijg je geen
+berichten meer.
 
 ## Als deelnemer (zonder account)
 

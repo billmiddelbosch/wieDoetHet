@@ -221,6 +221,12 @@
     "privacy": {
       "title": "Privacy – Wie Doet Het",
       "description": "Which data Wie Doet Het stores about organisers and participants, why, and how to get rid of it."
+    },
+    "adminAutomation": {
+      "title": "Mail automation"
+    },
+    "adminMailLog": {
+      "title": "Sent log"
     }
   },
   "faq": {
@@ -256,7 +262,8 @@
     "subnav": {
       "dashboard": "Overview",
       "users": "Users",
-      "groups": "Groups"
+      "groups": "Groups",
+      "automation": "Automation"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -279,12 +286,22 @@
       "columnGroupCount": "Groups",
       "columnLastActivity": "Last activity",
       "emptyTitle": "No users found",
-      "emptyDesc": "Try a different search term."
+      "emptyDesc": "Try a different search term.",
+      "optedOut": "Opted out"
     },
     "userDetail": {
       "back": "Back to users",
       "groupsTitle": "Groups initiated",
-      "notFound": "User not found."
+      "notFound": "User not found.",
+      "mailPrefsTitle": "Email preferences",
+      "mailPrefsSubscribed": "This user receives emails.",
+      "mailPrefsOptedOut": "This user has been opted out of email since {date}.",
+      "optOutLabel": "Opted out of email",
+      "optOutDescription": "No longer receives automatic mails or admin mails.",
+      "resubscribeTitle": "Allow emails again?",
+      "resubscribeMessage": "This user will receive automatic mails and admin mails again. Only do this if the user asked for it themselves.",
+      "resubscribeConfirm": "Yes, allow",
+      "optOutError": "Saving failed."
     },
     "groups": {
       "title": "Groups",
@@ -329,7 +346,99 @@
       "bodyPlaceholder": "Write your message here...",
       "bodyRequired": "Message is required.",
       "sendCta": "Send",
-      "resultSummary": "{sent} sent, {failed} failed."
+      "resultSummary": "{sent} sent, {failed} failed.",
+      "skippedOptOut": "{n} skipped (opted out)"
+    },
+    "automation": {
+      "title": "Mail automation",
+      "tabTemplates": "Templates",
+      "tabLog": "Sent log",
+      "neverRan": "The automation has never run.",
+      "masterOff": "The master switch is off — no mails are sent, not even for enabled templates.",
+      "lastRun": "Last run: {at} — {sent} sent, {failed} failed.",
+      "loadError": "Failed to load templates.",
+      "enabled": "Enabled",
+      "edit": "Edit",
+      "customised": "Custom text",
+      "default": "Default text",
+      "timing": {
+        "timely": "Mon–Fri at 10:00",
+        "normal": "Tue–Thu at 10:00"
+      },
+      "toggleError": "Could not update.",
+      "templates": {
+        "welcome": {
+          "name": "Welcome",
+          "description": "Welcome mail with the first steps.",
+          "trigger": "The day after registration, only if there is no group yet"
+        },
+        "no_group": {
+          "name": "No group yet",
+          "description": "A nudge to create the first group.",
+          "trigger": "48 hours after registration, if there is no group yet"
+        },
+        "no_tasks": {
+          "name": "Group without tasks",
+          "description": "Reminder to add tasks to a new group.",
+          "trigger": "24 hours after creating a group without tasks"
+        },
+        "no_claims": {
+          "name": "Tasks without claims",
+          "description": "Tip to share the link when nobody has picked a task.",
+          "trigger": "4 days after the first task, if nobody has claimed a task"
+        },
+        "day_after_event": {
+          "name": "Day after the event",
+          "description": "Look back and an invitation to create a new group.",
+          "trigger": "The day after a group’s event date"
+        },
+        "dormant_30": {
+          "name": "Inactive (30 days)",
+          "description": "First win-back mail.",
+          "trigger": "30 days without activity"
+        },
+        "dormant_60": {
+          "name": "Inactive (60 days)",
+          "description": "Second and final win-back mail.",
+          "trigger": "60 days without activity, after the 30-day mail"
+        }
+      },
+      "editModal": {
+        "title": "Edit template",
+        "subject": "Subject",
+        "body": "Text",
+        "variables": "Available fields:",
+        "footerNote": "The footer inviting suggestions and explaining how to opt out is automatically added below every mail.",
+        "save": "Save",
+        "reset": "Reset to default text",
+        "test": "Send test mail to myself",
+        "testSent": "Test mail sent to {email}.",
+        "subjectRequired": "Subject is required.",
+        "bodyRequired": "Text is required.",
+        "saveError": "Saving failed."
+      }
+    },
+    "mailLog": {
+      "title": "Sent log",
+      "filterTemplate": "Template",
+      "filterStatus": "Status",
+      "allTemplates": "All templates",
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search by email address...",
+      "columnSentAt": "Sent at",
+      "columnRecipient": "Recipient",
+      "columnTemplate": "Template",
+      "columnSubject": "Subject",
+      "columnStatus": "Status",
+      "columnAttempts": "Attempts",
+      "status": {
+        "sent": "Sent",
+        "failed": "Failed",
+        "sending": "Sending"
+      },
+      "empty": "No mails sent yet",
+      "noResults": "No results",
+      "loadError": "Failed to load the sent log."
     }
   },
   "footer": {

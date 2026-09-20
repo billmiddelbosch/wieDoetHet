@@ -19,6 +19,14 @@ Zet erbij welke browser je gebruikt, wat je deed en wat je verwachtte. Als het
 om een specifieke groep gaat: deel geen deellink in een openbaar issue — die
 link geeft iedereen toegang tot de takenlijst.
 
+## Suggesties en afmelden
+
+Heb je een idee om Wie Doet Het beter te maken? Mail ons op
+**[REPLY-ADRES NOG INVULLEN — zelfde adres als SES_REPLY_TO_EMAIL]** — we lezen
+alles. Wil je geen e-mails meer van ons ontvangen? Stuur een mail met "afmelden"
+naar hetzelfde adres (of antwoord op een van onze mails). Wij zetten je dan
+binnen 2 werkdagen uit de mailinglijst.
+
 ## Je wilt je account of je gegevens laten verwijderen
 
 Verwijder je groepen in de app en daarna je account via je profielpagina. Wat er

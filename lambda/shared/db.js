@@ -28,6 +28,13 @@
  *
  * Claim       PK=TASK#{taskId}           SK=CLAIM#{claimId}
  *             GSI1PK=GCLAIM#{groupId}    GSI1SK={claimedAt}
+ *
+ * Mail automation (wiedoethet-lifecycle + wiedoethet-admin) — see
+ * product/specs/mail-automation-api.spec.md
+ * Template    PK=MAILTPL#{templateId}    SK=CONFIG
+ * Mail log    PK=USER#{userId}           SK=MAIL#{templateId}#{scopeId}
+ *             GSI3PK=MAILLOG             GSI3SK={createdAt}#{userId}#{templateId}
+ * Last run    PK=MAILSTATE#lifecycle     SK=LASTRUN
  */
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
@@ -59,6 +66,11 @@ export const keys = {
   // GSI3 — Admin Section (wiedoethet-admin): "list all users/groups" without a table Scan.
   userGsi3: (createdAt, id) => ({ GSI3PK: 'USER', GSI3SK: `${createdAt}#${id}` }),
   groupGsi3: (createdAt, id) => ({ GSI3PK: 'GROUP', GSI3SK: `${createdAt}#${id}` }),
+  // Mail automation. scopeId = groupId for group-scoped templates, '-' for user-scoped ones.
+  mailTemplate: (templateId) => ({ PK: `MAILTPL#${templateId}`, SK: 'CONFIG' }),
+  mailLog: (userId, templateId, scopeId) => ({ PK: `USER#${userId}`, SK: `MAIL#${templateId}#${scopeId}` }),
+  mailLogGsi3: (createdAt, userId, templateId) => ({ GSI3PK: 'MAILLOG', GSI3SK: `${createdAt}#${userId}#${templateId}` }),
+  mailState: () => ({ PK: 'MAILSTATE#lifecycle', SK: 'LASTRUN' }),
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -93,6 +105,87 @@ export async function updateItem(pk, sk, updates) {
     ExpressionAttributeNames: names,
     ExpressionAttributeValues: values,
   }))
+}
+
+/**
+ * Conditional put that only succeeds when no item with this PK+SK exists.
+ * Returns true when written, false when the item was already there — the
+ * exactly-once lock of the lifecycle mail log. Any other error is rethrown.
+ */
+export async function putItemIfAbsent(item) {
+  try {
+    await ddb.send(new PutCommand({
+      TableName: table(),
+      Item: item,
+      ConditionExpression: 'attribute_not_exists(PK)',
+    }))
+    return true
+  } catch (err) {
+    if (err?.name === 'ConditionalCheckFailedException') return false
+    throw err
+  }
+}
+
+/**
+ * SET-only update guarded by a ConditionExpression. Returns true when applied,
+ * false when the condition did not hold. Every key of `updates` is available in
+ * the condition as `#key` (its name) — several are DynamoDB reserved words
+ * (e.g. status), so never write them bare. `values` holds the condition's own
+ * `:placeholders` (must not collide with `:{updateKey}`); `names` any extra
+ * `#names` the condition needs.
+ */
+export async function updateItemIf(pk, sk, updates, condition, values = {}, names = {}) {
+  const expressions = []
+  const expressionNames = { ...names }
+  const expressionValues = { ...values }
+  for (const [key, val] of Object.entries(updates)) {
+    expressions.push(`#${key} = :${key}`)
+    expressionNames[`#${key}`] = key
+    expressionValues[`:${key}`] = val
+  }
+  try {
+    await ddb.send(new UpdateCommand({
+      TableName: table(),
+      Key: { PK: pk, SK: sk },
+      UpdateExpression: `SET ${expressions.join(', ')}`,
+      ConditionExpression: condition,
+      ExpressionAttributeNames: expressionNames,
+      ExpressionAttributeValues: expressionValues,
+    }))
+    return true
+  } catch (err) {
+    if (err?.name === 'ConditionalCheckFailedException') return false
+    throw err
+  }
+}
+
+const LAST_SEEN_THROTTLE_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Records "this user used the product just now" as User.lastSeenAt, at most
+ * once per 24 h (feeds the dormant_* lifecycle mails). Never throws: a failed
+ * touch must not fail the request that triggered it. Callers await it (or put
+ * it in a Promise.all) rather than dropping the promise, because a Lambda may
+ * be frozen the moment the handler returns and would stall a dangling write.
+ *
+ * @param {string} userId
+ * @param {string|null} [knownLastSeenAt] — the caller's copy of the user's
+ *   lastSeenAt, when it already has the record; skips the write when fresh.
+ */
+export async function touchLastSeen(userId, knownLastSeenAt = null) {
+  const now = Date.now()
+  if (knownLastSeenAt && now - Date.parse(knownLastSeenAt) < LAST_SEEN_THROTTLE_MS) return
+  try {
+    await updateItemIf(
+      `USER#${userId}`,
+      'PROFILE',
+      { lastSeenAt: new Date(now).toISOString() },
+      'attribute_exists(PK) AND (attribute_not_exists(#lastSeenAt) OR #lastSeenAt < :cutoff)',
+      { ':cutoff': new Date(now - LAST_SEEN_THROTTLE_MS).toISOString() },
+    )
+  } catch (err) {
+    console.warn(JSON.stringify({ level: 'warn', event: 'touch-last-seen-failed', userId, message: err?.message }))
+  }
 }
 
 export async function queryByPk(pk, skPrefix = null, indexName = null) {

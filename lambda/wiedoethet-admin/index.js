@@ -6,23 +6,32 @@
  *   GET  /admin/groups
  *   GET  /admin/groups/{groupId}
  *   POST /admin/mail
+ *   GET  /admin/mail-templates
+ *   PATCH /admin/mail-templates/{templateId}
+ *   POST /admin/mail-templates/{templateId}/test
+ *   GET  /admin/mail-log
+ *   PATCH /admin/users/{userId}/mail-opt-out
  *
  * Function name: wiedoethet-admin
  * Runtime: nodejs24.x
  * Handler: index.handler
  *
  * Role-gated (User.role === 'admin', re-checked server-side on every request —
- * the JWT itself carries no role claim). All GET routes are read-only; POST
- * /admin/mail is the one write/side-effecting route (sends email via SES, no
- * database writes). See product/specs/admin-api.spec.md for the full
- * contract, and lambda/SES_SETUP.md for the SES setup this route depends on.
+ * the JWT itself carries no role claim). All GET routes are read-only. POST
+ * /admin/mail and POST /admin/mail-templates/{id}/test send email via SES;
+ * PATCH /admin/mail-templates/{id} and PATCH /admin/users/{id}/mail-opt-out
+ * write to DynamoDB. See product/specs/admin-api.spec.md and
+ * product/specs/mail-automation-api.spec.md for the full contracts, and
+ * lambda/SES_SETUP.md for the SES setup the mail routes depend on.
  */
 
-import { ok, unauthorized, forbidden, notFound, badRequest, serverError, extractBearer, parseBody } from '../shared/http.js'
+import { ok, unauthorized, forbidden, notFound, badRequest, badGateway, serverError, extractBearer, parseBody } from '../shared/http.js'
 import { verifyJwt } from '../shared/jwt.js'
-import { getItem, queryByPk, queryGsi1, queryGsi2, queryGsi3 } from '../shared/db.js'
+import { getItem, updateItem, queryByPk, queryGsi1, queryGsi2, queryGsi3, keys } from '../shared/db.js'
 import { sendMail } from '../shared/ses.js'
 import { wrapEmailHtml } from '../shared/email-template.js'
+import { LIFECYCLE_TEMPLATES, getTemplate, mergeTemplateConfig } from '../shared/lifecycle-templates.js'
+import { validateTemplateText, buildVariables, renderTemplate, getAppUrl } from '../shared/mail-render.js'
 
 const MAX_INTERNAL_QUERIES = 5
 const MAX_MAIL_RESOLVE_QUERIES = 200 // safety cap on the resolveAllMatchingUsers loop (~10,000 users at page size 50)
@@ -138,6 +147,11 @@ async function countAllMatchingUsers(q) {
  * bounce/complaint tracking works properly this way), in small bounded-
  * concurrency chunks. An individual send failure is not fatal to the request;
  * failures are collected and returned alongside the success count.
+ *
+ * Users with `mailOptOut === true` are never mailed: they are dropped after
+ * recipient resolution and before the MAX_MAIL_RECIPIENTS check (which applies
+ * to the sendable set), and reported back as `skippedOptOut`. Every mail goes
+ * through wrapEmailHtml, whose footer needs SES_REPLY_TO_EMAIL.
  */
 async function mailUsers(event) {
   const start = Date.now()
@@ -149,6 +163,7 @@ async function mailUsers(event) {
   const html = body.html?.trim()
   if (!subject) return badRequest('Onderwerp is verplicht')
   if (!html) return badRequest('Berichttekst is verplicht')
+  if (!process.env.SES_REPLY_TO_EMAIL) return serverError(new Error('SES_REPLY_TO_EMAIL env var is not set'))
 
   let recipients
   if (body.selectAll === true) {
@@ -164,14 +179,21 @@ async function mailUsers(event) {
   }
 
   if (recipients.length === 0) return badRequest('Geen ontvangers gevonden')
-  if (recipients.length > MAX_MAIL_RECIPIENTS) {
-    return badRequest(`Te veel ontvangers (${recipients.length}). Maximum is ${MAX_MAIL_RECIPIENTS} per verzending.`)
+
+  const sendable = recipients.filter((user) => user.mailOptOut !== true)
+  const skippedOptOut = recipients.length - sendable.length
+  if (sendable.length === 0) {
+    logSuccess({ route: 'POST /admin/mail', adminUserId: admin.id, start, resultCount: 0 })
+    return ok({ sent: 0, failed: 0, failures: [], skippedOptOut })
+  }
+  if (sendable.length > MAX_MAIL_RECIPIENTS) {
+    return badRequest(`Te veel ontvangers (${sendable.length}). Maximum is ${MAX_MAIL_RECIPIENTS} per verzending.`)
   }
 
-  const { sent, failed, failures } = await sendToRecipients(recipients, subject, wrapEmailHtml(html))
+  const { sent, failed, failures } = await sendToRecipients(sendable, subject, wrapEmailHtml(html))
 
   logSuccess({ route: 'POST /admin/mail', adminUserId: admin.id, start, resultCount: sent })
-  return ok({ sent, failed, failures })
+  return ok({ sent, failed, failures, skippedOptOut })
 }
 
 /**
@@ -238,7 +260,14 @@ async function getUserDetail(event) {
     .map((g) => ({ id: g.id, name: g.name, shareToken: g.shareToken, createdAt: g.createdAt }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
-  const detail = { ...toUserSummaryBase(user), groupCount, lastActivityAt, groups }
+  const detail = {
+    ...toUserSummaryBase(user),
+    mailOptOutAt: user.mailOptOutAt ?? null,
+    lastSeenAt: user.lastSeenAt ?? null,
+    groupCount,
+    lastActivityAt,
+    groups,
+  }
 
   logSuccess({ route: 'GET /admin/users/{userId}', adminUserId: admin.id, start, resultCount: 1 })
   return ok(detail)
@@ -325,6 +354,212 @@ async function getGroupDetail(event) {
   return ok(detail)
 }
 
+// ─── Mail automation (templates, log, opt-out) ───────────────────────────────
+
+const MAIL_LOG_STATUSES = ['sent', 'failed', 'sending']
+const MAIL_LOG_PAGE_SIZE = 100 // DynamoDB read size when a filter is active — FilterExpression applies after the read
+const MAIL_LOG_MAX_QUERIES = 20
+
+/** One `items[]` entry of GET /admin/mail-templates (static definition merged with its CONFIG item). */
+function toTemplateItem(definition, config) {
+  const merged = mergeTemplateConfig(definition, config)
+  return {
+    id: merged.id,
+    scope: merged.scope,
+    tier: merged.tier,
+    enabled: merged.enabled,
+    subject: merged.subject,
+    bodyHtml: merged.bodyHtml,
+    defaultSubject: merged.defaultSubject,
+    defaultBodyHtml: merged.defaultBodyHtml,
+    isCustomised: merged.isCustomised,
+    variables: merged.variables,
+    updatedAt: merged.updatedAt,
+    updatedBy: merged.updatedBy,
+  }
+}
+
+async function getTemplateConfig(templateId) {
+  const { PK, SK } = keys.mailTemplate(templateId)
+  return getItem(PK, SK)
+}
+
+async function listMailTemplates(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const state = keys.mailState()
+  const [configs, lastRunItem] = await Promise.all([
+    Promise.all(LIFECYCLE_TEMPLATES.map((t) => getTemplateConfig(t.id))),
+    getItem(state.PK, state.SK),
+  ])
+
+  const items = LIFECYCLE_TEMPLATES.map((definition, i) => toTemplateItem(definition, configs[i]))
+  const lastRun = lastRunItem
+    ? {
+        at: lastRunItem.at,
+        masterEnabled: lastRunItem.masterEnabled === true,
+        dryRun: lastRunItem.dryRun === true,
+        evaluated: lastRunItem.evaluated ?? 0,
+        sent: lastRunItem.sent ?? 0,
+        failed: lastRunItem.failed ?? 0,
+        skippedByCap: lastRunItem.skippedByCap ?? 0,
+      }
+    : null
+
+  logSuccess({ route: 'GET /admin/mail-templates', adminUserId: admin.id, start, resultCount: items.length })
+  return ok({ items, lastRun })
+}
+
+async function updateMailTemplate(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const { templateId } = event.pathParameters ?? {}
+  const definition = getTemplate(templateId)
+  if (!definition) return notFound('Sjabloon niet gevonden')
+
+  const body = parseBody(event)
+  const has = (field) => Object.prototype.hasOwnProperty.call(body, field)
+  if (!has('enabled') && !has('subject') && !has('bodyHtml')) return badRequest('Geen wijzigingen opgegeven')
+  if (has('enabled') && typeof body.enabled !== 'boolean') return badRequest('enabled moet true of false zijn')
+
+  const validationError = validateTemplateText({ subject: body.subject, bodyHtml: body.bodyHtml }, definition.variables)
+  if (validationError) return badRequest(validationError)
+
+  const { PK, SK } = keys.mailTemplate(templateId)
+  const existing = await getItem(PK, SK)
+  const now = new Date().toISOString()
+
+  const enabled = has('enabled') ? body.enabled : existing?.enabled === true
+  const next = {
+    enabled,
+    // null clears the override (back to the default text); admin HTML is stored as-is
+    subject: has('subject') ? (typeof body.subject === 'string' ? body.subject.trim() : null) : (existing?.subject ?? null),
+    bodyHtml: has('bodyHtml') ? (typeof body.bodyHtml === 'string' ? body.bodyHtml : null) : (existing?.bodyHtml ?? null),
+    // false -> true restarts the clock the dormant_* templates measure from; true -> false leaves it
+    enabledAt: enabled && existing?.enabled !== true ? now : (existing?.enabledAt ?? null),
+    updatedAt: now,
+    updatedBy: admin.id,
+  }
+  await updateItem(PK, SK, next)
+
+  logSuccess({ route: 'PATCH /admin/mail-templates/{templateId}', adminUserId: admin.id, start, resultCount: 1 })
+  return ok(toTemplateItem(definition, next))
+}
+
+/** Renders the template with sample values and mails it to the calling admin only. Not logged. */
+async function sendTemplateTest(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const { templateId } = event.pathParameters ?? {}
+  const definition = getTemplate(templateId)
+  if (!definition) return notFound('Sjabloon niet gevonden')
+
+  const merged = mergeTemplateConfig(definition, await getTemplateConfig(templateId))
+  const values = buildVariables({
+    user: admin,
+    group: definition.scope === 'group' ? { id: 'voorbeeld', name: 'Voorbeeldgroep' } : undefined,
+  })
+  // A sample group has no page of its own; point at a real one instead of a dead link
+  if (definition.scope === 'group') values.groupUrl = `${getAppUrl()}/dashboard`
+  const rendered = renderTemplate({ subject: merged.subject, bodyHtml: merged.bodyHtml }, values)
+
+  try {
+    await sendMail({ to: admin.email, subject: `[TEST] ${rendered.subject}`, html: wrapEmailHtml(rendered.bodyHtml) })
+  } catch (err) {
+    console.error(JSON.stringify({ level: 'error', route: 'POST /admin/mail-templates/{templateId}/test', message: err.message }))
+    return badGateway(`Testmail versturen mislukt: ${err.message}`)
+  }
+
+  logSuccess({ route: 'POST /admin/mail-templates/{templateId}/test', adminUserId: admin.id, start, resultCount: 1 })
+  return ok({ sent: true, to: admin.email })
+}
+
+async function listMailLog(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const params = parseListParams(event)
+  if (params.error) return params.error
+  const { limit, exclusiveStartKey, q } = params
+
+  const qs = event.queryStringParameters ?? {}
+  const templateId = qs.templateId || undefined
+  const status = qs.status || undefined
+  if (templateId && !getTemplate(templateId)) return badRequest('Onbekend sjabloon')
+  if (status && !MAIL_LOG_STATUSES.includes(status)) return badRequest('Ongeldige status')
+
+  const conditions = []
+  const expressionAttributeNames = {}
+  const expressionAttributeValues = {}
+  if (templateId) {
+    conditions.push('templateId = :templateId')
+    expressionAttributeValues[':templateId'] = templateId
+  }
+  if (status) {
+    conditions.push('#status = :status')
+    expressionAttributeNames['#status'] = 'status'
+    expressionAttributeValues[':status'] = status
+  }
+  if (q) {
+    // Emails are stored lower-case (register lower-cases them), so lower-casing the needle makes this case-insensitive
+    conditions.push('contains(email, :q)')
+    expressionAttributeValues[':q'] = q.toLowerCase()
+  }
+  const filtered = conditions.length > 0
+
+  const { items: rows, nextCursor } = await queryGsi3Paginated('MAILLOG', {
+    limit,
+    exclusiveStartKey,
+    pageSize: filtered ? MAIL_LOG_PAGE_SIZE : limit,
+    maxQueries: filtered ? MAIL_LOG_MAX_QUERIES : MAX_INTERNAL_QUERIES,
+    filterExpression: filtered ? conditions.join(' AND ') : undefined,
+    expressionAttributeNames: Object.keys(expressionAttributeNames).length ? expressionAttributeNames : undefined,
+    expressionAttributeValues: filtered ? expressionAttributeValues : undefined,
+  })
+
+  const items = rows.map((row) => {
+    // eslint-disable-next-line no-unused-vars
+    const { PK, SK, GSI3PK, GSI3SK, type, ...entry } = row
+    return entry
+  })
+
+  logSuccess({ route: 'GET /admin/mail-log', adminUserId: admin.id, start, resultCount: items.length })
+  return ok({ items, nextCursor })
+}
+
+async function setUserMailOptOut(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const { userId } = event.pathParameters ?? {}
+  const { optOut } = parseBody(event)
+  if (typeof optOut !== 'boolean') return badRequest('optOut moet true of false zijn')
+
+  const user = await getItem(`USER#${userId}`, 'PROFILE')
+  if (!user) return notFound('Gebruiker niet gevonden')
+
+  // Idempotent: repeating the current state changes nothing (keeps the original mailOptOutAt)
+  const current = user.mailOptOut === true
+  if (optOut === current) {
+    logSuccess({ route: 'PATCH /admin/users/{userId}/mail-opt-out', adminUserId: admin.id, start, resultCount: 1 })
+    return ok({ id: user.id, mailOptOut: current, mailOptOutAt: current ? (user.mailOptOutAt ?? null) : null })
+  }
+
+  const mailOptOutAt = optOut ? new Date().toISOString() : null
+  await updateItem(`USER#${userId}`, 'PROFILE', { mailOptOut: optOut, mailOptOutAt, mailOptOutBy: admin.id })
+
+  logSuccess({ route: 'PATCH /admin/users/{userId}/mail-opt-out', adminUserId: admin.id, start, resultCount: 1 })
+  return ok({ id: user.id, mailOptOut: optOut, mailOptOutAt })
+}
+
 // ─── Read-model builders ─────────────────────────────────────────────────────
 
 function toUserSummaryBase(user) {
@@ -333,6 +568,7 @@ function toUserSummaryBase(user) {
     email: user.email,
     name: user.name,
     role: user.role ?? 'user',
+    mailOptOut: user.mailOptOut === true,
     createdAt: user.createdAt,
   }
 }
@@ -390,15 +626,23 @@ async function enrichGroupSummary(group, initiator) {
  *    the only path taken when `q` is not supplied, since an unfiltered query
  *    can never accumulate more than one call's `limit`).
  */
-async function queryGsi3Paginated(gsi3pk, { limit, exclusiveStartKey, filterExpression, expressionAttributeNames, expressionAttributeValues }) {
+async function queryGsi3Paginated(gsi3pk, {
+  limit,
+  exclusiveStartKey,
+  filterExpression,
+  expressionAttributeNames,
+  expressionAttributeValues,
+  pageSize = limit, // DynamoDB read size per internal query; raise it for sparse filters
+  maxQueries = MAX_INTERNAL_QUERIES,
+}) {
   const items = []
   let cursor = exclusiveStartKey
   let lastEvaluatedKey = null
 
-  for (let loop = 0; loop < MAX_INTERNAL_QUERIES && items.length < limit; loop++) {
+  for (let loop = 0; loop < maxQueries && items.length < limit; loop++) {
     const result = await queryGsi3(gsi3pk, {
       scanIndexForward: false,
-      limit,
+      limit: pageSize,
       exclusiveStartKey: cursor,
       filterExpression,
       expressionAttributeNames,
@@ -511,6 +755,11 @@ export const handler = async (event) => {
     if (method === 'GET' && path === '/admin/groups')                return await listGroups(event)
     if (method === 'GET' && /^\/admin\/groups\/[^/]+$/.test(path))  return await getGroupDetail(event)
     if (method === 'POST' && path === '/admin/mail')                 return await mailUsers(event)
+    if (method === 'GET' && path === '/admin/mail-templates')        return await listMailTemplates(event)
+    if (method === 'PATCH' && /^\/admin\/mail-templates\/[^/]+$/.test(path))     return await updateMailTemplate(event)
+    if (method === 'POST' && /^\/admin\/mail-templates\/[^/]+\/test$/.test(path)) return await sendTemplateTest(event)
+    if (method === 'GET' && path === '/admin/mail-log')              return await listMailLog(event)
+    if (method === 'PATCH' && /^\/admin\/users\/[^/]+\/mail-opt-out$/.test(path)) return await setUserMailOptOut(event)
 
     return { statusCode: 404, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Route niet gevonden' }) }
   } catch (err) {

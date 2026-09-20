@@ -10,6 +10,11 @@ export const useAdminStore = defineStore('admin', () => {
   const groups = ref([])
   const groupsNextCursor = ref(null)
   const currentGroup = ref(null)
+  // Lifecycle-mail templates. Kept in the store (not in the composable) because
+  // the templates page and its edit modal each call the composable and must see
+  // the same list.
+  const mailTemplates = ref([])
+  const mailLastRun = ref(null)
 
   function setStats(data) {
     stats.value = data
@@ -34,6 +39,15 @@ export const useAdminStore = defineStore('admin', () => {
     currentGroup.value = group
   }
 
+  function setMailTemplates(items, lastRun = null) {
+    mailTemplates.value = items
+    mailLastRun.value = lastRun
+  }
+
+  function replaceMailTemplate(updated) {
+    mailTemplates.value = mailTemplates.value.map((tpl) => (tpl.id === updated.id ? updated : tpl))
+  }
+
   return {
     stats,
     users,
@@ -43,10 +57,14 @@ export const useAdminStore = defineStore('admin', () => {
     groups,
     groupsNextCursor,
     currentGroup,
+    mailTemplates,
+    mailLastRun,
     setStats,
     setUsers,
     setCurrentUser,
     setGroups,
     setCurrentGroup,
+    setMailTemplates,
+    replaceMailTemplate,
   }
 })

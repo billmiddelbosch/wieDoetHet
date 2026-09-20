@@ -13,7 +13,8 @@ const props = defineProps({
   open: { type: Boolean, required: true },
   recipientCount: { type: Number, required: true },
   loading: { type: Boolean, default: false },
-  // Aggregate result of the last send attempt: { sent, failed, failures } | null.
+  // Aggregate result of the last send attempt:
+  // { sent, failed, failures, skippedOptOut? } | null.
   // Rendered as a summary inside the modal so the admin sees per-recipient
   // outcomes without leaving the compose flow.
   result: { type: Object, default: null },
@@ -62,6 +63,9 @@ function submit() {
 
       <BaseAlert v-else-if="result" :variant="result.failed > 0 ? 'warning' : 'success'">
         <p>{{ t('admin.mail.resultSummary', { sent: result.sent, failed: result.failed }) }}</p>
+        <p v-if="result.skippedOptOut > 0" class="mt-1 text-xs">
+          {{ t('admin.mail.skippedOptOut', { n: result.skippedOptOut }) }}
+        </p>
         <ul v-if="result.failures?.length" class="mt-2 list-disc pl-5 text-xs">
           <li v-for="f in result.failures" :key="f.userId">{{ f.email }} — {{ f.message }}</li>
         </ul>
