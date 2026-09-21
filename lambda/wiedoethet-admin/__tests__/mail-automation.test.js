@@ -66,6 +66,7 @@ describe('auth', () => {
     seedUser({ id: 'admin-1', role: 'user' })
     for (const [method, path] of [
       ['GET', '/admin/mail-templates'],
+      ['PATCH', '/admin/mail-master'],
       ['PATCH', '/admin/mail-templates/welcome'],
       ['POST', '/admin/mail-templates/welcome/test'],
       ['GET', '/admin/mail-log'],
@@ -85,6 +86,7 @@ describe('GET /admin/mail-templates', () => {
     expect(json.items[0]).toMatchObject({ scope: 'user', tier: 'timely', subject: json.items[0].defaultSubject })
     expect(json.items[2].variables).toContain('groupName')
     expect(json.lastRun).toBeNull()
+    expect(json.master).toEqual({ enabled: false, updatedAt: null, updatedBy: null })
   })
 
   it('merges a stored override and reports the last run', async () => {
@@ -93,7 +95,45 @@ describe('GET /admin/mail-templates', () => {
     const { json } = await call('GET', '/admin/mail-templates')
     expect(json.items[0]).toMatchObject({ enabled: true, subject: 'Hoi!', isCustomised: true, updatedBy: 'admin-1' })
     expect(json.items[0].bodyHtml).toBe(json.items[0].defaultBodyHtml)
-    expect(json.lastRun).toEqual({ at: '2026-09-18T08:00:00.000Z', masterEnabled: true, dryRun: false, evaluated: 12, sent: 3, failed: 1, skippedByCap: 0 })
+    expect(json.lastRun).toEqual({ at: '2026-09-18T08:00:00.000Z', masterEnabled: true, killSwitch: false, dryRun: false, evaluated: 12, sent: 3, failed: 1, skippedByCap: 0 })
+  })
+
+  it('reports the master switch and whether the env kill switch overrode it on the last run', async () => {
+    store.set(id('MAILSTATE#lifecycle', 'MASTER'), { enabled: true, updatedAt: '2026-09-17T08:00:00.000Z', updatedBy: 'admin-1' })
+    store.set(id('MAILSTATE#lifecycle', 'LASTRUN'), { at: '2026-09-18T08:00:00.000Z', masterEnabled: false, killSwitch: true, dryRun: false })
+    const { json } = await call('GET', '/admin/mail-templates')
+    expect(json.master).toEqual({ enabled: true, updatedAt: '2026-09-17T08:00:00.000Z', updatedBy: 'admin-1' })
+    expect(json.lastRun).toMatchObject({ masterEnabled: false, killSwitch: true })
+  })
+})
+
+describe('PATCH /admin/mail-master', () => {
+  const patch = (body) => call('PATCH', '/admin/mail-master', { body })
+
+  it('400s a body without a boolean enabled and writes nothing', async () => {
+    for (const body of [{}, { enabled: 'true' }, { enabled: 1 }, { enabled: null }]) {
+      expect((await patch(body)).status, JSON.stringify(body)).toBe(400)
+    }
+    expect(store.has(id('MAILSTATE#lifecycle', 'MASTER'))).toBe(false)
+  })
+
+  it('switches on and off, recording who and when, and returns the master object', async () => {
+    const on = await patch({ enabled: true })
+    expect(on.status).toBe(200)
+    expect(on.json).toEqual({ enabled: true, updatedAt: expect.any(String), updatedBy: 'admin-1' })
+    expect(store.get(id('MAILSTATE#lifecycle', 'MASTER'))).toMatchObject({ enabled: true, updatedBy: 'admin-1' })
+
+    const off = await patch({ enabled: false })
+    expect(off.json).toMatchObject({ enabled: false, updatedBy: 'admin-1' })
+    expect(store.get(id('MAILSTATE#lifecycle', 'MASTER')).enabled).toBe(false)
+  })
+
+  it('is what the templates list reports afterwards, and leaves LASTRUN alone', async () => {
+    store.set(id('MAILSTATE#lifecycle', 'LASTRUN'), { at: '2026-09-18T08:00:00.000Z', masterEnabled: false, dryRun: false })
+    await patch({ enabled: true })
+    const { json } = await call('GET', '/admin/mail-templates')
+    expect(json.master.enabled).toBe(true)
+    expect(json.lastRun.masterEnabled).toBe(false) // only the next run updates this
   })
 })
 

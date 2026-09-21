@@ -4,9 +4,9 @@
  * Unlike deploy-admin.js there is no API Gateway wiring: the function is only
  * invoked by EventBridge Scheduler (or by hand with the events in
  * wiedoethet-lifecycle/tests/). This script therefore just zips the bundle and
- * uploads it to the existing function. Create the function, its IAM role, the
- * environment variables and the schedule first — see lambda/SES_SETUP.md
- * ("Lifecycle mail").
+ * uploads it to the existing function. Create the function, its IAM roles, the
+ * environment variables and the schedule first with `npm run setup:lifecycle`
+ * (scripts/setup-lifecycle.js; see lambda/SES_SETUP.md, "Lifecycle mail").
  *
  * Usage:
  *   npm run deploy:lifecycle      (bundles, then runs this script)
@@ -52,4 +52,4 @@ function updateFunctionCode() {
 
 createZip()
 updateFunctionCode()
-console.log('Done. Nothing is sent until LIFECYCLE_MAIL_ENABLED=true and a template is switched on in the admin panel.')
+console.log('Done. Nothing is sent until an admin turns on the master switch and a template in Admin -> Automatisering.')

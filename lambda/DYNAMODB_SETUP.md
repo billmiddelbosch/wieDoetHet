@@ -151,11 +151,12 @@ Used by: list all claims on a task (Query PK + SK begins\_with `CLAIM#`), list a
 | Lifecycle — send exactly once | Conditional PutItem | `PK = USER#{userId}`, `SK = MAIL#{templateId}#{scopeId}`, `attribute_not_exists(PK)` |
 | Admin/lifecycle — template config | GetItem | `PK = MAILTPL#{templateId}`, `SK = CONFIG` |
 | Admin — last lifecycle run | GetItem | `PK = MAILSTATE#lifecycle`, `SK = LASTRUN` |
+| Admin/lifecycle — master switch | GetItem / UpdateItem | `PK = MAILSTATE#lifecycle`, `SK = MASTER` |
 | Admin — mail log, newest first | GSI3 query (descending) | `GSI3PK = MAILLOG` |
 
 ## Mail automation items
 
-Lifecycle mail automation (`wiedoethet-lifecycle`, admin Lambda; see `product/specs/mail-automation-api.spec.md`) adds three item types to `wdh-main`. **No new table and no new GSI.**
+Lifecycle mail automation (`wiedoethet-lifecycle`, admin Lambda; see `product/specs/mail-automation-api.spec.md`) adds four item types to `wdh-main`. **No new table and no new GSI.**
 
 ### Mail log row (exactly-once lock + admin log)
 
@@ -184,6 +185,15 @@ Attributes: `enabled`, `subject` / `bodyHtml` (`null` ⇒ default text from code
 | `PK` | `MAILSTATE#lifecycle` |
 | `SK` | `LASTRUN` |
 
-Single item, written at the start of every run (also dry runs and runs skipped by the master switch) and completed with the counts at the end: `at`, `masterEnabled`, `dryRun`, `evaluated`, `sent`, `failed`, `skippedByCap`. Shown on the admin Automation page.
+Single item, written at the start of every run (also dry runs and runs skipped by the master switch) and completed with the counts at the end: `at`, `masterEnabled`, `killSwitch`, `dryRun`, `evaluated`, `sent`, `failed`, `skippedByCap`. Shown on the admin Automation page.
 
-Used by: lifecycle Lambda (candidate discovery, "already mailed?" check, exactly-once put), admin Lambda (`GET/PATCH /admin/mail-templates`, `GET /admin/mail-log`).
+### Master switch
+
+| Key | Value |
+|---|---|
+| `PK` | `MAILSTATE#lifecycle` |
+| `SK` | `MASTER` |
+
+Attributes: `enabled` (boolean), `updatedAt`, `updatedBy`. Toggled from Admin → Automatisering (`PATCH /admin/mail-master`) and read by the lifecycle Lambda at the start of every run. **An absent or unreadable item means: off.** It is a separate item from the last-run marker so the run's own write cannot overwrite it, and each table (`wdh-dev`, `wdh-main`) has its own switch.
+
+Used by: lifecycle Lambda (candidate discovery, "already mailed?" check, exactly-once put), admin Lambda (`GET/PATCH /admin/mail-templates`, `PATCH /admin/mail-master`, `GET /admin/mail-log`).

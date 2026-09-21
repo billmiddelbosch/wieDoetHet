@@ -23,7 +23,7 @@ wieDoetHet is a Vue 3 SPA with no server-side rendering. Googlebot can execute J
 **Current state (before SEO-01):**
 - No `<meta name="description">` tag
 - No Open Graph tags — share link previews are blank in WhatsApp, iMessage, Slack
-- Every page shows the same `<title>Wie Doet Het</title>` — no per-page variation
+- Every page shows the same `<title>Wie-Doet-Het</title>` — no per-page variation
 - No `robots.txt` or `sitemap.xml`
 - No structured data (JSON-LD)
 - Landing page copy not tuned for any keyword intent
@@ -60,7 +60,7 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
 
 | Decision point | Resolution |
 |---|---|
-| Landing page `<title>` | "Wie Doet Het – Taken verdelen voor groepen" |
+| Landing page `<title>` | "Wie-Doet-Het – Taken verdelen voor groepen" |
 | OG image strategy | Option B — static branded fallback `/public/og-image.png` (1200×630px) used on all pages |
 | English SEO | Deferred — a separate backlog item will cover full English UI/SEO |
 | Page priority | Landing page is the highest priority; public share/scorecard second |
@@ -76,7 +76,7 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
 |---|---|
 | `useHead` composable | New composable at `src/composables/useHead.js`. Accepts a config object (`title`, `description`, `ogTitle`, `ogDescription`, `ogUrl`, `ogImage`, `ogType`, `canonical`). Uses `document.head` manipulation via `watchEffect` — no external library. Called from every view. |
 | Per-page meta — landing | Highest priority. Title, description, OG tags, `WebApplication` JSON-LD, `FAQPage` JSON-LD, canonical. |
-| Per-page meta — public share/scorecard | Dynamic title = group name. Dynamic description references task count + "Wie Doet Het". Static branded OG image fallback. `ItemList` JSON-LD. Canonical. |
+| Per-page meta — public share/scorecard | Dynamic title = group name. Dynamic description references task count + "Wie-Doet-Het". Static branded OG image fallback. `ItemList` JSON-LD. Canonical. |
 | Per-page meta — auth-gated pages | Generic defaults. `<meta name="robots" content="noindex">` on `/dashboard`, `/profile`, `/groups/*/settings` to prevent indexing of private pages. |
 | Open Graph tags | `og:title`, `og:description`, `og:url`, `og:image`, `og:type` injected via `useHead` on every page. |
 | `WebApplication` JSON-LD | Injected as `<script type="application/ld+json">` on landing. Includes `name`, `url`, `description`, `applicationCategory: "UtilityApplication"`, `offers: { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }`, `inLanguage: "nl"`. |
@@ -86,7 +86,7 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
 | `robots.txt` | New file at `public/robots.txt`. See rules below. |
 | `sitemap.xml` | New file at `public/sitemap.xml`. Static entries only. See entries below. |
 | Landing page copy (`LandingView.vue`) | H1, H2, and body copy updated to match target keywords. Must stay in sync with static HTML in `index.html`. |
-| Branded OG image | `/public/og-image.png` at 1200×630px. Brand colour `#2d9cdb` background, "Wie Doet Het" wordmark, tagline "Taken verdelen voor groepen". |
+| Branded OG image | `/public/og-image.png` at 1200×630px. Brand colour `#2d9cdb` background, "Wie-Doet-Het" wordmark, tagline "Taken verdelen voor groepen". |
 
 ---
 
@@ -104,9 +104,9 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
 
 ## Acceptance Criteria
 
-- [ ] AC-01: Landing page `<title>` is exactly "Wie Doet Het – Taken verdelen voor groepen"
+- [ ] AC-01: Landing page `<title>` is exactly "Wie-Doet-Het – Taken verdelen voor groepen"
 - [ ] AC-02: Landing page `<meta name="description">` is within 155 characters and contains at least two target keywords
-- [ ] AC-03: Public share/scorecard page has dynamic OG tags: `og:title` = group name, `og:description` references task count and "Wie Doet Het"
+- [ ] AC-03: Public share/scorecard page has dynamic OG tags: `og:title` = group name, `og:description` references task count and "Wie-Doet-Het"
 - [ ] AC-04: All pages include `<link rel="canonical">` pointing to the correct absolute URL
 - [ ] AC-05: A WhatsApp link preview for a share URL shows title, description, and the branded OG image
 - [ ] AC-06: `robots.txt` is served at `/robots.txt` and disallows `/dashboard`, `/profile`, and `/groups/*/settings`
@@ -139,7 +139,7 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "Wie Doet Het",
+  "name": "Wie-Doet-Het",
   "url": "https://wiedoethet.nl",
   "description": "Verdeel taken over een groep zonder gedoe. Maak een takenlijst, deel de link via WhatsApp en zie wie wat pakt.",
   "applicationCategory": "UtilityApplication",
@@ -161,7 +161,7 @@ The share link is the primary growth channel for wieDoetHet. When a recipient op
   "@context": "https://schema.org",
   "@type": "ItemList",
   "name": "<group name>",
-  "description": "Taakverdeling voor <group name> via Wie Doet Het",
+  "description": "Taakverdeling voor <group name> via Wie-Doet-Het",
   "numberOfItems": <task count>,
   "itemListElement": [
     {
@@ -181,7 +181,7 @@ The static SEO block is placed immediately after `<body>` opens, before `<div id
 ```html
 <style>#seo-static { display: none; }</style>
 <div id="seo-static" aria-hidden="true">
-  <h1>Wie Doet Het – Taken verdelen voor groepen</h1>
+  <h1>Wie-Doet-Het – Taken verdelen voor groepen</h1>
   <p>Maak een takenlijst, deel de link via WhatsApp en zie wie wat oppakt. Gratis, geen account nodig voor deelnemers.</p>
   <h2>Veelgestelde vragen</h2>
   <!-- FAQ Q&A pairs here -->
@@ -194,13 +194,13 @@ Vue mounts on `#app` only — the `#seo-static` block is never touched by Vue.
 ### FAQ Content (Dutch — `FAQPage` JSON-LD + static HTML)
 
 **Q1: Hoe verdeel ik taken over een groep?**
-> Maak een groep aan op Wie Doet Het, voeg je taken toe en deel de link via WhatsApp. Deelnemers zien de lijst en klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft opgepakt.
+> Maak een groep aan op Wie-Doet-Het, voeg je taken toe en deel de link via WhatsApp. Deelnemers zien de lijst en klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft opgepakt.
 
 **Q2: Welke app kan taken verdelen?**
-> Wie Doet Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep. Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen account nodig.
+> Wie-Doet-Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep. Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen account nodig.
 
-**Q3: Is Wie Doet Het gratis?**
-> Ja, Wie Doet Het is volledig gratis te gebruiken. Maak een account aan als organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens voor aan te melden.
+**Q3: Is Wie-Doet-Het gratis?**
+> Ja, Wie-Doet-Het is volledig gratis te gebruiken. Maak een account aan als organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens voor aan te melden.
 
 **Q4: Kan ik taken verdelen via WhatsApp?**
 > Ja. Na het aanmaken van een takenlijst genereer je een deellink die je rechtstreeks in je WhatsApp-groep plakt. Deelnemers openen de link en claimen hun taak zonder extra app of account.

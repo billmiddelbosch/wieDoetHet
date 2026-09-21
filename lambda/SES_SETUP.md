@@ -121,49 +121,54 @@ To scope this more tightly once the exact sending identity is finalized, replace
 
 Automatic mails (welcome, no group, group without tasks/claims, day after the event, dormant) sent by a scheduled Lambda. Contract: `product/specs/mail-automation-api.spec.md`; behaviour and admin UI: `product/specs/mail-automation.spec.md`. The function is **not** behind API Gateway — EventBridge Scheduler invokes it.
 
-**Nothing in this section has been performed against the live account.** Everything ships switched off: `LIFECYCLE_MAIL_ENABLED` defaults to off and every template is disabled until an admin turns it on.
+Everything ships switched off: the **master switch** (*Hoofdschakelaar* in Admin → Automatisering) is stored in the table, is off until an admin turns it on (per table: `wdh-dev` and `wdh-main` are independent), and every template is disabled until an admin turns it on. Sections 6.2–6.5 are automated by `lambda/scripts/setup-lifecycle.js`; they stay here as the reference for what the script creates.
 
 ### 6.1 Prerequisites
 
 - **GSI3 backfill** (`lambda/scripts/backfill-gsi3.js`, backlog ADM-07) — the function finds its candidates through GSI3. Users written before the admin section shipped are invisible to it until the backfill has run. See `DYNAMODB_SETUP.md`.
 - **Production SES access** (section 2). In the sandbox only verified recipients are reachable and the send rate is 1/s; the function sends with a concurrency of 5, so throttled sends end up `failed` in the log and are retried by the next run (max 3 attempts per mail).
-- **A monitored reply mailbox.** Every mail's footer tells users to *reply* to make suggestions or to opt out, so `SES_REPLY_TO_EMAIL` must point at a mailbox somebody reads. Opt-outs are then applied by an admin (Admin → Users → user → *E-mailvoorkeuren*). The address must also be put in `public/contact.md` (currently a flagged placeholder).
+- **A monitored reply mailbox.** Every mail's footer tells users to *reply* to make suggestions or to opt out, so `SES_REPLY_TO_EMAIL` must point at a mailbox somebody reads. Opt-outs are then applied by an admin (Admin → Users → user → *E-mailvoorkeuren*). The address is also printed in `public/contact.md` — keep the two in sync (currently `Sanne@AIntern.nl`, the same as `SES_FROM_EMAIL`).
 - **SPF/DKIM/DMARC aligned** for the sending domain (section 1, Option A). Check the domain's DMARC policy before the first automated send.
 
-### 6.2 Create the function
+### 6.2 Run the setup script
 
-Lambda Console → **Create function**:
+```bash
+cd lambda
+npm run setup:lifecycle -- --plan        # read-only: shows what would be created
+npm run setup:lifecycle                  # bundles, then creates whatever is missing
+```
 
-| Setting | Value |
-|---|---|
-| Name | `wiedoethet-lifecycle` |
-| Runtime | Node.js 24.x |
-| Handler | `index.handler` |
-| Timeout | 5 min (a run is capped at 50 sends, but candidate discovery pages through GSI3) |
-| Memory | 256 MB |
+It creates, in order, only what does not exist yet (safe to re-run; existing resources are never overwritten, differences are reported as warnings): the IAM role (6.4), the function with its environment (6.3), the Scheduler role and the schedule (6.5), then runs one `{"dryRun": true}` invoke as a smoke test (sends nothing).
 
-Then upload the bundle: `cd lambda && npm run deploy:lifecycle` (bundles `wiedoethet-lifecycle/index.js` with esbuild and uploads it to `$LATEST`; needs the AWS CLI + credentials). The script only updates code — it does not create the function, role, variables or schedule.
+- **One function serves one table.** The default is `wdh-dev` (safe for testing). Point it at production with `npm run setup:lifecycle -- --table wdh-main`; that changes the function's `TABLE_NAME`, so do it deliberately. `wdh-dev` and `wdh-main` hold separate template switches and `LASTRUN` records.
+- `--schedule-disabled` creates the schedule in the DISABLED state. The default is ENABLED, which is inert while the master switch is off and every template is off.
+- Function settings: name `wiedoethet-lifecycle`, Node.js 24.x, handler `index.handler`, timeout 5 min (a run is capped at 50 sends, but candidate discovery pages through GSI3), memory 256 MB.
+- `SES_FROM_EMAIL` / `SES_REPLY_TO_EMAIL` are copied from `wiedoethet-admin`'s environment (set them there first). `JWT_SECRET` is never copied.
+- It does **not** do the GSI3 backfill (6.1), SES identity/production access (it only warns), turning on the master switch or any template (both are done in the admin panel), or CloudWatch alarms (6.7).
+- Code updates afterwards: `npm run deploy:lifecycle` (bundles `wiedoethet-lifecycle/index.js` with esbuild and uploads it to `$LATEST`). The setup script never touches the code of an existing function.
 
 ### 6.3 Environment variables
 
+Set by the script on creation (a re-run only adds missing keys). Turning mail on needs **no** environment change: flip the master switch in Admin → Automatisering (it is a `MAILSTATE#lifecycle` / `MASTER` item in the table, read at the start of every run; absent or unreadable ⇒ off).
+
 | Key | Value | Notes |
 |---|---|---|
-| `TABLE_NAME` | `wdh-main` | Same table as the other functions |
+| `TABLE_NAME` | `wdh-dev` (default) or `wdh-main` | The one table this function processes (`--table`) |
 | `SES_FROM_EMAIL` | e.g. `noreply@wiedoethet.nl` | Verified identity (section 1) |
 | `SES_REPLY_TO_EMAIL` | the monitored mailbox | **Required.** Reply-To header and the address printed in every footer. Without it a real run does nothing and logs `lifecycle-misconfigured` (fail closed) |
 | `APP_URL` | `https://wiedoethet.nl` | Base URL for links in the mails; defaults to `https://wiedoethet.nl` |
-| `LIFECYCLE_MAIL_ENABLED` | `true` | **Master kill switch.** Only the exact string `true` lets the function send. Unset or any other value ⇒ each run only records itself and exits |
+| `LIFECYCLE_MAIL_ENABLED` | **not set** (optional) | Emergency hard stop only. The exact string `false` forces the function off regardless of the admin master switch (the admin card then shows a warning). Unset, `true` or anything else defers to the master switch in the table. Do **not** leave it at `false` if you want to control mail from the admin panel |
 | `LIFECYCLE_MAX_SENDS_PER_RUN` | `50` | Optional. Hard cap per run; the surplus waits for the next scheduled run |
 
 `SES_REPLY_TO_EMAIL` must **also** be set on `wiedoethet-admin`: the manual `POST /admin/mail` and the template test mail use the same footer, and `POST /admin/mail` returns 500 when it is missing.
 
 ### 6.4 IAM
 
-Give the function's execution role the same two policies as the admin function: `lambda/iam-policy-dynamodb.json` (Get/Put/Update/Delete/Query on `wdh-main` and its indexes) and `lambda/iam-policy-ses.json` (section 4), plus `AWSLambdaBasicExecutionRole` for CloudWatch Logs.
+The script creates a dedicated role `wiedoethet-lifecycle-role` (it does not share `wiedoethet-admin-role`): `AWSLambdaBasicExecutionRole` for CloudWatch Logs, plus the inline policies `WdhDynamoDBTableAccess` (`lambda/iam-policy-dynamodb.json`: Get/Put/Update/Delete/Query on both tables and Query on their indexes) and `WdhSesSendAccess` (`lambda/iam-policy-ses.json`, section 4; send only, not `AmazonSESFullAccess`).
 
 ### 6.5 Schedule (EventBridge Scheduler)
 
-EventBridge → **Scheduler** → **Create schedule**:
+Created by the script as `wiedoethet-lifecycle-weekdays` (default schedule group), with a separate role `wiedoethet-lifecycle-scheduler-role` that Scheduler assumes and that may only `lambda:InvokeFunction` on `wiedoethet-lifecycle`:
 
 | Setting | Value |
 |---|---|
@@ -174,7 +179,7 @@ EventBridge → **Scheduler** → **Create schedule**:
 | Target | AWS Lambda **Invoke** → `wiedoethet-lifecycle` |
 | Payload | `{}` |
 | Retry policy | Retry 0 times — a run is idempotent, the next weekday's run picks up what is left |
-| Execution role | A role Scheduler may assume, with `lambda:InvokeFunction` on `wiedoethet-lifecycle` (the console can create it) |
+| Execution role | `wiedoethet-lifecycle-scheduler-role` (trust: `scheduler.amazonaws.com`, restricted to this account) |
 
 Why 10:00 on weekdays: people read private mail most on weekday mornings, and Tuesday–Thursday are the strongest days. So `welcome` may go out Monday–Friday, while the other templates (`no_group`, `no_tasks`, `no_claims`, `day_after_event`, `dormant_*`) only go out Tuesday–Thursday. Never at weekends.
 
@@ -182,10 +187,10 @@ Why 10:00 on weekdays: people read private mail most on weekday mornings, and Tu
 
 1. Invoke the function from the console with `lambda/wiedoethet-lifecycle/tests/dry-run.json` (`{"dryRun": true}`). It evaluates every **enabled** template, sends and logs nothing, and returns/logs the `wouldSend` list plus counts. Templates are disabled by default — enable one in Admin → Automation first, or the list will be empty.
 2. In Admin → Automation use **Send test mail** on each template you are about to enable; it goes to the calling admin only and is not logged.
-3. Set `LIFECYCLE_MAIL_ENABLED=true`, enable **one** template, and watch Admin → Automation → Verzendlog after the next 10:00 run. `lambda/wiedoethet-lifecycle/tests/force.json` (`{"force": true}`) runs it immediately (skips only the 10:00-hour guard; the weekend check still applies).
+3. Turn on the master switch (Admin → Automatisering → *Hoofdschakelaar*, with a confirmation), enable **one** template, and watch Admin → Automation → Verzendlog after the next 10:00 run. `lambda/wiedoethet-lifecycle/tests/force.json` (`{"force": true}`) runs it immediately (skips only the 10:00-hour guard; the weekend check still applies).
 4. Enable the remaining templates one by one.
 
-To stop everything at once set `LIFECYCLE_MAIL_ENABLED` to anything other than `true` (or disable the schedule). To stop a single mail, switch its template off in the admin panel.
+To stop everything at once switch the master switch off in the admin panel (takes effect at the next run), set `LIFECYCLE_MAIL_ENABLED=false` on the function (hard stop that does not depend on the database), or disable the schedule. To stop a single mail, switch its template off in the admin panel.
 
 ### 6.7 Monitoring
 
@@ -208,10 +213,9 @@ Lifecycle mails go to registered users who never ticked a marketing box. Under t
 - [ ] Attach `lambda/iam-policy-ses.json` to `wiedoethet-admin`'s execution role
 - [ ] `npm install` in `lambda/`, then re-bundle and re-upload `wiedoethet-admin` (`npm run bundle:admin`)
 - [ ] Re-import `openapi.yaml` into API Gateway to pick up the new `POST /admin/mail` route
-- [ ] Fill in the reply address in `public/contact.md` (replace the flagged placeholder)
-- [ ] Run the GSI3 backfill (`lambda/scripts/backfill-gsi3.js`) before enabling any lifecycle template
-- [ ] Create `wiedoethet-lifecycle` (Node 24, `index.handler`), set its env vars (section 6.3), attach the DynamoDB + SES policies, then `npm run deploy:lifecycle`
-- [ ] Create the EventBridge Scheduler schedule `cron(0 10 ? * MON-FRI *)` / `Europe/Amsterdam`, retries 0 (section 6.5)
-- [ ] Dry-run (`tests/dry-run.json`), send test mails from Admin → Automation, then set `LIFECYCLE_MAIL_ENABLED=true` and enable templates one at a time
+- [x] Fill in the reply address in `public/contact.md`
+- [ ] Run the GSI3 backfill (`lambda/scripts/backfill-gsi3.js`) per table before enabling any lifecycle template
+- [ ] `cd lambda && npm run setup:lifecycle -- --plan`, then `npm run setup:lifecycle` — creates the lifecycle role, function, env vars, Scheduler role and schedule (section 6.2; `--table wdh-main` for production)
+- [ ] Dry-run (`tests/dry-run.json`), send test mails from Admin → Automation, then turn on the master switch in Admin → Automatisering and enable templates one at a time
 - [ ] CloudWatch alarms: lifecycle Errors, SES bounce/complaint rate
-- [ ] `cd lambda && npm run deploy:admin` — deploys the admin code and wires the five new admin routes (mail templates, mail log, opt-out)
+- [ ] `cd lambda && npm run deploy:admin` — deploys the admin code and wires the seven new admin routes (mail templates, mail log, opt-out, master switch `PATCH /admin/mail-master`) on the `development` stage; use `node scripts/deploy-admin.js production` for production

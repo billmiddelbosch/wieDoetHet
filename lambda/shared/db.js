@@ -35,6 +35,7 @@
  * Mail log    PK=USER#{userId}           SK=MAIL#{templateId}#{scopeId}
  *             GSI3PK=MAILLOG             GSI3SK={createdAt}#{userId}#{templateId}
  * Last run    PK=MAILSTATE#lifecycle     SK=LASTRUN
+ * Master      PK=MAILSTATE#lifecycle     SK=MASTER   (enabled, updatedAt, updatedBy)
  */
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
@@ -71,6 +72,7 @@ export const keys = {
   mailLog: (userId, templateId, scopeId) => ({ PK: `USER#${userId}`, SK: `MAIL#${templateId}#${scopeId}` }),
   mailLogGsi3: (createdAt, userId, templateId) => ({ GSI3PK: 'MAILLOG', GSI3SK: `${createdAt}#${userId}#${templateId}` }),
   mailState: () => ({ PK: 'MAILSTATE#lifecycle', SK: 'LASTRUN' }),
+  mailMaster: () => ({ PK: 'MAILSTATE#lifecycle', SK: 'MASTER' }),
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────

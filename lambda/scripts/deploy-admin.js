@@ -58,6 +58,12 @@ const ROUTES = [
     methodResponses: ['200', '401', '403'],
   },
   {
+    fullPath: '/admin/mail-master',
+    method: 'PATCH',
+    permissionSid: 'admin-mail-master-patch',
+    methodResponses: ['200', '400', '401', '403'],
+  },
+  {
     fullPath: '/admin/mail-templates/{templateId}',
     method: 'PATCH',
     permissionSid: 'admin-mail-templates-patch',

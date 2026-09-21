@@ -276,13 +276,27 @@ group-scoped templates, `-` for user-scoped). Listed in GSI3 under the constant 
 ```
 Returned as-is by `GET /admin/mail-log` (minus the DynamoDB key attributes).
 
+### MailMaster
+Single item: `PK = MAILSTATE#lifecycle`, `SK = MASTER`. The lifecycle-mail master switch, per table (`wdh-dev` and
+`wdh-main` are independent). Returned as `master` by `GET /admin/mail-templates` and by
+`PATCH /admin/mail-master`. **An absent item means: off** — nothing is sent until an admin turns it on. It is a
+separate item from `LASTRUN` so the run's own write can never overwrite it.
+```js
+{
+  enabled: boolean,
+  updatedAt: string | null,   // ISO 8601; null when never set
+  updatedBy: string | null,   // admin user id; null when never set
+}
+```
+
 ### MailLastRun
 Single item, overwritten every run: `PK = MAILSTATE#lifecycle`, `SK = LASTRUN`. Returned as `lastRun` by
 `GET /admin/mail-templates`; `null` when the function has never run.
 ```js
 {
   at: string,               // ISO 8601
-  masterEnabled: boolean,   // LIFECYCLE_MAIL_ENABLED === 'true' at run time
+  masterEnabled: boolean,   // effective at run time: MailMaster.enabled && !killSwitch
+  killSwitch: boolean,      // LIFECYCLE_MAIL_ENABLED === 'false' on the Lambda (forces masterEnabled off)
   dryRun: boolean,
   evaluated: number,        // candidates evaluated
   sent: number,

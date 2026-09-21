@@ -16,9 +16,14 @@ const messageOf = (err) => err?.response?.data?.message ?? err.message
  */
 export function useAdminMailTemplates() {
   const adminStore = useAdminStore()
-  const { mailTemplates: templates, mailLastRun: lastRun } = storeToRefs(adminStore)
+  const {
+    mailTemplates: templates,
+    mailLastRun: lastRun,
+    mailMaster: master,
+  } = storeToRefs(adminStore)
   const loading = ref(false)
   const error = ref(null)
+  const masterSaving = ref(false)
   // Ids with a request in flight — the UI disables that template's controls.
   const savingIds = ref(new Set())
 
@@ -34,7 +39,7 @@ export function useAdminMailTemplates() {
     error.value = null
     try {
       const { data } = await apiClient.get('/admin/mail-templates')
-      adminStore.setMailTemplates(data.items ?? [], data.lastRun ?? null)
+      adminStore.setMailTemplates(data.items ?? [], data.lastRun ?? null, data.master ?? null)
     } catch (err) {
       error.value = messageOf(err)
     } finally {
@@ -65,6 +70,23 @@ export function useAdminMailTemplates() {
     return result.ok
   }
 
+  /**
+   * Switch the lifecycle-mail master switch on or off. Like setEnabled, resolves
+   * to true when the server accepted it and only then updates the store.
+   */
+  async function setMaster(enabled) {
+    masterSaving.value = true
+    try {
+      const { data } = await apiClient.patch('/admin/mail-master', { enabled })
+      adminStore.setMailMaster(data)
+      return true
+    } catch {
+      return false
+    } finally {
+      masterSaving.value = false
+    }
+  }
+
   /** Save an edited subject + body. Resolves to `{ ok, message? }` (message = server validation text). */
   function saveTemplate(id, { subject, bodyHtml }) {
     return patchTemplate(id, { subject, bodyHtml })
@@ -91,11 +113,14 @@ export function useAdminMailTemplates() {
   return {
     templates,
     lastRun,
+    master,
     loading,
     error,
     savingIds,
+    masterSaving,
     fetchTemplates,
     setEnabled,
+    setMaster,
     saveTemplate,
     resetTemplate,
     sendTest,

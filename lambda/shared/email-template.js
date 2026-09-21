@@ -25,7 +25,7 @@ function footerHtml(replyToEmail) {
   const safeEmail = escapeHtml(replyToEmail)
   const link = `<a href="mailto:${safeEmail}" style="color:#2080b8;text-decoration:underline;">${safeEmail}</a>`
   return `<div style="margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0;">
-<p style="margin:0 0 4px;font-size:14px;line-height:1.6;color:#1e293b;font-weight:600;">Ideeën om Wie Doet Het beter te maken?</p>
+<p style="margin:0 0 4px;font-size:14px;line-height:1.6;color:#1e293b;font-weight:600;">Ideeën om Wie-Doet-Het beter te maken?</p>
 <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#475569;">Laat het ons weten! Antwoord gewoon op deze e-mail met je suggestie — we lezen elk bericht.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.6;color:#1e293b;font-weight:600;">Geen e-mails meer van ons?</p>
 <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">Antwoord op deze e-mail met het woord &quot;afmelden&quot; (of mail naar ${link}). Wij zetten je dan uit onze mailinglijst — ${OPT_OUT_PROCESSING_TEXT}. Meer hoef je niet te doen.</p>

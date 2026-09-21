@@ -123,9 +123,13 @@ function makeTemplate(def, overrides = {}) {
   }
 }
 
+const masterOn = { enabled: true, updatedAt: '2026-03-03T09:00:00Z', updatedBy: 'admin-1' }
+const masterOff = { enabled: false, updatedAt: null, updatedBy: null }
+
 const lastRunOk = {
   at: '2026-03-04T09:00:00Z',
   masterEnabled: true,
+  killSwitch: false,
   dryRun: false,
   evaluated: 12,
   sent: 3,
@@ -133,10 +137,11 @@ const lastRunOk = {
   skippedByCap: 0,
 }
 
-function templatesResponse({ lastRun = lastRunOk, overrides = {} } = {}) {
+function templatesResponse({ lastRun = lastRunOk, master = masterOn, overrides = {} } = {}) {
   return {
     items: TEMPLATE_DEFS.map((def) => makeTemplate(def, overrides[def.id])),
     lastRun,
+    master,
   }
 }
 
@@ -148,7 +153,7 @@ const logEntry = (n, overrides = {}) => ({
   userName: `Gebruiker ${n}`,
   groupId: null,
   groupName: null,
-  subject: `Welkom bij Wie Doet Het, Gebruiker ${n}!`,
+  subject: `Welkom bij Wie-Doet-Het, Gebruiker ${n}!`,
   status: 'sent',
   attempts: 1,
   errorMessage: null,
@@ -178,7 +183,7 @@ const logPage1 = {
 }
 
 const logPage2 = {
-  items: [logEntry(4, { subject: 'Welkom bij Wie Doet Het, Gebruiker 4!' })],
+  items: [logEntry(4, { subject: 'Welkom bij Wie-Doet-Het, Gebruiker 4!' })],
   nextCursor: null,
 }
 
@@ -259,6 +264,11 @@ function openUsersList(response = usersList) {
   cy.wait('@stats')
   cy.get('nav').contains('a', 'Gebruikers').click()
   cy.wait('@users')
+}
+
+/** The master switch card (a <section>, so it never counts as a template <article>). */
+function masterCard() {
+  return cy.contains('section h2', 'Hoofdschakelaar').closest('section')
 }
 
 /** The <article> card of one template, found by its <h3> name. */
@@ -361,19 +371,44 @@ describe('Admin mail automation', () => {
         cy.contains('De automatisering heeft nog nooit gedraaid.').should('be.visible')
       })
 
-      it('shows a warning when the master switch is off', () => {
-        openAutomation(templatesResponse({ lastRun: { ...lastRunOk, masterEnabled: false } }))
-        cy.contains(
+      it('shows the master switch as off with an explanation', () => {
+        openAutomation(
+          templatesResponse({
+            master: masterOff,
+            lastRun: { ...lastRunOk, masterEnabled: false },
+          })
+        )
+        masterCard().find('button[role="switch"]').should('have.attr', 'aria-checked', 'false')
+        masterCard().should(
+          'contain',
           'De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates.'
-        ).should('be.visible')
+        )
         cy.contains('De automatisering heeft nog nooit gedraaid.').should('not.exist')
       })
 
-      it('shows neither warning when the last run was normal', () => {
+      it('shows the master switch as on', () => {
+        openAutomation()
+        masterCard().find('button[role="switch"]').should('have.attr', 'aria-checked', 'true')
+        masterCard().should('contain', 'De hoofdschakelaar staat aan')
+        masterCard().should('not.contain', 'De hoofdschakelaar staat uit')
+      })
+
+      it('shows the last run and no never-ran warning after a normal run', () => {
         openAutomation()
         cy.contains('De automatisering heeft nog nooit gedraaid.').should('not.exist')
-        cy.contains('De hoofdschakelaar staat uit').should('not.exist')
         cy.contains('Laatste run:').should('be.visible')
+      })
+
+      it('warns when the emergency stop on the server overrides the master switch', () => {
+        openAutomation(
+          templatesResponse({ lastRun: { ...lastRunOk, masterEnabled: false, killSwitch: true } })
+        )
+        masterCard().should('contain', 'De noodstop op de server')
+      })
+
+      it('shows no emergency-stop warning after a normal run', () => {
+        openAutomation()
+        cy.contains('De noodstop op de server').should('not.exist')
       })
 
       it('shows an error message when loading the templates fails', () => {
@@ -462,6 +497,86 @@ describe('Admin mail automation', () => {
           .find('button[role="switch"]')
           .should('have.attr', 'aria-checked', 'false')
         card('Welkom').find('button[role="switch"]').should('have.attr', 'aria-checked', 'false')
+      })
+    })
+
+    describe('the master switch', () => {
+      const masterSwitch = () => masterCard().find('button[role="switch"]')
+
+      it('asks for confirmation before switching on, then sends PATCH { enabled: true }', () => {
+        openAutomation(templatesResponse({ master: masterOff, overrides: { welcome: { enabled: true } } }))
+        cy.intercept('PATCH', '**/admin/mail-master', (req) => {
+          req.reply({ enabled: true, updatedAt: '2026-03-05T09:00:00Z', updatedBy: 'admin-1' })
+        }).as('patchMaster')
+
+        masterSwitch().click()
+
+        cy.contains('Hoofdschakelaar inschakelen?').should('be.visible')
+        cy.contains('Nu ingeschakeld: 1.').should('be.visible')
+        cy.get('@patchMaster.all').should('have.length', 0)
+
+        cy.contains('button', 'Inschakelen').click()
+
+        cy.wait('@patchMaster').its('request.body').should('deep.equal', { enabled: true })
+        cy.contains('Hoofdschakelaar inschakelen?').should('not.exist')
+        masterSwitch().should('have.attr', 'aria-checked', 'true')
+        masterCard().should('contain', 'De hoofdschakelaar staat aan')
+      })
+
+      it('sends nothing when the confirmation is cancelled', () => {
+        openAutomation(templatesResponse({ master: masterOff }))
+        cy.intercept('PATCH', '**/admin/mail-master', { statusCode: 200, body: masterOn }).as(
+          'patchMaster'
+        )
+
+        masterSwitch().click()
+        cy.contains('button', 'Annuleren').click()
+
+        cy.contains('Hoofdschakelaar inschakelen?').should('not.exist')
+        masterSwitch().should('have.attr', 'aria-checked', 'false')
+        cy.get('@patchMaster.all').should('have.length', 0)
+      })
+
+      it('switches off immediately, without a confirmation', () => {
+        openAutomation()
+        cy.intercept('PATCH', '**/admin/mail-master', (req) => {
+          req.reply({ enabled: false, updatedAt: '2026-03-05T09:00:00Z', updatedBy: 'admin-1' })
+        }).as('patchMaster')
+
+        masterSwitch().click()
+
+        cy.wait('@patchMaster').its('request.body').should('deep.equal', { enabled: false })
+        cy.contains('Hoofdschakelaar inschakelen?').should('not.exist')
+        masterSwitch().should('have.attr', 'aria-checked', 'false')
+        masterCard().should('contain', 'De hoofdschakelaar staat uit')
+      })
+
+      it('keeps the switch as it was and shows an error when the request fails', () => {
+        openAutomation(templatesResponse({ master: masterOff }))
+        cy.intercept('PATCH', '**/admin/mail-master', {
+          statusCode: 500,
+          body: { message: 'Server error' },
+        }).as('patchMaster')
+
+        masterSwitch().click()
+        cy.contains('button', 'Inschakelen').click()
+        cy.wait('@patchMaster')
+
+        masterSwitch().should('have.attr', 'aria-checked', 'false')
+        cy.contains('Wijzigen mislukt.').should('be.visible')
+      })
+
+      it('does not change any template when the master switch is toggled', () => {
+        openAutomation(templatesResponse({ overrides: { welcome: { enabled: true } } }))
+        cy.intercept('PATCH', '**/admin/mail-master', {
+          statusCode: 200,
+          body: { enabled: false, updatedAt: '2026-03-05T09:00:00Z', updatedBy: 'admin-1' },
+        }).as('patchMaster')
+
+        masterSwitch().click()
+        cy.wait('@patchMaster')
+
+        card('Welkom').find('button[role="switch"]').should('have.attr', 'aria-checked', 'true')
       })
     })
 

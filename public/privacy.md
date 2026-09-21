@@ -1,6 +1,6 @@
 # Privacy
 
-Wie Doet Het verzamelt zo min mogelijk. Deze pagina beschrijft precies welke
+Wie-Doet-Het verzamelt zo min mogelijk. Deze pagina beschrijft precies welke
 gegevens er zijn, waarom ze er zijn en hoe je ze weer kwijtraakt.
 
 ## Als organisator (met account)

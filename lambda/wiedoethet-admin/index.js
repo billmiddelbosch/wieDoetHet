@@ -7,6 +7,7 @@
  *   GET  /admin/groups/{groupId}
  *   POST /admin/mail
  *   GET  /admin/mail-templates
+ *   PATCH /admin/mail-master
  *   PATCH /admin/mail-templates/{templateId}
  *   POST /admin/mail-templates/{templateId}/test
  *   GET  /admin/mail-log
@@ -19,8 +20,8 @@
  * Role-gated (User.role === 'admin', re-checked server-side on every request —
  * the JWT itself carries no role claim). All GET routes are read-only. POST
  * /admin/mail and POST /admin/mail-templates/{id}/test send email via SES;
- * PATCH /admin/mail-templates/{id} and PATCH /admin/users/{id}/mail-opt-out
- * write to DynamoDB. See product/specs/admin-api.spec.md and
+ * PATCH /admin/mail-templates/{id}, PATCH /admin/mail-master and
+ * PATCH /admin/users/{id}/mail-opt-out write to DynamoDB. See product/specs/admin-api.spec.md and
  * product/specs/mail-automation-api.spec.md for the full contracts, and
  * lambda/SES_SETUP.md for the SES setup the mail routes depend on.
  */
@@ -390,9 +391,10 @@ async function listMailTemplates(event) {
   if (error) return error
 
   const state = keys.mailState()
-  const [configs, lastRunItem] = await Promise.all([
+  const [configs, lastRunItem, masterItem] = await Promise.all([
     Promise.all(LIFECYCLE_TEMPLATES.map((t) => getTemplateConfig(t.id))),
     getItem(state.PK, state.SK),
+    getMailMasterItem(),
   ])
 
   const items = LIFECYCLE_TEMPLATES.map((definition, i) => toTemplateItem(definition, configs[i]))
@@ -400,6 +402,7 @@ async function listMailTemplates(event) {
     ? {
         at: lastRunItem.at,
         masterEnabled: lastRunItem.masterEnabled === true,
+        killSwitch: lastRunItem.killSwitch === true,
         dryRun: lastRunItem.dryRun === true,
         evaluated: lastRunItem.evaluated ?? 0,
         sent: lastRunItem.sent ?? 0,
@@ -409,7 +412,38 @@ async function listMailTemplates(event) {
     : null
 
   logSuccess({ route: 'GET /admin/mail-templates', adminUserId: admin.id, start, resultCount: items.length })
-  return ok({ items, lastRun })
+  return ok({ items, lastRun, master: toMasterItem(masterItem) })
+}
+
+async function getMailMasterItem() {
+  const { PK, SK } = keys.mailMaster()
+  return getItem(PK, SK)
+}
+
+/** No MASTER item means the switch was never turned on: off, like the lifecycle Lambda treats it. */
+function toMasterItem(item) {
+  return {
+    enabled: item?.enabled === true,
+    updatedAt: item?.updatedAt ?? null,
+    updatedBy: item?.updatedBy ?? null,
+  }
+}
+
+/** The lifecycle mail master switch. The lifecycle Lambda reads this item on every run. */
+async function setMailMaster(event) {
+  const start = Date.now()
+  const { user: admin, error } = await requireAdmin(event)
+  if (error) return error
+
+  const body = parseBody(event)
+  if (typeof body.enabled !== 'boolean') return badRequest('enabled moet true of false zijn')
+
+  const { PK, SK } = keys.mailMaster()
+  const next = { enabled: body.enabled, updatedAt: new Date().toISOString(), updatedBy: admin.id }
+  await updateItem(PK, SK, next)
+
+  logSuccess({ route: 'PATCH /admin/mail-master', adminUserId: admin.id, start, resultCount: 1 })
+  return ok(toMasterItem(next))
 }
 
 async function updateMailTemplate(event) {
@@ -756,6 +790,7 @@ export const handler = async (event) => {
     if (method === 'GET' && /^\/admin\/groups\/[^/]+$/.test(path))  return await getGroupDetail(event)
     if (method === 'POST' && path === '/admin/mail')                 return await mailUsers(event)
     if (method === 'GET' && path === '/admin/mail-templates')        return await listMailTemplates(event)
+    if (method === 'PATCH' && path === '/admin/mail-master')         return await setMailMaster(event)
     if (method === 'PATCH' && /^\/admin\/mail-templates\/[^/]+$/.test(path))     return await updateMailTemplate(event)
     if (method === 'POST' && /^\/admin\/mail-templates\/[^/]+\/test$/.test(path)) return await sendTemplateTest(event)
     if (method === 'GET' && path === '/admin/mail-log')              return await listMailLog(event)

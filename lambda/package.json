@@ -21,6 +21,7 @@
     "bundle": "npm run bundle:auth && npm run bundle:groups && npm run bundle:tasks && npm run bundle:claims && npm run bundle:admin && npm run bundle:lifecycle",
     "deploy:admin": "npm run bundle:admin && node scripts/deploy-admin.js",
     "deploy:lifecycle": "npm run bundle:lifecycle && node scripts/deploy-lifecycle.js",
+    "setup:lifecycle": "npm run bundle:lifecycle && node scripts/setup-lifecycle.js",
     "set-admin": "node scripts/set-admin-role.js",
     "set-password": "node scripts/set-password.js"
   },

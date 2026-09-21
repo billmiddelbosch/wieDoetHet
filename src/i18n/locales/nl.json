@@ -171,56 +171,56 @@
   },
   "seo": {
     "landing": {
-      "title": "Wie Doet Het – Taken verdelen voor groepen",
+      "title": "Wie-Doet-Het – Taken verdelen voor groepen",
       "description": "Verdeel taken over je groep via WhatsApp. Maak een takenlijst, deel de link en zie wie wat oppakt. Gratis, geen account nodig voor deelnemers."
     },
     "login": {
-      "title": "Inloggen – Wie Doet Het",
-      "description": "Log in op je Wie Doet Het account om je groepen en taken te beheren."
+      "title": "Inloggen – Wie-Doet-Het",
+      "description": "Log in op je Wie-Doet-Het account om je groepen en taken te beheren."
     },
     "register": {
-      "title": "Account aanmaken – Wie Doet Het",
+      "title": "Account aanmaken – Wie-Doet-Het",
       "description": "Maak een gratis account aan en begin met taken verdelen voor je groep."
     },
     "dashboard": {
-      "title": "Mijn groepen – Wie Doet Het"
+      "title": "Mijn groepen – Wie-Doet-Het"
     },
     "profile": {
-      "title": "Mijn profiel – Wie Doet Het"
+      "title": "Mijn profiel – Wie-Doet-Het"
     },
     "groupSettings": {
-      "title": "Groepsinstellingen – Wie Doet Het"
+      "title": "Groepsinstellingen – Wie-Doet-Het"
     },
     "shareRedirect": {
-      "title": "Groep laden – Wie Doet Het",
-      "description": "Taakverdeling via Wie Doet Het. Deel de link en zie wie wat doet."
+      "title": "Groep laden – Wie-Doet-Het",
+      "description": "Taakverdeling via Wie-Doet-Het. Deel de link en zie wie wat doet."
     },
     "adminDashboard": {
-      "title": "Admin overzicht – Wie Doet Het"
+      "title": "Admin overzicht – Wie-Doet-Het"
     },
     "adminUsers": {
-      "title": "Admin – Gebruikers – Wie Doet Het"
+      "title": "Admin – Gebruikers – Wie-Doet-Het"
     },
     "adminUserDetail": {
-      "title": "Admin – Gebruikersdetail – Wie Doet Het"
+      "title": "Admin – Gebruikersdetail – Wie-Doet-Het"
     },
     "adminGroups": {
-      "title": "Admin – Groepen – Wie Doet Het"
+      "title": "Admin – Groepen – Wie-Doet-Het"
     },
     "adminGroupDetail": {
-      "title": "Admin – Groepsdetail – Wie Doet Het"
+      "title": "Admin – Groepsdetail – Wie-Doet-Het"
     },
     "about": {
-      "title": "Over Wie Doet Het – Taken verdelen zonder gedoe",
-      "description": "Wie Doet Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft."
+      "title": "Over Wie-Doet-Het – Taken verdelen zonder gedoe",
+      "description": "Wie-Doet-Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft."
     },
     "contact": {
-      "title": "Contact – Wie Doet Het",
-      "description": "Waar je terechtkunt met vragen over een takenlijst, een bug of het verwijderen van je gegevens bij Wie Doet Het."
+      "title": "Contact – Wie-Doet-Het",
+      "description": "Waar je terechtkunt met vragen over een takenlijst, een bug of het verwijderen van je gegevens bij Wie-Doet-Het."
     },
     "privacy": {
-      "title": "Privacy – Wie Doet Het",
-      "description": "Welke gegevens Wie Doet Het bewaart van organisatoren en deelnemers, waarom, en hoe je ze weer kwijtraakt."
+      "title": "Privacy – Wie-Doet-Het",
+      "description": "Welke gegevens Wie-Doet-Het bewaart van organisatoren en deelnemers, waarom, en hoe je ze weer kwijtraakt."
     },
     "adminAutomation": {
       "title": "Mail-automatisering"
@@ -232,11 +232,11 @@
   "faq": {
     "title": "Veelgestelde vragen",
     "q1": "Hoe verdeel ik taken over een groep?",
-    "a1": "Maak een groep aan op Wie Doet Het, voeg je taken toe en deel de link via WhatsApp. Deelnemers klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft opgepakt.",
+    "a1": "Maak een groep aan op Wie-Doet-Het, voeg je taken toe en deel de link via WhatsApp. Deelnemers klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft opgepakt.",
     "q2": "Welke app kan taken verdelen?",
-    "a2": "Wie Doet Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep. Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen account nodig.",
-    "q3": "Is Wie Doet Het gratis?",
-    "a3": "Ja, Wie Doet Het is volledig gratis te gebruiken. Maak een account aan als organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens voor aan te melden.",
+    "a2": "Wie-Doet-Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep. Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen account nodig.",
+    "q3": "Is Wie-Doet-Het gratis?",
+    "a3": "Ja, Wie-Doet-Het is volledig gratis te gebruiken. Maak een account aan als organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens voor aan te melden.",
     "q4": "Kan ik taken verdelen via WhatsApp?",
     "a4": "Na het aanmaken van een takenlijst genereer je een deellink die je rechtstreeks in je WhatsApp-groep plakt. Deelnemers openen de link en claimen hun taak zonder extra app of account."
   },
@@ -244,7 +244,7 @@
     "title": "Scorekaart",
     "refresh": "Vernieuwen",
     "notVisible": "De scorekaart is niet zichtbaar voor jou. De initiator heeft dit beperkt.",
-    "ogDescription": "Bekijk de taakverdeling voor {name}. {count} taken · Wie Doet Het"
+    "ogDescription": "Bekijk de taakverdeling voor {name}. {count} taken · Wie-Doet-Het"
   },
   "profile": {
     "title": "Mijn profiel",
@@ -355,6 +355,16 @@
       "tabLog": "Verzendlog",
       "neverRan": "De automatisering heeft nog nooit gedraaid.",
       "masterOff": "De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates.",
+      "master": {
+        "title": "Hoofdschakelaar",
+        "label": "Mails versturen",
+        "on": "De hoofdschakelaar staat aan — ingeschakelde templates worden verstuurd bij de eerstvolgende run.",
+        "updatedAt": "Laatst gewijzigd: {at}",
+        "killSwitch": "De noodstop op de server (LIFECYCLE_MAIL_ENABLED=false) staat aan: er worden geen mails verstuurd, ook niet met deze schakelaar aan.",
+        "confirmTitle": "Hoofdschakelaar inschakelen?",
+        "confirmMessage": "Vanaf de eerstvolgende run (ma–vr om 10:00) worden er mails verstuurd voor de ingeschakelde templates. Nu ingeschakeld: {count}. Weet je het zeker?",
+        "confirmLabel": "Inschakelen"
+      },
       "lastRun": "Laatste run: {at} — {sent} verstuurd, {failed} mislukt.",
       "loadError": "Templates laden mislukt.",
       "enabled": "Ingeschakeld",
@@ -447,8 +457,8 @@
     "privacy": "Privacy"
   },
   "about": {
-    "title": "Over Wie Doet Het",
-    "intro": "Wie Doet Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft.",
+    "title": "Over Wie-Doet-Het",
+    "intro": "Wie-Doet-Het is een gratis webapp waarmee je taken verdeelt over een groep mensen, zonder dat iedereen een account nodig heeft.",
     "sections": [
       {
         "title": "Het probleem",
@@ -457,7 +467,7 @@
         ]
       },
       {
-        "title": "Hoe Wie Doet Het het oplost",
+        "title": "Hoe Wie-Doet-Het het oplost",
         "paragraphs": [
           "De organisator maakt een groep, voegt de taken toe en deelt één link. Iedereen die de link opent ziet de complete lijst en kiest zelf wat zij doen. Een geclaimde taak is direct voor iedereen zichtbaar, dus dubbel werk kan niet. Per taak kun je instellen hoeveel mensen zich mogen aanmelden.",
           "Deelnemers maken geen account aan. Zij vullen alleen hun naam in bij de taak die zij pakken. Alleen de organisator heeft een account nodig, om de groep later terug te kunnen vinden en aan te passen."
@@ -472,13 +482,13 @@
       {
         "title": "Wat het niet is",
         "paragraphs": [
-          "Geen projectmanagementtool, geen chat, geen agenda en geen urenregistratie. Wie Doet Het doet één ding: een lijst taken, een gedeelde link, en zichtbaar maken wie wat oppakt."
+          "Geen projectmanagementtool, geen chat, geen agenda en geen urenregistratie. Wie-Doet-Het doet één ding: een lijst taken, een gedeelde link, en zichtbaar maken wie wat oppakt."
         ]
       },
       {
         "title": "Over het project",
         "paragraphs": [
-          "Wie Doet Het is een onafhankelijk, gratis project. De broncode van de webapp staat publiek op GitHub."
+          "Wie-Doet-Het is een onafhankelijk, gratis project. De broncode van de webapp staat publiek op GitHub."
         ],
         "link": {
           "href": "https://github.com/billmiddelbosch/wieDoetHet",
@@ -489,7 +499,7 @@
   },
   "contact": {
     "title": "Contact",
-    "intro": "Wie Doet Het is een klein, gratis project. Hieronder staat per situatie waar je moet zijn, zodat je niet op het verkeerde adres aanklopt.",
+    "intro": "Wie-Doet-Het is een klein, gratis project. Hieronder staat per situatie waar je moet zijn, zodat je niet op het verkeerde adres aanklopt.",
     "sections": [
       {
         "title": "Je bent uitgenodigd voor een takenlijst",
@@ -520,7 +530,7 @@
       {
         "title": "Je bent een AI-agent",
         "paragraphs": [
-          "Begin bij de agentgids voor wat het product doet en wanneer je het wel of niet moet aanraden. Wie Doet Het is een website die mensen in een browser gebruiken; er is niets voor een agent om mee in te loggen."
+          "Begin bij de agentgids voor wat het product doet en wanneer je het wel of niet moet aanraden. Wie-Doet-Het is een website die mensen in een browser gebruiken; er is niets voor een agent om mee in te loggen."
         ],
         "link": {
           "href": "/agents.md",
@@ -537,7 +547,7 @@
   },
   "privacy": {
     "title": "Privacy",
-    "intro": "Wie Doet Het verzamelt zo min mogelijk. Deze pagina beschrijft precies welke gegevens er zijn, waarom ze er zijn en hoe je ze weer kwijtraakt.",
+    "intro": "Wie-Doet-Het verzamelt zo min mogelijk. Deze pagina beschrijft precies welke gegevens er zijn, waarom ze er zijn en hoe je ze weer kwijtraakt.",
     "sections": [
       {
         "title": "Als organisator (met account)",
@@ -602,8 +612,8 @@
     ]
   },
   "agentMode": {
-    "title": "Wie Doet Het — samenvatting voor agents",
-    "summary": "Wie Doet Het verdeelt een vaste set taken over een groep mensen. Eén persoon maakt een groep aan en voegt taken toe; alle anderen openen een deellink en claimen de taak die zij gaan doen.",
+    "title": "Wie-Doet-Het — samenvatting voor agents",
+    "summary": "Wie-Doet-Het verdeelt een vaste set taken over een groep mensen. Eén persoon maakt een groep aan en voegt taken toe; alle anderen openen een deellink en claimen de taak die zij gaan doen.",
     "factsTitle": "Kerngegevens",
     "facts": [
       {

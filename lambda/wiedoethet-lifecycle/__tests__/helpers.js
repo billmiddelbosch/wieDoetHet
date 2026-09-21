@@ -4,7 +4,7 @@
  * without DynamoDB. Test-only.
  */
 
-export function createFakeDb() {
+export function createFakeDb({ master = true } = {}) {
   const items = new Map()
   const id = (pk, sk) => `${pk}||${sk}`
   const all = () => [...items.values()]
@@ -119,11 +119,19 @@ export function createFakeDb() {
   db.logRows = () => all().filter((i) => i.type === 'MAILLOG')
   db.logRow = (userId, templateId, scopeId = '-') => items.get(id(`USER#${userId}`, `MAIL#${templateId}#${scopeId}`)) ?? null
   db.lastRun = () => items.get(id('MAILSTATE#lifecycle', 'LASTRUN')) ?? null
+  db.setMaster = (enabled) => {
+    const item = { PK: 'MAILSTATE#lifecycle', SK: 'MASTER', enabled, updatedAt: '2026-01-01T00:00:00.000Z', updatedBy: 'admin-1' }
+    items.set(id(item.PK, item.SK), item)
+    return item
+  }
+  db.clearMaster = () => items.delete(id('MAILSTATE#lifecycle', 'MASTER'))
+  // The master switch defaults to ON so the run tests exercise the real send path;
+  // pass { master: false } to start without a MASTER item (fail-closed).
+  if (master) db.setMaster(true)
   return db
 }
 
 export const ENV = {
-  LIFECYCLE_MAIL_ENABLED: 'true',
   SES_FROM_EMAIL: 'noreply@wiedoethet.nl',
   SES_REPLY_TO_EMAIL: 'hallo@wiedoethet.nl',
 }

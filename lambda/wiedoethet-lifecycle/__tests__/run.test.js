@@ -23,20 +23,65 @@ const oldUser = (db, id, extra = {}) => db.addUser({ id, createdAt: daysAgo(TUE_
 describe('guards', () => {
   it('does nothing while the master switch is off (but still records the run)', async () => {
     const db = createFakeDb()
+    db.setMaster(false)
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
+    const { summary, sent } = await run(db, TUE_10)
+    expect(summary.skipped).toBe('master-switch-off')
+    expect(sent).toHaveLength(0)
+    expect(db.logRows()).toHaveLength(0)
+    expect(db.lastRun()).toMatchObject({ masterEnabled: false, killSwitch: false })
+  })
+
+  it('fails closed when the master switch was never set', async () => {
+    const db = createFakeDb({ master: false })
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
+    const { summary, sent } = await run(db, TUE_10)
+    expect(summary.skipped).toBe('master-switch-off')
+    expect(sent).toHaveLength(0)
+    expect(db.lastRun()).toMatchObject({ masterEnabled: false })
+  })
+
+  it('fails closed when the master switch cannot be read', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
+    const getItem = db.getItem
+    db.getItem = async (pk, sk) => {
+      if (sk === 'MASTER') throw new Error('throttled')
+      return getItem(pk, sk)
+    }
+    const { summary, sent } = await run(db, TUE_10)
+    expect(summary.skipped).toBe('master-switch-off')
+    expect(sent).toHaveLength(0)
+  })
+
+  it('LIFECYCLE_MAIL_ENABLED=false is a hard override, even with the master switch on', async () => {
+    const db = createFakeDb()
     db.enableTemplate('welcome')
     db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
     const { summary, sent } = await run(db, TUE_10, {}, { env: { ...ENV, LIFECYCLE_MAIL_ENABLED: 'false' } })
     expect(summary.skipped).toBe('master-switch-off')
     expect(sent).toHaveLength(0)
-    expect(db.logRows()).toHaveLength(0)
-    expect(db.lastRun()).toMatchObject({ masterEnabled: false })
+    expect(db.lastRun()).toMatchObject({ masterEnabled: false, killSwitch: true })
+  })
+
+  it('an unset or "true" LIFECYCLE_MAIL_ENABLED defers to the master switch in the table', async () => {
+    for (const value of [undefined, 'true']) {
+      const db = createFakeDb()
+      db.enableTemplate('welcome')
+      db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
+      const { sent } = await run(db, TUE_10, {}, { env: { ...ENV, LIFECYCLE_MAIL_ENABLED: value } })
+      expect(sent).toHaveLength(1)
+    }
   })
 
   it('fails closed without a reply-to address', async () => {
     const db = createFakeDb()
     db.enableTemplate('welcome')
     db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
-    const { summary, sent } = await run(db, TUE_10, {}, { env: { LIFECYCLE_MAIL_ENABLED: 'true', SES_FROM_EMAIL: 'noreply@wiedoethet.nl' } })
+    const { summary, sent } = await run(db, TUE_10, {}, { env: { SES_FROM_EMAIL: 'noreply@wiedoethet.nl' } })
     expect(summary.skipped).toBe('misconfigured')
     expect(sent).toHaveLength(0)
   })
@@ -72,7 +117,8 @@ describe('guards', () => {
     const db = createFakeDb()
     db.enableTemplate('welcome')
     db.addUser({ id: 'u1', createdAt: '2026-09-21T14:00:00.000Z' })
-    const { summary, sent } = await run(db, TUE_10, { dryRun: true }, { env: { ...ENV, LIFECYCLE_MAIL_ENABLED: 'false' } })
+    db.setMaster(false)
+    const { summary, sent } = await run(db, TUE_10, { dryRun: true })
     expect(sent).toHaveLength(0)
     expect(db.logRows()).toHaveLength(0)
     expect(summary.wouldSend).toEqual([{ templateId: 'welcome', userId: 'u1', scopeId: '-' }])
@@ -120,7 +166,7 @@ describe('welcome', () => {
     db.enableTemplate('welcome')
     db.addUser({ id: 'u1', name: 'Anna de Vries', createdAt: '2026-09-21T14:00:00.000Z' })
     const { sent } = await run(db, TUE_10)
-    expect(sent[0].subject).toBe('Welkom bij Wie Doet Het, Anna!')
+    expect(sent[0].subject).toBe('Welkom bij Wie-Doet-Het, Anna!')
     expect(sent[0].html).toContain('Hoi Anna,')
     expect(sent[0].html).toContain('/groups/new')
     expect(sent[0].html).toMatch(/afmelden/i)
@@ -322,7 +368,7 @@ describe('dormant win-backs', () => {
     const { sent } = await run(db, TUE_10)
     expect(recipients(sent)).toEqual(['e1@example.com', 'e3@example.com'])
     expect(sent.find((m) => m.to === 'e1@example.com').subject).toBe('Nog iets te regelen, Anna?')
-    expect(sent.find((m) => m.to === 'e3@example.com').subject).toBe('We missen je bij Wie Doet Het')
+    expect(sent.find((m) => m.to === 'e3@example.com').subject).toBe('We missen je bij Wie-Doet-Het')
   })
 
   it('never sends dormant_60 without a sent dormant_30', async () => {

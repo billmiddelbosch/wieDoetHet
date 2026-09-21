@@ -105,8 +105,9 @@ When groups need to divide tasks, coordination typically happens chaotically thr
     mail; an admin records the opt-out on the user (Admin → Users → user → *E-mailvoorkeuren*) and answers
     suggestions manually. Opted-out users are also skipped by the manual Mail Users feature.
   - Admin → **Automatisering**: per-template on/off switch, editable subject/body per template (with reset to
-    the default text and a test mail to yourself), and a sent-mail log (template, recipient, status, attempts).
-    A master kill switch (`LIFECYCLE_MAIL_ENABLED`) and a per-run send cap sit outside the panel.
+    the default text and a test mail to yourself), a **master switch** (*Hoofdschakelaar*, off until an admin
+    turns it on, with a confirmation), and a sent-mail log (template, recipient, status, attempts).
+    An emergency stop (`LIFECYCLE_MAIL_ENABLED=false` on the Lambda) and a per-run send cap sit outside the panel.
   - Deferred to a later version: "event approaching" and "everything claimed" mails.
   - Specs: `product/specs/mail-automation.spec.md` (UI + rules), `product/specs/mail-automation-api.spec.md` (backend).
 

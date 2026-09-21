@@ -548,7 +548,14 @@ components:
           type: string
         masterEnabled:
           type: boolean
-          description: LIFECYCLE_MAIL_ENABLED was "true" at run time.
+          description: >-
+            The lifecycle function was allowed to send at run time: the master
+            switch (see MailMaster) was on and the emergency stop was not set.
+        killSwitch:
+          type: boolean
+          description: >-
+            LIFECYCLE_MAIL_ENABLED was "false" on the Lambda, which forces
+            masterEnabled off whatever the master switch says.
         dryRun:
           type: boolean
         evaluated:
@@ -563,11 +570,42 @@ components:
       required:
         - at
         - masterEnabled
+        - killSwitch
         - dryRun
         - evaluated
         - sent
         - failed
         - skippedByCap
+
+    MailMaster:
+      type: object
+      description: >-
+        The lifecycle-mail master switch of this environment's table. Absent
+        in the table counts as off, so nothing is sent until an admin turns it
+        on.
+      properties:
+        enabled:
+          type: boolean
+        updatedAt:
+          type: string
+          nullable: true
+          description: null when the switch was never set.
+        updatedBy:
+          type: string
+          nullable: true
+          description: User id of the admin who last changed it; null when never set.
+      required:
+        - enabled
+        - updatedAt
+        - updatedBy
+
+    MailMasterPatch:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required:
+        - enabled
 
     MailTemplateListResponse:
       type: object
@@ -581,9 +619,12 @@ components:
             - $ref: '#/components/schemas/MailLastRun'
           nullable: true
           description: null when the lifecycle function has never run.
+        master:
+          $ref: '#/components/schemas/MailMaster'
       required:
         - items
         - lastRun
+        - master
 
     MailTemplatePatch:
       type: object
@@ -1247,16 +1288,45 @@ paths:
   /admin/mail-templates:
     get:
       summary: >-
-        The 7 lifecycle mail templates (in priority order) and the result of
-        the last lifecycle run (admin only)
+        The 7 lifecycle mail templates (in priority order), the result of the
+        last lifecycle run and the master switch (admin only)
       operationId: listAdminMailTemplates
       responses:
         "200":
-          description: Templates and last run
+          description: Templates, last run and master switch
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MailTemplateListResponse'
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-master:
+    patch:
+      summary: Switch the lifecycle-mail master switch on or off (admin only)
+      operationId: updateAdminMailMaster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailMasterPatch'
+      responses:
+        "200":
+          description: The master switch after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailMaster'
+        "400":
+          description: enabled is not a boolean
         "401":
           description: Not authenticated
         "403":

@@ -1,9 +1,9 @@
 # Spec — Mail Automation (Backend: `wiedoethet-lifecycle` + admin endpoints)
 
-**Status:** SPEC written — awaiting product review. E2E tests written (`cypress/e2e/admin-automation.cy.js`) but not yet run against an implementation. **Nothing is built.**
+**Status:** BUILT on `feature/mailAutomation` (2026-09-20). Verified with `npx vitest run lambda/` (67 tests, mocked DynamoDB/SES, fixed clock incl. DST) and the Cypress suite with stubbed API. **Not deployed / not run against AWS.** Deployed so far (2026-09-21): admin Lambda code + the six admin routes on the `development` stage, `SES_REPLY_TO_EMAIL` = `SES_FROM_EMAIL` on `wiedoethet-admin`. Still open: run the GSI3 backfill, create the `wiedoethet-lifecycle` Lambda + EventBridge Scheduler (see `lambda/SES_SETUP.md` § 6).
 **Scope of this file:** backend only — the new scheduled `wiedoethet-lifecycle` Lambda, the new/extended `wiedoethet-admin` endpoints, DynamoDB items, shared modules, send-timing rules, the mail footer, opt-out, env vars, IAM, error handling. Frontend (admin panel screens, composables, i18n) is `product/specs/mail-automation.spec.md`. Entity shapes are mirrored in `product/data-model.md`.
 **Branch:** `feature/mailAutomation`
-**Last Updated:** 2026-09-19
+**Last Updated:** 2026-09-20
 
 ---
 
@@ -88,8 +88,10 @@ A new Lambda, **not** behind API Gateway. Invoked by **EventBridge Scheduler** o
 ### Run algorithm
 
 ```
-1. masterEnabled = process.env.LIFECYCLE_MAIL_ENABLED === 'true'
-   write MAILSTATE#lifecycle / LASTRUN { at, masterEnabled, dryRun }    // always — the admin panel shows it
+1. killSwitch = process.env.LIFECYCLE_MAIL_ENABLED === 'false'        // emergency override, exactly 'false'
+   master = killSwitch ? null : getItem(MAILSTATE#lifecycle / MASTER)  // toggled from the admin panel
+   masterEnabled = !killSwitch && master?.enabled === true             // absent / unreadable ⇒ off (fail closed)
+   write MAILSTATE#lifecycle / LASTRUN { at, masterEnabled, killSwitch, dryRun }    // always — the admin panel shows it
    if !masterEnabled and !dryRun → return { skipped: 'master-switch-off' }
 2. localNow = Europe/Amsterdam wall-clock (Intl.DateTimeFormat, no offset math)
    if !force and !dryRun and localNow.hour !== 10 → return { skipped: 'outside-send-window' }
@@ -186,7 +188,7 @@ Implemented once, in `lambda/shared/email-template.js` → `wrapEmailHtml(bodyHt
 Two visually separated blocks, Dutch, plain language, ≥ 14 px, links underlined:
 
 ```
-Ideeën om Wie Doet Het beter te maken?
+Ideeën om Wie-Doet-Het beter te maken?
 Laat het ons weten! Antwoord gewoon op deze e-mail met je suggestie — we lezen elk bericht.
 
 Geen e-mails meer van ons?
@@ -271,7 +273,8 @@ Returns all seven templates in `PRIORITY ORDER` (built from the code definitions
     updatedAt: string | null,
     updatedBy: string | null,             // admin user id
   }],
-  lastRun: { at, masterEnabled, dryRun, evaluated, sent, failed, skippedByCap } | null,
+  lastRun: { at, masterEnabled, killSwitch, dryRun, evaluated, sent, failed, skippedByCap } | null,
+  master: { enabled: boolean, updatedAt: string | null, updatedBy: string | null },   // absent item ⇒ { enabled:false, updatedAt:null, updatedBy:null }
 }
 ```
 Name/description/trigger copy is **not** returned — it is i18n on the frontend, keyed by `id` (both `nl.json` and `en.json`). Only the email text itself is server-owned (mails are always Dutch).
@@ -293,6 +296,10 @@ Partial update. Body — any subset of:
 - Flipping `enabled` from `false` → `true` sets `enabledAt = now` (see `dormant_*`); `true` → `false` leaves it.
 - Writes the CONFIG item (`PK=MAILTPL#{id}`, `SK=CONFIG`) with `enabled, subject, bodyHtml, enabledAt, updatedAt, updatedBy` (`updateItem`, creating it on first touch). Returns the updated template in the same shape as one `items[]` entry.
 - Admin HTML is stored as-is (admins are trusted; the manual mail endpoint already does the same). The only escaping is of substituted *values*.
+
+### `PATCH /admin/mail-master`
+
+Switches the lifecycle-mail master switch. Body: `{ enabled: boolean }` — anything else (missing, string, number) → `400` `badRequest('enabled moet true of false zijn')`, nothing written. Writes the MASTER item (`PK=MAILSTATE#lifecycle`, `SK=MASTER`) with `enabled, updatedAt, updatedBy` (`updateItem`, creating it on first touch) and returns `{ enabled, updatedAt, updatedBy }`. It never touches `LASTRUN`, and it does not change any template's own toggle. The lifecycle Lambda reads the item at the start of every run, so a switch made now takes effect at the next run (Mon–Fri 10:00) — there is no immediate send.
 
 ### `POST /admin/mail-templates/{templateId}/test` (A8)
 
@@ -337,11 +344,12 @@ Body `{ optOut: boolean }` (required, boolean, else `400`). Unknown user → `40
 | Template config | `MAILTPL#{templateId}` | `CONFIG` | `{ enabled, subject\|null, bodyHtml\|null, enabledAt\|null, updatedAt, updatedBy }`. Absent ⇒ disabled, default text. Not in GSI3. |
 | Mail log | `USER#{userId}` | `MAIL#{templateId}#{scopeId}` | See § Idempotency. In GSI3 under the constant partition `MAILLOG`. |
 | Last-run state | `MAILSTATE#lifecycle` | `LASTRUN` | Single item, overwritten every run. |
+| Master switch | `MAILSTATE#lifecycle` | `MASTER` | `{ enabled, updatedAt, updatedBy }`. Absent ⇒ off. Separate from `LASTRUN` so the run's write cannot clobber it. Per table: `wdh-dev` and `wdh-main` are independent. |
 
 Impacts to verify at build time:
 - `GSI3PK='MAILLOG'` items must **not** be counted by the stats queries (`GSI3PK='USER'` / `'GROUP'` are separate partitions — no overlap).
 - Any existing `queryByPk('USER#{id}')` that does not pass an `SK` prefix would now also return `MAIL#…` rows. Grep every caller of `queryByPk` with a `USER#` PK during build; `getItem(USER#id, 'PROFILE')` is unaffected.
-- New key builders in `lambda/shared/db.js`: `keys.mailTemplate(id)`, `keys.mailLog(userId, templateId, scopeId)`, `keys.mailLogGsi3(createdAt, userId, templateId)`, `keys.mailState()`.
+- New key builders in `lambda/shared/db.js`: `keys.mailTemplate(id)`, `keys.mailLog(userId, templateId, scopeId)`, `keys.mailLogGsi3(createdAt, userId, templateId)`, `keys.mailState()`, `keys.mailMaster()`.
 - New helpers in `lambda/shared/db.js`: `putItemIfAbsent(item)` (conditional put returning `false` on `ConditionalCheckFailedException`), `updateItemIf(pk, sk, updates, condition, values)`, `touchLastSeen(user)`.
 
 ## Environment Variables
@@ -352,14 +360,14 @@ Impacts to verify at build time:
 | `SES_FROM_EMAIL` | lifecycle, admin | Yes | unchanged (noreply) |
 | `SES_REPLY_TO_EMAIL` | lifecycle, admin | **Yes** | The **monitored** mailbox. Footer promises replies are read. `sendMail` throws without it. **Owner must create/choose this mailbox before enabling anything** — there is currently no public address anywhere on the site. |
 | `APP_URL` | lifecycle, admin | Yes | e.g. `https://wiedoethet.nl`; used in placeholders |
-| `LIFECYCLE_MAIL_ENABLED` | lifecycle | No (default off) | Master kill switch: only the literal string `'true'` sends. Flip it off in the Lambda console to stop everything instantly, regardless of template toggles. |
+| `LIFECYCLE_MAIL_ENABLED` | lifecycle | No | **Emergency stop only.** The exact string `'false'` forces the master switch off regardless of the flag in the table (recorded as `LASTRUN.killSwitch`). Unset, `'true'` or anything else defers to the master switch in the table, which is what the admin toggles. Set it to `false` in the Lambda console to stop everything even if the admin panel or API is unavailable. |
 | `LIFECYCLE_MAX_SENDS_PER_RUN` | lifecycle | No | default `50` |
 | `JWT_SECRET` | admin | Yes | unchanged (the lifecycle Lambda does not verify JWTs and does not need it) |
 
 ## IAM Permissions
 
 - **`wiedoethet-lifecycle` execution role:** the shared `lambda/iam-policy-dynamodb.json` (already grants `GetItem/PutItem/UpdateItem/Query` on the table and GSI1–3 — verify no change needed) + `lambda/iam-policy-ses.json` (`ses:SendEmail`, already region/identity-scoped) + the standard basic-execution/CloudWatch Logs policy.
-- **EventBridge Scheduler:** a scheduler execution role permitted `lambda:InvokeFunction` on `wiedoethet-lifecycle` (create once, manual — documented in `lambda/SES_SETUP.md`'s new "Lifecycle mail" section).
+- **EventBridge Scheduler:** a scheduler execution role permitted `lambda:InvokeFunction` on `wiedoethet-lifecycle` (created by `lambda/scripts/setup-lifecycle.js`, run once via `npm run setup:lifecycle`; documented in `lambda/SES_SETUP.md`'s "Lifecycle mail" section).
 - **SES:** if the account is still in the SES sandbox, recipients must be verified — production access is a prerequisite for real users (see `SES_SETUP.md`). The `Reply-To` mailbox does **not** need SES verification (it is a normal inbox), but the **From** identity's domain should have SPF/DKIM/DMARC aligned (re-verify the DMARC policy before the first send).
 
 ## Error Handling
@@ -374,7 +382,9 @@ Impacts to verify at build time:
 | Lifecycle run — single send throws | Logged in the mail item (`failed`), run continues; never aborts the batch |
 | Lifecycle run — DynamoDB throws while discovering candidates | Log `ERROR`, abort that template only, continue with the next; run still writes `LASTRUN` |
 | Lifecycle run — `SES_REPLY_TO_EMAIL`/`SES_FROM_EMAIL` missing | Abort the run before any send (`sendMail` guard), `ERROR` log line |
-| Master switch off | Run is a no-op; `LASTRUN.masterEnabled=false` so the admin UI can show why nothing is sent |
+| `PATCH /admin/mail-master` — non-boolean `enabled` | `400`; nothing written |
+| Master switch off, never set, or unreadable (DynamoDB error) | Run is a no-op (fail closed); `LASTRUN.masterEnabled=false` so the admin UI can show why nothing is sent. A read error is logged as `WARN lifecycle-master-read-failed` |
+| `LIFECYCLE_MAIL_ENABLED=false` on the Lambda | Same as off, whatever the table says; `LASTRUN.killSwitch=true` so the admin UI can warn that the switch is overridden |
 
 ## Performance
 
@@ -396,7 +406,7 @@ Impacts to verify at build time:
 | `public/privacy.md` (Dutch, **no API/backend details** — public agent-facing file rule) | Replace "…niet gebruikt voor nieuwsbrieven." with an honest description: e-mail is also used for a few automatic service mails (welcome, tips for getting started, occasional reminder when inactive); every mail explains how to opt out by replying; stored fields now include the opt-out flag and the moment of last visit. See Appendix B. |
 | `public/contact.md` (Dutch) | Add the monitored mailbox and: suggestions welcome, opt-out = reply "afmelden". See Appendix B. |
 | `public/sitemap.xml` | Bump the `lastmod` of `/privacy` and `/contact` (the privacy page itself says the date is updated on changes). |
-| `lambda/DYNAMODB_SETUP.md` | New "Mail automation items" section (the three item types, `MAILLOG` GSI3 partition). |
+| `lambda/DYNAMODB_SETUP.md` | New "Mail automation items" section (the four item types incl. the master switch, `MAILLOG` GSI3 partition). |
 | `lambda/SES_SETUP.md` | New "Lifecycle mail" section: `SES_REPLY_TO_EMAIL`, scheduler setup, IAM, production access, DMARC check, kill switch. |
 | `lambda/package.json` | `bundle:lifecycle`, `deploy:lifecycle`; add to aggregate `bundle`. |
 | `lambda/wiedoethet-auth`, `wiedoethet-groups` | `touchLastSeen` calls (see § `lastSeenAt`). |
@@ -411,38 +421,38 @@ Legal note (not legal advice — owner to confirm): mailing your own registered 
 ## Acceptance Criteria
 
 **Timing & scheduling**
-- [ ] The Lambda sends nothing when `LIFECYCLE_MAIL_ENABLED` is not `'true'`, and records `LASTRUN.masterEnabled = false`.
-- [ ] The Lambda sends nothing on Saturday/Sunday, and nothing outside the 10:00 Amsterdam hour unless `force`/`dryRun`.
-- [ ] `normal`-tier templates send only Tue/Wed/Thu; `timely`-tier Mon–Fri. Verified with a fixed clock across a DST boundary (last Sunday of March/October).
-- [ ] A trigger that falls on a weekend is delivered the next allowed slot; one older than `maxAgeHours` is dropped.
-- [ ] A run never sends more than `LIFECYCLE_MAX_SENDS_PER_RUN`.
+- [x] The Lambda sends nothing when the master switch item is absent, `enabled: false` or unreadable, or when `LIFECYCLE_MAIL_ENABLED` is exactly `'false'`, and records `LASTRUN.masterEnabled = false` (and `killSwitch`).
+- [x] The Lambda sends nothing on Saturday/Sunday, and nothing outside the 10:00 Amsterdam hour unless `force`/`dryRun`.
+- [x] `normal`-tier templates send only Tue/Wed/Thu; `timely`-tier Mon–Fri. Verified with a fixed clock across a DST boundary (last Sunday of March/October).
+- [x] A trigger that falls on a weekend is delivered the next allowed slot; one older than `maxAgeHours` is dropped.
+- [x] A run never sends more than `LIFECYCLE_MAX_SENDS_PER_RUN`.
 
 **Rules**
-- [ ] `welcome`: sent on the day after registration, **not** sent when the user already has a group.
-- [ ] `no_group`: eligible exactly 48 h after registration; not sent once the user has a group; exempt from the 72 h gap only after `welcome`.
-- [ ] `no_tasks` / `no_claims`: a group in stage `no_tasks` never gets `no_claims` and vice versa; `no_claims` triggers 96 h after the first task; neither fires after the event date has passed or once the group is `done`.
-- [ ] `day_after_event`: once per group, only when the group had ≥ 1 claim.
-- [ ] `dormant_30` then `dormant_60`, each at most once per user; `dormant_60` only after a sent `dormant_30` with no activity since; **no further lifecycle mail after `dormant_60`**.
-- [ ] Enabling `dormant_*` on a database with many legacy dormant users sends at most 50 per run.
-- [ ] Conditions are evaluated at send time: a user who created a group between trigger and send gets nothing.
-- [ ] At most one lifecycle mail per user per run; ≥ 72 h between any two (except A1).
-- [ ] Opted-out users and admins never receive a lifecycle mail; opted-out users are also skipped by `POST /admin/mail` (`skippedOptOut` reported).
+- [x] `welcome`: sent on the day after registration, **not** sent when the user already has a group.
+- [x] `no_group`: eligible exactly 48 h after registration; not sent once the user has a group; exempt from the 72 h gap only after `welcome`.
+- [x] `no_tasks` / `no_claims`: a group in stage `no_tasks` never gets `no_claims` and vice versa; `no_claims` triggers 96 h after the first task; neither fires after the event date has passed or once the group is `done`.
+- [x] `day_after_event`: once per group, only when the group had ≥ 1 claim.
+- [x] `dormant_30` then `dormant_60`, each at most once per user; `dormant_60` only after a sent `dormant_30` with no activity since; **no further lifecycle mail after `dormant_60`**.
+- [x] Enabling `dormant_*` on a database with many legacy dormant users sends at most 50 per run.
+- [x] Conditions are evaluated at send time: a user who created a group between trigger and send gets nothing.
+- [x] At most one lifecycle mail per user per run; ≥ 72 h between any two (except A1).
+- [x] Opted-out users and admins never receive a lifecycle mail; opted-out users are also skipped by `POST /admin/mail` (`skippedOptOut` reported).
 
 **Exactly-once / resilience**
-- [ ] Two concurrent runs never send the same (user, template, scope) twice (conditional put).
-- [ ] A failed send is retried on later runs, max 3 attempts, then left `failed`.
-- [ ] A `sending` row is never retried.
-- [ ] A failed touch of `lastSeenAt` never fails the request; writes are throttled to once per 24 h.
+- [x] Two concurrent runs never send the same (user, template, scope) twice (conditional put).
+- [x] A failed send is retried on later runs, max 3 attempts, then left `failed`.
+- [x] A `sending` row is never retried.
+- [x] A failed touch of `lastSeenAt` never fails the request; writes are throttled to once per 24 h.
 
 **Mail content**
-- [ ] Every mail (lifecycle, manual, test) contains the suggestions block and the opt-out block **and** a `Reply-To` header set to `SES_REPLY_TO_EMAIL`; `sendMail` throws without it.
-- [ ] Unknown/unauthorised placeholders are rejected on save; substituted values are HTML-escaped.
+- [x] Every mail (lifecycle, manual, test) contains the suggestions block and the opt-out block **and** a `Reply-To` header set to `SES_REPLY_TO_EMAIL`; `sendMail` throws without it.
+- [x] Unknown/unauthorised placeholders are rejected on save; substituted values are HTML-escaped.
 
 **Admin API**
-- [ ] All five new routes reject non-admins (401/403) and behave per § Admin API changes; `PATCH` `enabled: true` sets `enabledAt`; `null` overrides reset to default.
-- [ ] `GET /admin/mail-log` paginates newest-first and filters by template/status/email.
-- [ ] `openapi.yaml`, `DYNAMODB_SETUP.md`, `SES_SETUP.md`, `data-model.md`, `privacy.md`, `contact.md` updated.
-- [ ] Lambda test-event JSON files added under `lambda/wiedoethet-admin/tests/` (same format as `mail-users.json`) and `lambda/wiedoethet-lifecycle/tests/` (`dry-run.json`, `scheduled.json`), plus unit tests for the evaluators with an injectable clock.
+- [x] All new routes (including `PATCH /admin/mail-master`) reject non-admins (401/403) and behave per § Admin API changes; `PATCH` `enabled: true` sets `enabledAt`; `null` overrides reset to default.
+- [x] `GET /admin/mail-log` paginates newest-first and filters by template/status/email.
+- [x] `openapi.yaml`, `DYNAMODB_SETUP.md`, `SES_SETUP.md`, `data-model.md`, `privacy.md`, `contact.md` updated.
+- [x] Lambda test-event JSON files added under `lambda/wiedoethet-admin/tests/` (same format as `mail-users.json`) and `lambda/wiedoethet-lifecycle/tests/` (`dry-run.json`, `scheduled.json`), plus unit tests for the evaluators with an injectable clock.
 
 ## Known Limitations
 
@@ -460,11 +470,11 @@ Legal note (not legal advice — owner to confirm): mailing your own registered 
 
 ## Appendix A — Default Dutch text proposals (review these!)
 
-Tone: warm, short, informal "je". Each is subject + body (HTML; the shell and footer are added automatically). `{{…}}` per § Placeholders. Buttons are simple link-buttons (`<a>` styled inline) to the relevant URL.
+Tone: warm, short, informal "je". Every body opens (after the greeting) with a one-sentence intro naming Wie-Doet-Het ("de gratis app om taken te verdelen binnen een groep") and why the recipient gets the mail (their account, or the group they created), because not every recipient remembers having used the app. Each is subject + body (HTML; the shell and footer are added automatically). `{{…}}` per § Placeholders. Buttons are simple link-buttons (`<a>` styled inline) to the relevant URL.
 
-**`welcome`** — subject: `Welkom bij Wie Doet Het, {{firstName}}!`
+**`welcome`** — subject: `Welkom bij Wie-Doet-Het, {{firstName}}!`
 > Hoi {{firstName}},
-> Leuk dat je er bent! Met Wie Doet Het verdeel je taken binnen een groep zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.
+> Je hebt een account aangemaakt bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.
 > Zo begin je:
 > 1. Maak een groep aan (een etentje, verjaardag, klusdag…)
 > 2. Zet de taken erin
@@ -473,34 +483,34 @@ Tone: warm, short, informal "je". Each is subject + body (HTML; the shell and fo
 > [Maak je eerste groep]({{createGroupUrl}})
 
 **`no_group`** — subject: `Zullen we samen je eerste groep maken?`
-> Hoi {{firstName}}, je account staat klaar, maar je hebt nog geen groep gemaakt. Dat kost twee minuten: geef je groep een naam, voeg een paar taken toe en deel de link. Weet je nog niet precies wat je nodig hebt? Begin gerust klein, je kunt altijd taken toevoegen.
+> Hoi {{firstName}}, je hebt een account bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, maar je hebt nog geen groep gemaakt. Dat kost twee minuten: geef je groep een naam, voeg een paar taken toe en deel de link. Begin gerust klein, je kunt altijd taken toevoegen.
 >
 > [Start een groep]({{createGroupUrl}})
 
 **`no_tasks`** — subject: `Bijna klaar: voeg taken toe aan {{groupName}}`
-> Hoi {{firstName}}, je hebt de groep "{{groupName}}" aangemaakt — top! Alleen staan er nog geen taken in, dus er valt nog niets te kiezen. Voeg een paar taken toe (bijv. "Drinken meenemen", "Taart bakken"), dan kun je de link delen.
+> Hoi {{firstName}}, je hebt in Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, de groep "{{groupName}}" aangemaakt — top! Alleen staan er nog geen taken in, dus er valt nog niets te kiezen. Voeg een paar taken toe (bijv. "Drinken meenemen", "Taart bakken"), dan kun je de link delen.
 >
 > [Taken toevoegen]({{groupUrl}})
 
 **`no_claims`** — subject: `Nog niemand heeft een taak gekozen in {{groupName}}`
-> Hoi {{firstName}}, de taken voor "{{groupName}}" staan klaar, maar niemand heeft er nog een geclaimd. Heb je de link al gedeeld? Een korte herinnering in de groepsapp helpt vaak — mensen vergeten het snel weer. Tip: houd taken klein en concreet, dan is kiezen makkelijker.
+> Hoi {{firstName}}, in Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, staan de taken voor "{{groupName}}" klaar, maar niemand heeft er nog een gekozen. Heb je de link al gedeeld? Een korte herinnering in de groepsapp helpt vaak — mensen vergeten het snel weer. Tip: houd taken klein en concreet, dan is kiezen makkelijker.
 >
 > [Naar je groep]({{groupUrl}})
 
 **`day_after_event`** — subject: `Hoe was {{groupName}}?`
-> Hoi {{firstName}}, gisteren was het zover: "{{groupName}}". Hopelijk was het gezellig! Volgende keer weer iets te organiseren? Je maakt zo een nieuwe groep, en je deelnemers hebben de taken weer snel op een rij.
+> Hoi {{firstName}}, je hebt "{{groupName}}" georganiseerd met Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. De datum is inmiddels geweest — hopelijk was het gezellig! Volgende keer weer iets te organiseren? Je maakt zo een nieuwe groep, en je deelnemers hebben de taken weer snel op een rij.
 >
 > [Nieuwe groep maken]({{createGroupUrl}})
 
-**`dormant_30`** — subject: `We missen je bij Wie Doet Het`
-> Hoi {{firstName}}, het is een tijdje geleden dat we je zagen. Staat er weer iets op de planning waarbij iedereen moet meehelpen? Je groepen en taken staan nog gewoon voor je klaar.
+**`dormant_30`** — subject: `We missen je bij Wie-Doet-Het`
+> Hoi {{firstName}}, je hebt een account bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Het is een tijdje geleden dat we je zagen. Staat er weer iets op de planning waarbij iedereen moet meehelpen? Je groepen en taken staan nog gewoon voor je klaar.
 >
-> [Naar Wie Doet Het]({{appUrl}})
+> [Naar Wie-Doet-Het]({{appUrl}})
 
 **`dormant_60`** — subject: `Nog iets te regelen, {{firstName}}?`
-> Hoi {{firstName}}, dit is voorlopig het laatste bericht van ons: we willen je inbox niet vullen. Mocht je ooit weer een groep willen organiseren, dan staat Wie Doet Het voor je klaar. En vertel ons vooral gerust wat we anders of beter zouden kunnen doen — je reactie is welkom.
+> Hoi {{firstName}}, dit is voorlopig het laatste bericht van Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep waar je een account hebt: we willen je inbox niet vullen. Mocht je ooit weer een groep willen organiseren, dan staat Wie-Doet-Het voor je klaar. En vertel ons vooral gerust wat we anders of beter zouden kunnen doen — je reactie is welkom.
 >
-> [Naar Wie Doet Het]({{appUrl}})
+> [Naar Wie-Doet-Het]({{appUrl}})
 
 ## Appendix B — Proposed public-page text (Dutch; no backend details)
 
@@ -511,4 +521,4 @@ Tone: warm, short, informal "je". Each is subject + body (HTML; the shell and fo
 
 `public/contact.md` — add a section:
 > ## Suggesties en afmelden
-> Heb je een idee om Wie Doet Het beter te maken? Mail ons op **{SES_REPLY_TO_EMAIL}** — we lezen alles. Wil je geen e-mails meer van ons ontvangen? Stuur een mail met "afmelden" naar hetzelfde adres (of antwoord op een van onze mails). Wij zetten je dan binnen 2 werkdagen uit de mailinglijst.
+> Heb je een idee om Wie-Doet-Het beter te maken? Mail ons op **{SES_REPLY_TO_EMAIL}** — we lezen alles. Wil je geen e-mails meer van ons ontvangen? Stuur een mail met "afmelden" naar hetzelfde adres (of antwoord op een van onze mails). Wij zetten je dan binnen 2 werkdagen uit de mailinglijst.

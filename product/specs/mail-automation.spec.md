@@ -1,9 +1,9 @@
 # Spec — Mail Automation (Frontend: Admin panel + product rules)
 
-**Status:** SPEC written — awaiting product review. E2E tests written (`cypress/e2e/admin-automation.cy.js`), not yet run. **Nothing is built.**
+**Status:** BUILT on `feature/mailAutomation` (2026-09-20). Verified: `cypress/e2e/admin-automation.cy.js` 43/43, `npm run lint`, `npx vitest run src` (165 tests). Not verified against real AWS (nothing deployed).
 **Companion:** `product/specs/mail-automation-api.spec.md` — the backend contract (lifecycle Lambda, timing, templates, endpoints, DynamoDB). This file specifies the **Admin-panel UI** and the user-visible product rules. Read the API spec first; response shapes referenced here are defined there.
 **Branch:** `feature/mailAutomation`
-**Last Updated:** 2026-09-19
+**Last Updated:** 2026-09-20
 
 ---
 
@@ -20,7 +20,7 @@ Everything the recipient sees in the mail (footer with suggestion invitation and
 ### Product rules the UI must make visible (summary of the API spec, for the reader of this file)
 
 - Mails go out on **weekdays at 10:00 (Amsterdam)**; "timely" templates Mon–Fri, "normal" templates Tue–Thu only. The template card shows which.
-- Every template is **disabled by default**; there is also a **master switch** (a Lambda env var, outside the UI). The UI shows when the master switch is off or when the automation has never run — otherwise an admin would toggle templates on and wonder why nothing happens.
+- Every template is **disabled by default**; there is also a **master switch** ("Hoofdschakelaar"), **off until an admin turns it on** and toggled from this screen. The UI shows the switch state and when the automation has never run — otherwise an admin would toggle templates on and wonder why nothing happens.
 - Opted-out users receive no automatic mail **and** are skipped by the manual "E-mail versturen" flow.
 
 ---
@@ -49,7 +49,10 @@ Live in `src/composables/`, wrap all Axios calls (never called from components),
 | Member | Type | Notes |
 |---|---|---|
 | `templates` | `Ref<MailTemplate[]>` | from `GET /admin/mail-templates` `items` |
-| `lastRun` | `Ref<LastRun \| null>` | from the same response |
+| `lastRun` | `Ref<LastRun \| null>` | from the same response (includes `killSwitch`) |
+| `master` | `Ref<{ enabled, updatedAt, updatedBy }>` | from the same response; a response without `master` (older backend) counts as `{ enabled: false, updatedAt: null, updatedBy: null }` |
+| `masterSaving` | `Ref<boolean>` | a master-switch write is in flight (locks the master toggle) |
+| `setMaster(enabled)` | `Promise<boolean>` | `PATCH /admin/mail-master` `{ enabled }`. Like `setEnabled`: no optimistic UI — `master` is replaced by the server response, and a failure only shows up in the return value. |
 | `loading` | `Ref<boolean>` | initial fetch |
 | `error` | `Ref<string \| null>` | fetch error message |
 | `fetchTemplates()` | `Promise<void>` | |
@@ -89,6 +92,7 @@ Request: `GET /admin/mail-log?limit=20[&templateId=][&status=][&q=][&cursor=]` �
 |---|---|---|---|
 | `AdminAutomationView` | page | `src/views/` | Heading, in-page tabs, status banners, list of template cards |
 | `AdminMailLogView` | page | `src/views/` | Heading, in-page tabs, filters, table, pagination |
+| `AdminMailMasterCard` | molecule | `src/components/molecules/` | The master switch: title, state text, toggle, emergency-stop warning, last-changed line |
 | `AdminMailTemplateCard` | molecule | `src/components/molecules/` | One template: name, description, trigger, timing chip, customised badge, toggle, edit button |
 | `AdminMailTemplateEditModal` | organism | `src/components/organisms/` | Edit subject/body, placeholders help, footer note, save / reset / test |
 
@@ -97,9 +101,15 @@ Reuses `BaseCard`, `BaseBadge`, `BaseToggle`, `BaseButton`, `BaseModal`, `BaseIn
 ### `AdminAutomationView`
 
 - `<h1>` **"Mail-automatisering"**.
-- **Banners** (`BaseAlert`), shown above the list, based on `lastRun`:
+- **Master switch card** (`AdminMailMasterCard`), shown above the template list, driven by `master` (not by `lastRun`, which is only as fresh as the last run):
+  - `<h2>` "Hoofdschakelaar", a `BaseToggle` labelled "Mails versturen" (`button[role=switch]`, `aria-checked` = `master.enabled`, disabled while `masterSaving`).
+  - State text: on → "De hoofdschakelaar staat aan — ingeschakelde templates worden verstuurd bij de eerstvolgende run."; off → "De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates."
+  - `master.enabled && lastRun.killSwitch === true` → `warning` inside the card: the emergency stop on the server (`LIFECYCLE_MAIL_ENABLED=false`) overrides the switch, so nothing is sent.
+  - A quiet "Laatst gewijzigd: {datetime}" line when `master.updatedAt` is set.
+  - **Switching off** is immediate (no confirmation): `setMaster(false)`. **Switching on** first opens a `ConfirmModal` ("Hoofdschakelaar inschakelen?", with the number of currently enabled templates, buttons "Inschakelen" / "Annuleren"); only "Inschakelen" sends `setMaster(true)`. Cancelling sends nothing. The switch shows the server's answer, not the requested state; on failure it stays as it was and the page's "Wijzigen mislukt." alert (`toggleFailed`) is shown.
+  - The switch never changes any template's own toggle.
+- **Banner** (`BaseAlert`), shown above the list, based on `lastRun`:
   - `lastRun === null` → `warning`: "De automatisering heeft nog nooit gedraaid."
-  - `lastRun.masterEnabled === false` → `warning`: "De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates."
   - otherwise a quiet line "Laatste run: {datetime} — {sent} verstuurd, {failed} mislukt." (`lastRun.at`, formatted like other admin dates).
 - Loading → `BaseSpinner`; error → `BaseAlert danger` (`admin.automation.loadError`).
 - Renders one `AdminMailTemplateCard` per item, API order (= priority order).
@@ -174,6 +184,14 @@ admin.automation.tabTemplates               "Templates"
 admin.automation.tabLog                     "Verzendlog"
 admin.automation.neverRan                   "De automatisering heeft nog nooit gedraaid."
 admin.automation.masterOff                  "De hoofdschakelaar staat uit — er worden geen mails verstuurd, ook niet voor ingeschakelde templates."
+admin.automation.master.title               "Hoofdschakelaar"
+admin.automation.master.label               "Mails versturen"
+admin.automation.master.on                  "De hoofdschakelaar staat aan — ingeschakelde templates worden verstuurd bij de eerstvolgende run."
+admin.automation.master.updatedAt           "Laatst gewijzigd: {at}"
+admin.automation.master.killSwitch          "De noodstop op de server (LIFECYCLE_MAIL_ENABLED=false) staat aan: er worden geen mails verstuurd, ook niet met deze schakelaar aan."
+admin.automation.master.confirmTitle        "Hoofdschakelaar inschakelen?"
+admin.automation.master.confirmMessage      "Vanaf de eerstvolgende run (ma–vr om 10:00) worden er mails verstuurd voor de ingeschakelde templates. Nu ingeschakeld: {count}. Weet je het zeker?"
+admin.automation.master.confirmLabel        "Inschakelen"
 admin.automation.lastRun                    "Laatste run: {at} — {sent} verstuurd, {failed} mislukt."
 admin.automation.loadError                  "Templates laden mislukt."
 admin.automation.enabled                    "Ingeschakeld"
@@ -276,39 +294,43 @@ AdminMailComposeModal ─ useAdminUsers.sendMail ───── POST  /admin/ma
 ## Acceptance Criteria
 
 **Access & navigation**
-- [ ] `/admin/automation` and `/admin/automation/log` redirect a logged-out visitor to `/login` and a non-admin to `/dashboard`.
-- [ ] The admin sub-nav has an "Automatisering" tab; the in-page "Templates" | "Verzendlog" tabs navigate between the two routes; the sub-nav tab stays active on both.
+- [x] `/admin/automation` and `/admin/automation/log` redirect a logged-out visitor to `/login` and a non-admin to `/dashboard`.
+- [x] The admin sub-nav has an "Automatisering" tab; the in-page "Templates" | "Verzendlog" tabs navigate between the two routes; the sub-nav tab stays active on both.
 
 **Templates page**
-- [ ] Lists exactly the 7 templates in API order with name, description, trigger sentence, timing chip (Ma–vr / Di–do), and a "Standaardtekst"/"Aangepaste tekst" badge.
-- [ ] Each card's toggle reflects `enabled`; toggling sends `PATCH {enabled}` and the card reflects the server response; a failed request reverts the toggle and shows an error.
-- [ ] Banner "nog nooit gedraaid" when `lastRun` is null; banner "hoofdschakelaar staat uit" when `lastRun.masterEnabled` is false; the last-run line otherwise.
-- [ ] Load error shows an alert.
+- [x] Lists exactly the 7 templates in API order with name, description, trigger sentence, timing chip (Ma–vr / Di–do), and a "Standaardtekst"/"Aangepaste tekst" badge.
+- [x] Each card's toggle reflects `enabled`; toggling sends `PATCH {enabled}` and the card reflects the server response; a failed request reverts the toggle and shows an error.
+- [x] Banner "nog nooit gedraaid" when `lastRun` is null; the last-run line otherwise.
+- [x] The master switch card reflects `master.enabled` (not `lastRun`) with the matching state text; a `master` missing from the response counts as off.
+- [x] Switching the master switch **on** first asks for confirmation (showing the number of enabled templates); only "Inschakelen" sends `PATCH /admin/mail-master {enabled:true}`, "Annuleren" sends nothing. Switching **off** sends `{enabled:false}` immediately.
+- [x] The master switch follows the server response; a failed request leaves it as it was and shows "Wijzigen mislukt.". While in flight it is locked. It never changes any template toggle.
+- [x] A warning shows in the card when the switch is on but `lastRun.killSwitch` is true (the server emergency stop overrides it).
+- [x] Load error shows an alert.
 
 **Edit modal**
-- [ ] Opens pre-filled with the effective subject and body; lists the allowed placeholder tokens; shows the fixed-footer note.
-- [ ] Empty subject or empty body blocks saving with the Dutch validation message and sends no request.
-- [ ] Save sends `{ subject, bodyHtml }`; success closes the modal and the card shows "Aangepaste tekst".
-- [ ] A server 400 message is shown verbatim and the modal stays open.
-- [ ] "Terug naar standaardtekst" is disabled unless customised; clicking it sends `{ subject: null, bodyHtml: null }` and restores the default text in the editor.
-- [ ] "Testmail naar mezelf" calls the test endpoint and shows the result without closing the modal.
+- [x] Opens pre-filled with the effective subject and body; lists the allowed placeholder tokens; shows the fixed-footer note.
+- [x] Empty subject or empty body blocks saving with the Dutch validation message and sends no request.
+- [x] Save sends `{ subject, bodyHtml }`; success closes the modal and the card shows "Aangepaste tekst".
+- [x] A server 400 message is shown verbatim and the modal stays open.
+- [x] "Terug naar standaardtekst" is disabled unless customised; clicking it sends `{ subject: null, bodyHtml: null }` and restores the default text in the editor.
+- [x] "Testmail naar mezelf" calls the test endpoint and shows the result without closing the modal.
 
 **Verzendlog**
-- [ ] Lists entries with Verzonden op, Ontvanger, Template, Onderwerp, Status badge (Verzonden/Mislukt/Bezig), Pogingen; failed rows show the error message.
-- [ ] Template/status filters and search send the matching query params (and omit empty ones) and reset to page 1.
-- [ ] Paginates with Vorige/Volgende via the `cursor` param; empty state, filtered-empty state, and error state exist.
+- [x] Lists entries with Verzonden op, Ontvanger, Template, Onderwerp, Status badge (Verzonden/Mislukt/Bezig), Pogingen; failed rows show the error message.
+- [x] Template/status filters and search send the matching query params (and omit empty ones) and reset to page 1.
+- [x] Paginates with Vorige/Volgende via the `cursor` param; empty state, filtered-empty state, and error state exist.
 
 **Opt-out**
-- [ ] User detail shows "E-mailvoorkeuren" with the correct status text; toggling ON sends `PATCH {optOut:true}` immediately and updates the status line.
-- [ ] Toggling OFF asks for confirmation ("Weer e-mails toestaan?") and only sends `PATCH {optOut:false}` after "Ja, toestaan"; cancelling leaves the toggle on.
-- [ ] Opted-out users show an "Afgemeld" badge in the users list.
-- [ ] The manual mail result shows "{n} overgeslagen (afgemeld)" when `skippedOptOut > 0`.
+- [x] User detail shows "E-mailvoorkeuren" with the correct status text; toggling ON sends `PATCH {optOut:true}` immediately and updates the status line.
+- [x] Toggling OFF asks for confirmation ("Weer e-mails toestaan?") and only sends `PATCH {optOut:false}` after "Ja, toestaan"; cancelling leaves the toggle on.
+- [x] Opted-out users show an "Afgemeld" badge in the users list.
+- [x] The manual mail result shows "{n} overgeslagen (afgemeld)" when `skippedOptOut > 0`.
 
 **Quality**
-- [ ] All strings via `useI18n()`, keys present in `nl.json` and `en.json`.
-- [ ] Composables have Vitest tests (`useAdminMailTemplates`, `useAdminMailLog`, the `setMailOptOut` addition); the two new components have component tests (`AdminMailTemplateCard`, `AdminMailTemplateEditModal`), following the `AdminMailComposeModal.test.js` pattern.
-- [ ] `cypress/e2e/admin-automation.cy.js` passes; `npm run lint` and `npm run test:unit` pass.
-- [ ] `product/data-model.md` and `product/product-overview.md` reflect the feature.
+- [x] All strings via `useI18n()`, keys present in `nl.json` and `en.json`.
+- [x] Composables have Vitest tests (`useAdminMailTemplates`, `useAdminMailLog`, the `setMailOptOut` addition); the new components have component tests (`AdminMailTemplateCard`, `AdminMailTemplateEditModal`, `AdminMailMasterCard`), following the `AdminMailComposeModal.test.js` pattern.
+- [x] `cypress/e2e/admin-automation.cy.js` passes; `npm run lint` and `npm run test:unit` pass.
+- [x] `product/data-model.md` and `product/product-overview.md` reflect the feature.
 
 ## Known Limitations
 
@@ -316,7 +338,7 @@ AdminMailComposeModal ─ useAdminUsers.sendMail ───── POST  /admin/ma
 - **Variable chips are display-only** in v1 (no click-to-insert requirement).
 - **No per-template send statistics** on the templates page — use the log with the template filter.
 - **No manual "send now" or "run now"** in the UI. Running/testing the automation itself is done via the Lambda console (`dryRun`, `force`) — see the API spec.
-- **The master switch is not toggleable from the UI** (intentionally a Lambda env var — a kill switch that does not depend on the app being healthy). The UI only reports its state via `lastRun.masterEnabled`, which is only as fresh as the last run (which writes it even when the switch is off).
+- **The master switch is toggleable from the UI** (this reverses the original v1 decision to keep it a Lambda env var). It is stored per environment in the table (`MAILSTATE#lifecycle` / `MASTER`), so the dev and production databases each have their own switch, and it takes effect at the next run (Mon–Fri 10:00) — there is no immediate send. Because a kill switch that needs the app to be healthy is a weaker kill switch, `LIFECYCLE_MAIL_ENABLED=false` on the Lambda stays as a hard emergency override that wins over the switch; the card warns when it is active (via `lastRun.killSwitch`, which is only as fresh as the last run).
 - **No bulk opt-out import.** The owner processes replies one by one via the user detail page (search by email in the users list).
 - **Timing chips describe the tier, not the exact next send.** They do not show when a given user will get the mail.
 - **English translations** of the admin strings exist for parity but the mails themselves are Dutch only.

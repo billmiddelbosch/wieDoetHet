@@ -199,11 +199,24 @@ export async function runLifecycle(event, deps) {
   const dryRun = event?.dryRun === true
   const force = event?.force === true
   const at = new Date(now).toISOString()
-  const masterEnabled = env.LIFECYCLE_MAIL_ENABLED === 'true'
 
-  // 1. Master switch. LASTRUN is always written so the admin panel can show it.
+  // 1. Master switch. It lives in the table (toggled from the admin panel) and
+  // fails closed: no MASTER item, or a failed read, means off. The env var is
+  // only a hard override — LIFECYCLE_MAIL_ENABLED=false forces off without
+  // needing the app. LASTRUN is always written so the admin panel can show it.
+  const killSwitch = env.LIFECYCLE_MAIL_ENABLED === 'false'
+  let masterItem = null
+  if (!killSwitch) {
+    try {
+      const { PK, SK } = keys.mailMaster()
+      masterItem = await db.getItem(PK, SK)
+    } catch (err) {
+      log('WARN', 'lifecycle-master-read-failed', { message: err?.message })
+    }
+  }
+  const masterEnabled = !killSwitch && masterItem?.enabled === true
   try {
-    await db.putItem({ ...keys.mailState(), at, masterEnabled, dryRun })
+    await db.putItem({ ...keys.mailState(), at, masterEnabled, killSwitch, dryRun })
   } catch (err) {
     log('WARN', 'lifecycle-lastrun-write-failed', { message: err?.message })
   }

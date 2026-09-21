@@ -108,6 +108,65 @@ describe('useAdminMailTemplates', () => {
     })
   })
 
+  describe('master switch', () => {
+    const masterOn = { enabled: true, updatedAt: '2026-09-21T08:00:00Z', updatedBy: 'admin-1' }
+
+    it('loads the master switch with the templates', async () => {
+      apiClient.get.mockResolvedValue({ data: { items: [welcome], lastRun: null, master: masterOn } })
+      const { fetchTemplates, master } = useAdminMailTemplates()
+
+      await fetchTemplates()
+
+      expect(master.value).toEqual(masterOn)
+    })
+
+    it('treats a response without `master` (older backend) as off', async () => {
+      apiClient.get.mockResolvedValue({ data: { items: [welcome], lastRun: null } })
+      const { fetchTemplates, master } = useAdminMailTemplates()
+
+      await fetchTemplates()
+
+      expect(master.value).toEqual({ enabled: false, updatedAt: null, updatedBy: null })
+    })
+
+    it('PATCHes /admin/mail-master and stores the server response', async () => {
+      const { setMaster, master } = useAdminMailTemplates()
+      apiClient.patch.mockResolvedValue({ data: masterOn })
+
+      const ok = await setMaster(true)
+
+      expect(apiClient.patch).toHaveBeenCalledWith('/admin/mail-master', { enabled: true })
+      expect(ok).toBe(true)
+      expect(master.value).toEqual(masterOn)
+    })
+
+    it('leaves the switch as it was and resolves to false when the request fails', async () => {
+      apiClient.get.mockResolvedValue({ data: { items: [welcome], lastRun: null, master: masterOn } })
+      const { fetchTemplates, setMaster, master, error } = useAdminMailTemplates()
+      await fetchTemplates()
+      apiClient.patch.mockRejectedValue(new Error('boom'))
+
+      const ok = await setMaster(false)
+
+      expect(ok).toBe(false)
+      expect(master.value.enabled).toBe(true)
+      expect(error.value).toBeNull()
+    })
+
+    it('marks the master switch as saving while the request is in flight', async () => {
+      let resolve
+      apiClient.patch.mockReturnValue(new Promise((r) => (resolve = r)))
+      const { setMaster, masterSaving } = useAdminMailTemplates()
+
+      const pending = setMaster(true)
+      expect(masterSaving.value).toBe(true)
+
+      resolve({ data: masterOn })
+      await pending
+      expect(masterSaving.value).toBe(false)
+    })
+  })
+
   describe('saveTemplate / resetTemplate', () => {
     it('saves a subject and body', async () => {
       apiClient.patch.mockResolvedValue({ data: { ...welcome, isCustomised: true } })

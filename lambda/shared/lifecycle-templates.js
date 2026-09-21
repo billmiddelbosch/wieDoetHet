@@ -40,10 +40,10 @@ export const LIFECYCLE_TEMPLATES = [
     maxPerUser: 1,
     gapExemptAfter: [],
     variables: USER_VARIABLES,
-    defaultSubject: 'Welkom bij Wie Doet Het, {{firstName}}!',
+    defaultSubject: 'Welkom bij Wie-Doet-Het, {{firstName}}!',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>Leuk dat je er bent! Met Wie Doet Het verdeel je taken binnen een groep zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.</p>',
+      '<p>Je hebt een account aangemaakt bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.</p>',
       '<p>Zo begin je:</p>',
       '<ol><li><p>Maak een groep aan (een etentje, verjaardag, klusdag…)</p></li><li><p>Zet de taken erin</p></li><li><p>Deel de link via WhatsApp — deelnemers hebben geen account nodig</p></li></ol>',
       link('Maak je eerste groep', '{{createGroupUrl}}'),
@@ -60,7 +60,7 @@ export const LIFECYCLE_TEMPLATES = [
     defaultSubject: 'Zullen we samen je eerste groep maken?',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>je account staat klaar, maar je hebt nog geen groep gemaakt. Dat kost twee minuten: geef je groep een naam, voeg een paar taken toe en deel de link. Weet je nog niet precies wat je nodig hebt? Begin gerust klein, je kunt altijd taken toevoegen.</p>',
+      '<p>je hebt een account bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, maar je hebt nog geen groep gemaakt. Dat kost twee minuten: geef je groep een naam, voeg een paar taken toe en deel de link. Begin gerust klein, je kunt altijd taken toevoegen.</p>',
       link('Start een groep', '{{createGroupUrl}}'),
     ].join(''),
   },
@@ -75,7 +75,7 @@ export const LIFECYCLE_TEMPLATES = [
     defaultSubject: 'Bijna klaar: voeg taken toe aan {{groupName}}',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>je hebt de groep "{{groupName}}" aangemaakt — top! Alleen staan er nog geen taken in, dus er valt nog niets te kiezen. Voeg een paar taken toe (bijv. "Drinken meenemen", "Taart bakken"), dan kun je de link delen.</p>',
+      '<p>je hebt in Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, de groep "{{groupName}}" aangemaakt — top! Alleen staan er nog geen taken in, dus er valt nog niets te kiezen. Voeg een paar taken toe (bijv. "Drinken meenemen", "Taart bakken"), dan kun je de link delen.</p>',
       link('Taken toevoegen', '{{groupUrl}}'),
     ].join(''),
   },
@@ -90,7 +90,7 @@ export const LIFECYCLE_TEMPLATES = [
     defaultSubject: 'Nog niemand heeft een taak gekozen in {{groupName}}',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>de taken voor "{{groupName}}" staan klaar, maar niemand heeft er nog een geclaimd. Heb je de link al gedeeld? Een korte herinnering in de groepsapp helpt vaak — mensen vergeten het snel weer. Tip: houd taken klein en concreet, dan is kiezen makkelijker.</p>',
+      '<p>in Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, staan de taken voor "{{groupName}}" klaar, maar niemand heeft er nog een gekozen. Heb je de link al gedeeld? Een korte herinnering in de groepsapp helpt vaak — mensen vergeten het snel weer. Tip: houd taken klein en concreet, dan is kiezen makkelijker.</p>',
       link('Naar je groep', '{{groupUrl}}'),
     ].join(''),
   },
@@ -105,7 +105,7 @@ export const LIFECYCLE_TEMPLATES = [
     defaultSubject: 'Hoe was {{groupName}}?',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>gisteren was het zover: "{{groupName}}". Hopelijk was het gezellig! Volgende keer weer iets te organiseren? Je maakt zo een nieuwe groep, en je deelnemers hebben de taken weer snel op een rij.</p>',
+      '<p>je hebt "{{groupName}}" georganiseerd met Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. De datum is inmiddels geweest — hopelijk was het gezellig! Volgende keer weer iets te organiseren? Je maakt zo een nieuwe groep, en je deelnemers hebben de taken weer snel op een rij.</p>',
       link('Nieuwe groep maken', '{{createGroupUrl}}'),
     ].join(''),
   },
@@ -117,11 +117,11 @@ export const LIFECYCLE_TEMPLATES = [
     maxPerUser: 1,
     gapExemptAfter: [],
     variables: USER_VARIABLES,
-    defaultSubject: 'We missen je bij Wie Doet Het',
+    defaultSubject: 'We missen je bij Wie-Doet-Het',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>het is een tijdje geleden dat we je zagen. Staat er weer iets op de planning waarbij iedereen moet meehelpen? Je groepen en taken staan nog gewoon voor je klaar.</p>',
-      link('Naar Wie Doet Het', '{{appUrl}}'),
+      '<p>je hebt een account bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Het is een tijdje geleden dat we je zagen. Staat er weer iets op de planning waarbij iedereen moet meehelpen? Je groepen en taken staan nog gewoon voor je klaar.</p>',
+      link('Naar Wie-Doet-Het', '{{appUrl}}'),
     ].join(''),
   },
   {
@@ -135,8 +135,8 @@ export const LIFECYCLE_TEMPLATES = [
     defaultSubject: 'Nog iets te regelen, {{firstName}}?',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>dit is voorlopig het laatste bericht van ons: we willen je inbox niet vullen. Mocht je ooit weer een groep willen organiseren, dan staat Wie Doet Het voor je klaar. En vertel ons vooral gerust wat we anders of beter zouden kunnen doen — je reactie is welkom.</p>',
-      link('Naar Wie Doet Het', '{{appUrl}}'),
+      '<p>dit is voorlopig het laatste bericht van Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep waar je een account hebt: we willen je inbox niet vullen. Mocht je ooit weer een groep willen organiseren, dan staat Wie-Doet-Het voor je klaar. En vertel ons vooral gerust wat we anders of beter zouden kunnen doen — je reactie is welkom.</p>',
+      link('Naar Wie-Doet-Het', '{{appUrl}}'),
     ].join(''),
   },
 ]
