@@ -26,6 +26,12 @@ components:
           type: string
         avatarUrl:
           type: string
+        mailOptOut:
+          type: boolean
+          description: True when an admin recorded that this user opted out of e-mail.
+        lastSeenAt:
+          type: string
+          description: Last login/dashboard visit (throttled to one write per 24h).
       required:
         - id
         - name
@@ -236,6 +242,8 @@ components:
           type: integer
         lastActivityAt:
           type: string
+        mailOptOut:
+          type: boolean
       required:
         - id
         - email
@@ -244,12 +252,19 @@ components:
         - createdAt
         - groupCount
         - lastActivityAt
+        - mailOptOut
 
     AdminUserDetail:
       allOf:
         - $ref: '#/components/schemas/AdminUserSummary'
         - type: object
           properties:
+            mailOptOutAt:
+              type: string
+              nullable: true
+            lastSeenAt:
+              type: string
+              nullable: true
             groups:
               type: array
               items:
@@ -428,6 +443,9 @@ components:
           type: integer
         failed:
           type: integer
+        skippedOptOut:
+          type: integer
+          description: Recipients skipped because the user opted out of e-mail.
         failures:
           type: array
           items:
@@ -447,6 +465,272 @@ components:
         - sent
         - failed
         - failures
+        - skippedOptOut
+
+    MailTemplate:
+      type: object
+      description: >-
+        A lifecycle mail template: the code definition (trigger, allowed
+        placeholders, default text) merged with the admin's stored
+        configuration. A template without stored configuration is disabled
+        and uses the default text.
+      properties:
+        id:
+          type: string
+          enum:
+            - welcome
+            - no_group
+            - no_tasks
+            - no_claims
+            - day_after_event
+            - dormant_30
+            - dormant_60
+        scope:
+          type: string
+          enum:
+            - user
+            - group
+          description: One mail per user, or one per group.
+        tier:
+          type: string
+          enum:
+            - timely
+            - normal
+          description: >-
+            timely = Monday-Friday 10:00, normal = Tuesday-Thursday 10:00
+            (Europe/Amsterdam).
+        enabled:
+          type: boolean
+        subject:
+          type: string
+          description: Effective subject (override, else the default).
+        bodyHtml:
+          type: string
+          description: Effective body (override, else the default).
+        defaultSubject:
+          type: string
+        defaultBodyHtml:
+          type: string
+        isCustomised:
+          type: boolean
+          description: True when an override of the subject and/or body is stored.
+        variables:
+          type: array
+          items:
+            type: string
+          description: Placeholders (without braces) this template may use, e.g. firstName.
+        updatedAt:
+          type: string
+          nullable: true
+        updatedBy:
+          type: string
+          nullable: true
+          description: Id of the admin who last changed the configuration.
+      required:
+        - id
+        - scope
+        - tier
+        - enabled
+        - subject
+        - bodyHtml
+        - defaultSubject
+        - defaultBodyHtml
+        - isCustomised
+        - variables
+        - updatedAt
+        - updatedBy
+
+    MailLastRun:
+      type: object
+      description: The most recent run of the lifecycle function (dry runs included).
+      properties:
+        at:
+          type: string
+        masterEnabled:
+          type: boolean
+          description: >-
+            The lifecycle function was allowed to send at run time: the master
+            switch (see MailMaster) was on and the emergency stop was not set.
+        killSwitch:
+          type: boolean
+          description: >-
+            LIFECYCLE_MAIL_ENABLED was "false" on the Lambda, which forces
+            masterEnabled off whatever the master switch says.
+        dryRun:
+          type: boolean
+        evaluated:
+          type: integer
+        sent:
+          type: integer
+        failed:
+          type: integer
+        skippedByCap:
+          type: integer
+          description: Due mails over LIFECYCLE_MAX_SENDS_PER_RUN; they wait for the next run.
+      required:
+        - at
+        - masterEnabled
+        - killSwitch
+        - dryRun
+        - evaluated
+        - sent
+        - failed
+        - skippedByCap
+
+    MailMaster:
+      type: object
+      description: >-
+        The lifecycle-mail master switch of this environment's table. Absent
+        in the table counts as off, so nothing is sent until an admin turns it
+        on.
+      properties:
+        enabled:
+          type: boolean
+        updatedAt:
+          type: string
+          nullable: true
+          description: null when the switch was never set.
+        updatedBy:
+          type: string
+          nullable: true
+          description: User id of the admin who last changed it; null when never set.
+      required:
+        - enabled
+        - updatedAt
+        - updatedBy
+
+    MailMasterPatch:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required:
+        - enabled
+
+    MailTemplateListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MailTemplate'
+        lastRun:
+          allOf:
+            - $ref: '#/components/schemas/MailLastRun'
+          nullable: true
+          description: null when the lifecycle function has never run.
+        master:
+          $ref: '#/components/schemas/MailMaster'
+      required:
+        - items
+        - lastRun
+        - master
+
+    MailTemplatePatch:
+      type: object
+      description: >-
+        Partial update; at least one field is required. A null subject or
+        bodyHtml removes the override and returns to the default text.
+        Placeholders the template does not allow are rejected with a 400.
+      properties:
+        enabled:
+          type: boolean
+        subject:
+          type: string
+          nullable: true
+        bodyHtml:
+          type: string
+          nullable: true
+
+    MailLogEntry:
+      type: object
+      description: One attempted lifecycle mail. The rendered body is not stored.
+      properties:
+        id:
+          type: string
+          description: templateId:userId:scopeId
+        templateId:
+          type: string
+        userId:
+          type: string
+        email:
+          type: string
+          description: Snapshot at send time.
+        userName:
+          type: string
+          description: Snapshot at send time.
+        groupId:
+          type: string
+          nullable: true
+        groupName:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          description: The rendered subject that was sent.
+        status:
+          type: string
+          enum:
+            - sending
+            - sent
+            - failed
+        attempts:
+          type: integer
+        errorMessage:
+          type: string
+          nullable: true
+        sesMessageId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        sentAt:
+          type: string
+          nullable: true
+      required:
+        - id
+        - templateId
+        - userId
+        - email
+        - status
+        - createdAt
+
+    MailLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MailLogEntry'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - items
+        - nextCursor
+
+    MailOptOutRequest:
+      type: object
+      properties:
+        optOut:
+          type: boolean
+      required:
+        - optOut
+
+    MailOptOutResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        mailOptOut:
+          type: boolean
+        mailOptOutAt:
+          type: string
+          nullable: true
+      required:
+        - id
+        - mailOptOut
+        - mailOptOutAt
 
 paths:
 
@@ -995,6 +1279,240 @@ paths:
           description: Not authenticated
         "403":
           description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-templates:
+    get:
+      summary: >-
+        The 7 lifecycle mail templates (in priority order), the result of the
+        last lifecycle run and the master switch (admin only)
+      operationId: listAdminMailTemplates
+      responses:
+        "200":
+          description: Templates, last run and master switch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailTemplateListResponse'
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-master:
+    patch:
+      summary: Switch the lifecycle-mail master switch on or off (admin only)
+      operationId: updateAdminMailMaster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailMasterPatch'
+      responses:
+        "200":
+          description: The master switch after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailMaster'
+        "400":
+          description: enabled is not a boolean
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-templates/{templateId}:
+    parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      summary: >-
+        Enable/disable a lifecycle template and/or override its subject and
+        body (admin only)
+      operationId: updateAdminMailTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailTemplatePatch'
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailTemplate'
+        "400":
+          description: No changes given, enabled is not a boolean, or the text uses a placeholder this template does not allow
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+        "404":
+          description: Unknown template
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-templates/{templateId}/test:
+    parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      summary: >-
+        Send the template with sample values to the calling admin only
+        (subject prefixed with [TEST]); not written to the mail log
+      operationId: testAdminMailTemplate
+      responses:
+        "200":
+          description: The test mail was handed to SES
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: boolean
+                  to:
+                    type: string
+                required:
+                  - sent
+                  - to
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+        "404":
+          description: Unknown template
+        "502":
+          description: SES refused the mail; the body carries a message
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/mail-log:
+    get:
+      summary: >-
+        Newest-first, cursor-paginated log of lifecycle mails, optionally
+        filtered (admin only)
+      operationId: listAdminMailLog
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: templateId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - sent
+              - failed
+              - sending
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring of the recipient email.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One page of log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailLogListResponse'
+        "400":
+          description: Invalid limit or cursor, unknown templateId, or invalid status
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:344050431068:function:wiedoethet-admin/invocations"
+        passthroughBehavior: when_no_match
+
+  /admin/users/{userId}/mail-opt-out:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    patch:
+      summary: >-
+        Set or clear the e-mail opt-out of a user who asked (by replying to a
+        mail) to stop receiving mail (admin only). Opted-out users get no
+        lifecycle mail and are skipped by POST /admin/mail.
+      operationId: setAdminUserMailOptOut
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailOptOutRequest'
+      responses:
+        "200":
+          description: The resulting opt-out state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailOptOutResponse'
+        "400":
+          description: optOut is not a boolean
+        "401":
+          description: Not authenticated
+        "403":
+          description: Authenticated but not an admin
+        "404":
+          description: User not found
       x-amazon-apigateway-integration:
         type: aws_proxy
         httpMethod: POST

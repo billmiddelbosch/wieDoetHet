@@ -11,7 +11,7 @@ import apiClient from '@/lib/axios'
  *     the server re-runs the same search filter, never trusting a client-built ID list
  *     for this case.
  *
- * Returns the aggregate result `{ sent, failed, failures }` on success, or `null`
+ * Returns the aggregate result `{ sent, failed, failures, skippedOptOut }` on success, or `null`
  * on a request-level failure (network error, 400, 401, 403) with `error` set.
  */
 export function useAdminMail() {

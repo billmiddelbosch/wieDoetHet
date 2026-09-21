@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/admin/mail-templates/welcome",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"enabled\":true}",
+  "pathParameters": {
+    "templateId": "welcome"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "path": "/admin/mail-templates/welcome",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

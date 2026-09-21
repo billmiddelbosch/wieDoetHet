@@ -36,13 +36,13 @@
 | Setting | Value |
 |---|---|
 | Index name | `GSI3` |
-| Partition key | `GSI3PK` — String, constant per entity type: `USER` or `GROUP` |
+| Partition key | `GSI3PK` — String, constant per entity type: `USER`, `GROUP` or `MAILLOG` |
 | Sort key | `GSI3SK` — String, `{createdAt ISO 8601}#{id}` |
 | Projection | All attributes |
 
-Added for the Admin Section (`wiedoethet-admin`, see `product/specs/admin-api.spec.md`). Turns "list all users" / "list all groups" into a `Query` (cost proportional to that entity type's item count) instead of a `Scan` (cost proportional to the whole table). Only `User` and `Group` items get a GSI3 partition — Tasks and Claims deliberately do not (see spec's Known Limitations).
+Added for the Admin Section (`wiedoethet-admin`, see `product/specs/admin-api.spec.md`). Turns "list all users" / "list all groups" into a `Query` (cost proportional to that entity type's item count) instead of a `Scan` (cost proportional to the whole table). Only `User` and `Group` items get a GSI3 partition — Tasks and Claims deliberately do not (see spec's Known Limitations). The lifecycle mail log rows (see [Mail automation items](#mail-automation-items)) use a third partition, `MAILLOG`, so the admin mail log is a `Query` too.
 
-**Backfill note:** only *new* User/Group writes (via `wiedoethet-auth`'s `register()` and `wiedoethet-groups`' `createGroup()`) populate `GSI3PK`/`GSI3SK`. Pre-existing items written before this feature shipped will be absent from GSI3 until a one-time backfill script runs (tracked as backlog item ADM-07 — not built yet). Confirm with the user whether `wdh-main` holds real data needing backfill before relying on `/admin/*` results as complete.
+**Backfill note:** only *new* User/Group writes (via `wiedoethet-auth`'s `register()` and `wiedoethet-groups`' `createGroup()`) populate `GSI3PK`/`GSI3SK`. Pre-existing items written before this feature shipped will be absent from GSI3 until a one-time backfill script runs (tracked as backlog item ADM-07; script: `lambda/scripts/backfill-gsi3.js`). **Run the backfill before enabling any lifecycle mail template** — the lifecycle Lambda finds its candidates through the `USER` and `GROUP` partitions, so a user missing from GSI3 never gets a mail. Confirm with the user whether `wdh-main` holds real data needing backfill before relying on `/admin/*` results as complete.
 
 ---
 
@@ -91,6 +91,8 @@ All four entity types share the single `wdh-main` table.
 | `GSI3SK` | `{createdAt}#{id}` | `2026-08-20T10:00:00.000Z#a1b2c3` |
 
 Used by: lookup by ID (GetItem on PK+SK), lookup by email (GSI1 query), admin — list/paginate all users newest-first (GSI3 query).
+
+Mail-related attributes on the profile item (all optional, absent ⇒ `false`/unset): `mailOptOut` (boolean), `mailOptOutAt` (ISO 8601), `mailOptOutBy` (admin user id) and `lastSeenAt` (ISO 8601, touched at most once per 24 h on login, `GET /auth/me` and `GET /groups`). Written through `UpdateItem`, so no key changes.
 
 ### Group
 
@@ -144,3 +146,54 @@ Used by: list all claims on a task (Query PK + SK begins\_with `CLAIM#`), list a
 | Admin — list/paginate all users | GSI3 query | `GSI3PK = USER`, sorted by `GSI3SK` |
 | Admin — list/paginate all groups | GSI3 query | `GSI3PK = GROUP`, sorted by `GSI3SK` |
 | Admin — count users/groups, "new in last 7 days" | GSI3 `Select: COUNT` query | `GSI3PK = USER\|GROUP` (+ `GSI3SK >= {7d ago ISO}` for the "new" counts) |
+| Lifecycle — find candidates (registered users, groups) | GSI3 query | `GSI3PK = USER`, `GSI3PK = GROUP` |
+| Lifecycle — "did we already mail this user?" | Query | `PK = USER#{userId}`, `SK` begins\_with `MAIL#` |
+| Lifecycle — send exactly once | Conditional PutItem | `PK = USER#{userId}`, `SK = MAIL#{templateId}#{scopeId}`, `attribute_not_exists(PK)` |
+| Admin/lifecycle — template config | GetItem | `PK = MAILTPL#{templateId}`, `SK = CONFIG` |
+| Admin — last lifecycle run | GetItem | `PK = MAILSTATE#lifecycle`, `SK = LASTRUN` |
+| Admin/lifecycle — master switch | GetItem / UpdateItem | `PK = MAILSTATE#lifecycle`, `SK = MASTER` |
+| Admin — mail log, newest first | GSI3 query (descending) | `GSI3PK = MAILLOG` |
+
+## Mail automation items
+
+Lifecycle mail automation (`wiedoethet-lifecycle`, admin Lambda; see `product/specs/mail-automation-api.spec.md`) adds four item types to `wdh-main`. **No new table and no new GSI.**
+
+### Mail log row (exactly-once lock + admin log)
+
+| Key | Value | Example |
+|---|---|---|
+| `PK` | `USER#{userId}` | `USER#a1b2c3` |
+| `SK` | `MAIL#{templateId}#{scopeId}` (`scopeId` = groupId for group-scoped templates, `-` for user-scoped) | `MAIL#no_tasks#g9f8e7` |
+| `GSI3PK` | `MAILLOG` (constant) | `MAILLOG` |
+| `GSI3SK` | `{createdAt}#{userId}#{templateId}` | `2026-09-21T08:00:01.120Z#a1b2c3#no_tasks` |
+
+The row is written with a conditional put (`attribute_not_exists(PK)`) *before* the mail is sent, so the same mail can never go out twice even if two runs overlap. Attributes: `id`, `templateId`, `userId`, `email`, `userName`, `groupId`, `groupName`, `subject`, `status` (`sending` → `sent` \| `failed`), `attempts` (max 3), `errorMessage`, `sesMessageId`, `createdAt`, `sentAt`. The rendered body is not stored. A row stuck in `sending` (Lambda crashed between put and SES) is never retried — at-most-once beats a duplicate. `failed` rows are retried on the next run until `attempts` reaches 3.
+
+### Template configuration
+
+| Key | Value |
+|---|---|
+| `PK` | `MAILTPL#{templateId}` |
+| `SK` | `CONFIG` |
+
+Attributes: `enabled`, `subject` / `bodyHtml` (`null` ⇒ default text from code), `enabledAt`, `updatedAt`, `updatedBy`. **An absent item means: template disabled, default text.** Template ids: `welcome`, `no_group`, `no_tasks`, `no_claims`, `day_after_event`, `dormant_30`, `dormant_60`. Not in GSI3.
+
+### Last-run marker
+
+| Key | Value |
+|---|---|
+| `PK` | `MAILSTATE#lifecycle` |
+| `SK` | `LASTRUN` |
+
+Single item, written at the start of every run (also dry runs and runs skipped by the master switch) and completed with the counts at the end: `at`, `masterEnabled`, `killSwitch`, `dryRun`, `evaluated`, `sent`, `failed`, `skippedByCap`. Shown on the admin Automation page.
+
+### Master switch
+
+| Key | Value |
+|---|---|
+| `PK` | `MAILSTATE#lifecycle` |
+| `SK` | `MASTER` |
+
+Attributes: `enabled` (boolean), `updatedAt`, `updatedBy`. Toggled from Admin → Automatisering (`PATCH /admin/mail-master`) and read by the lifecycle Lambda at the start of every run. **An absent or unreadable item means: off.** It is a separate item from the last-run marker so the run's own write cannot overwrite it, and each table (`wdh-dev`, `wdh-main`) has its own switch.
+
+Used by: lifecycle Lambda (candidate discovery, "already mailed?" check, exactly-once put), admin Lambda (`GET/PATCH /admin/mail-templates`, `PATCH /admin/mail-master`, `GET /admin/mail-log`).

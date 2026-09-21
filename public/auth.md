@@ -1,10 +1,10 @@
-# Inloggen — Wie Doet Het
+# Inloggen — Wie-Doet-Het
 
 Wat een agent moet weten over inloggen op wiedoethet.nl. Dit document volgt de
 volgorde van de secties uit de `auth.md`-specificatie van WorkOS
 (<https://github.com/workos/auth.md>), zodat het snel te doorlopen is.
 
-**Kort gezegd: er is voor een agent niets om mee in te loggen.** Wie Doet Het is
+**Kort gezegd: er is voor een agent niets om mee in te loggen.** Wie-Doet-Het is
 een website die mensen in een browser gebruiken. Een agent hoeft geen
 inloggegevens te verkrijgen, te bewaren of te tonen.
 

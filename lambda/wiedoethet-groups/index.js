@@ -15,7 +15,7 @@
 import { randomUUID } from 'node:crypto'
 import { ok, created, noContent, unauthorized, forbidden, notFound, badRequest, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { verifyJwt } from '../shared/jwt.js'
-import { getItem, putItem, deleteItem, queryByPk, queryGsi1, queryGsi2, keys } from '../shared/db.js'
+import { getItem, putItem, deleteItem, queryByPk, queryGsi1, queryGsi2, touchLastSeen, keys } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -23,7 +23,9 @@ async function listGroups(event) {
   const user = requireAuth(event)
   if (!user) return unauthorized()
 
-  const items = await queryGsi2(`INITIATOR#${user.sub}`, 'GROUP#')
+  // Opening the dashboard counts as activity (lifecycle mail: dormant users). touchLastSeen is
+  // throttled to one write per 24 h and never throws, so it cannot break the listing.
+  const [items] = await Promise.all([queryGsi2(`INITIATOR#${user.sub}`, 'GROUP#'), touchLastSeen(user.sub)])
   // Each GSI2 item IS the group record; sort by createdAt descending
   const groups = items
     .filter((i) => i.SK === 'METADATA')
@@ -62,6 +64,8 @@ async function createGroup(event) {
     scorecardVisibility: body.scorecardVisibility ?? 'all',
     scorecardViewerIds: body.scorecardViewerIds ?? [],
     reminderAt: body.reminderAt ?? null,
+    isTemporary: body.isTemporary ?? false,
+    eventDate: body.eventDate ?? null,
     createdAt: now,
   }
 
@@ -109,6 +113,8 @@ async function updateGroup(event) {
     scorecardVisibility: body.scorecardVisibility ?? group.scorecardVisibility,
     scorecardViewerIds: body.scorecardViewerIds ?? group.scorecardViewerIds,
     reminderAt: 'reminderAt' in body ? body.reminderAt : group.reminderAt,
+    isTemporary: 'isTemporary' in body ? body.isTemporary : group.isTemporary,
+    eventDate: 'eventDate' in body ? body.eventDate : group.eventDate,
   }
 
   await putItem(updated)

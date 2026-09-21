@@ -20,7 +20,7 @@ function buildLlmsFullTxt() {
     })
 
     return [
-      '# Wie Doet Het — volledige context',
+      '# Wie-Doet-Het — volledige context',
       '',
       '> Alle markdown-pagina\'s van wiedoethet.nl, samengevoegd in één document.',
       '> De losse pagina\'s en de korte index staan op https://wiedoethet.nl/llms.txt',

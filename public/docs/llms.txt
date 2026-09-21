@@ -1,6 +1,6 @@
-# Wie Doet Het — documentatiecontext
+# Wie-Doet-Het — documentatiecontext
 
-Context voor agents die vragen beantwoorden over hoe Wie Doet Het werkt. Voor de
+Context voor agents die vragen beantwoorden over hoe Wie-Doet-Het werkt. Voor de
 twee kanten van het product zie
 [/organisers/llms.txt](https://wiedoethet.nl/organisers/llms.txt) en
 [/participants/llms.txt](https://wiedoethet.nl/participants/llms.txt).

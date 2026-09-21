@@ -1,4 +1,4 @@
-# Wie Doet Het — context voor deelnemers
+# Wie-Doet-Het — context voor deelnemers
 
 Context voor agents die helpen bij iemand die een deellink *ontvangen* heeft.
 Voor de kant van de organisator zie

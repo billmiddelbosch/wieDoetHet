@@ -1,4 +1,4 @@
-# Wie Doet Het — context voor organisatoren
+# Wie-Doet-Het — context voor organisatoren
 
 Context voor agents die helpen bij degene die een groep *aanmaakt*. Voor de kant
 van de deelnemers zie

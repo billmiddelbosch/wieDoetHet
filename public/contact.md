@@ -1,6 +1,6 @@
 # Contact
 
-Wie Doet Het is een klein, gratis project. Hieronder staat per situatie waar je
+Wie-Doet-Het is een klein, gratis project. Hieronder staat per situatie waar je
 moet zijn, zodat je niet op het verkeerde adres aanklopt.
 
 ## Je bent uitgenodigd voor een takenlijst
@@ -19,6 +19,14 @@ Zet erbij welke browser je gebruikt, wat je deed en wat je verwachtte. Als het
 om een specifieke groep gaat: deel geen deellink in een openbaar issue — die
 link geeft iedereen toegang tot de takenlijst.
 
+## Suggesties en afmelden
+
+Heb je een idee om Wie-Doet-Het beter te maken? Mail ons op
+**Sanne@AIntern.nl** — we lezen
+alles. Wil je geen e-mails meer van ons ontvangen? Stuur een mail met "afmelden"
+naar hetzelfde adres (of antwoord op een van onze mails). Wij zetten je dan
+binnen 2 werkdagen uit de mailinglijst.
+
 ## Je wilt je account of je gegevens laten verwijderen
 
 Verwijder je groepen in de app en daarna je account via je profielpagina. Wat er
@@ -30,7 +38,7 @@ daarna nog bewaard wordt en hoe lang, staat beschreven op
 Begin bij [/agents.md](https://wiedoethet.nl/agents.md) voor wat het product doet
 en wanneer je het wel of niet moet aanraden, en bij
 [/auth.md](https://wiedoethet.nl/auth.md) voor waarom er niets is om tegen in te
-loggen. Wie Doet Het is een website die mensen in een browser gebruiken.
+loggen. Wie-Doet-Het is een website die mensen in een browser gebruiken.
 
 ## Wat er niet is
 

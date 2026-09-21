@@ -42,6 +42,10 @@ export function conflict(message = 'Conflict') {
   return { statusCode: 409, headers: CORS_HEADERS, body: JSON.stringify({ message }) }
 }
 
+export function badGateway(message = 'Externe dienst niet bereikbaar') {
+  return { statusCode: 502, headers: CORS_HEADERS, body: JSON.stringify({ message }) }
+}
+
 export function serverError(err) {
   console.error(err)
   return {

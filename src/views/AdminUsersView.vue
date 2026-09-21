@@ -174,6 +174,12 @@ function openUser(user) {
         <p class="font-medium text-[var(--text-primary)]">{{ t('admin.users.emptyTitle') }}</p>
         <p class="text-[var(--text-tertiary)] mt-1">{{ t('admin.users.emptyDesc') }}</p>
       </template>
+      <template #cell-email="{ row }">
+        <span>{{ row.email }}</span>
+        <BaseBadge v-if="row.mailOptOut" variant="warning" size="sm" class="ml-2">
+          {{ t('admin.users.optedOut') }}
+        </BaseBadge>
+      </template>
       <template #cell-role="{ value }">
         <BaseBadge :variant="value === 'admin' ? 'brand' : 'neutral'" size="sm">
           {{ t(`admin.roles.${value}`) }}
