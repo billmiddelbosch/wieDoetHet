@@ -1,6 +1,6 @@
-# Over Wie Doet Het
+# Over Wie-Doet-Het
 
-Wie Doet Het is een gratis webapp waarmee je taken verdeelt over een groep mensen,
+Wie-Doet-Het is een gratis webapp waarmee je taken verdeelt over een groep mensen,
 zonder dat iedereen een account nodig heeft.
 
 ## Het probleem
@@ -11,7 +11,7 @@ taak, drie taken blijven liggen, en de organisator moet alles handmatig bijhoude
 Bestaande projecttools lossen dat op met accounts, uitnodigingen en permissies —
 veel te zwaar voor "wie neemt de statiegeldflessen mee".
 
-## Hoe Wie Doet Het het oplost
+## Hoe Wie-Doet-Het het oplost
 
 De organisator maakt een groep, voegt de taken toe en deelt één link. Iedereen
 die de link opent ziet de complete lijst en kiest zelf wat zij doen. Een geclaimde
@@ -32,12 +32,12 @@ de boodschappen en de afwas.
 ## Wat het niet is
 
 Geen projectmanagementtool, geen chat, geen agenda en geen urenregistratie.
-Wie Doet Het doet één ding: een lijst taken, een gedeelde link, en zichtbaar
+Wie-Doet-Het doet één ding: een lijst taken, een gedeelde link, en zichtbaar
 maken wie wat oppakt.
 
 ## Over het project
 
-Wie Doet Het is een onafhankelijk, gratis project. De broncode van de webapp
+Wie-Doet-Het is een onafhankelijk, gratis project. De broncode van de webapp
 staat publiek op [GitHub](https://github.com/billmiddelbosch/wieDoetHet).
 
 - Website: <https://wiedoethet.nl/>

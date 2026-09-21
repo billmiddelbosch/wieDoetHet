@@ -67,6 +67,26 @@ export function useAdminUsers() {
     }
   }
 
+  // Toggle a user's e-mail opt-out. No optimistic UI: the switch only moves once
+  // the server has confirmed, so a failed request never leaves it in a wrong state.
+  // Resolves to true/false and leaves `error` alone: that ref drives the "user not
+  // found" state of the detail page, which a failed toggle must not trigger.
+  async function setMailOptOut(userId, optOut) {
+    try {
+      const { data } = await apiClient.patch(`/admin/users/${userId}/mail-opt-out`, { optOut })
+      if (currentUser.value?.id === userId) {
+        adminStore.setCurrentUser({
+          ...currentUser.value,
+          mailOptOut: data.mailOptOut,
+          mailOptOutAt: data.mailOptOutAt ?? null,
+        })
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return {
     users,
     currentUser,
@@ -80,5 +100,6 @@ export function useAdminUsers() {
     fetchNextPage,
     fetchPreviousPage,
     fetchUser,
+    setMailOptOut,
   }
 }

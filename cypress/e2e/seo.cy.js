@@ -21,7 +21,7 @@ describe('SEO — Landing page meta tags', () => {
   })
 
   it('AC-01: sets the correct page title', () => {
-    cy.title().should('eq', 'Wie Doet Het – Taken verdelen voor groepen')
+    cy.title().should('eq', 'Wie-Doet-Het – Taken verdelen voor groepen')
   })
 
   it('AC-02: sets meta description with target keywords', () => {
@@ -35,7 +35,7 @@ describe('SEO — Landing page meta tags', () => {
 
   it('sets og:title', () => {
     cy.get('head meta[property="og:title"]')
-      .should('have.attr', 'content', 'Wie Doet Het – Taken verdelen voor groepen')
+      .should('have.attr', 'content', 'Wie-Doet-Het – Taken verdelen voor groepen')
   })
 
   it('sets og:description', () => {
@@ -103,7 +103,7 @@ describe('SEO — Static HTML in index.html (AC-10, AC-11)', () => {
     cy.visit('/')
     // The #seo-static div must exist in the DOM (it is CSS-hidden, not removed)
     cy.get('#seo-static').should('exist')
-    cy.get('#seo-static h1').should('contain.text', 'Wie Doet Het')
+    cy.get('#seo-static h1').should('contain.text', 'Wie-Doet-Het')
     cy.get('#seo-static h3').should('have.length.at.least', 4)
   })
 })
@@ -119,7 +119,7 @@ describe('SEO — FAQ section visible in landing UI', () => {
     cy.get('#app').contains('Veelgestelde vragen').should('be.visible')
     cy.get('#app').contains('Hoe verdeel ik taken over een groep?').should('be.visible')
     cy.get('#app').contains('Welke app kan taken verdelen?').should('be.visible')
-    cy.get('#app').contains('Is Wie Doet Het gratis?').should('be.visible')
+    cy.get('#app').contains('Is Wie-Doet-Het gratis?').should('be.visible')
     cy.get('#app').contains('Kan ik taken verdelen via WhatsApp?').should('be.visible')
   })
 })
@@ -199,7 +199,7 @@ describe('SEO — meta tags on auth pages', () => {
   it('register page sets a page title', () => {
     cy.visit('/register')
     cy.get('form', { timeout: 8000 }).should('exist')
-    cy.title().should('include', 'Wie Doet Het')
+    cy.title().should('include', 'Wie-Doet-Het')
   })
 })
 

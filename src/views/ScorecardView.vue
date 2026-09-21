@@ -28,11 +28,11 @@ const group = computed(() => groupStore.currentGroup)
 // --- SEO ---
 useHead(computed(() => ({
   title: group.value
-    ? `${group.value.name} – ${t('scorecard.title')} – Wie Doet Het`
-    : `${t('scorecard.title')} – Wie Doet Het`,
+    ? `${group.value.name} – ${t('scorecard.title')} – Wie-Doet-Het`
+    : `${t('scorecard.title')} – Wie-Doet-Het`,
   description: group.value
     ? `${t('scorecard.ogDescription', { name: group.value.name, count: tasks.value?.length ?? 0 })}`
-    : 'Wie Doet Het – Taken verdelen voor groepen.',
+    : 'Wie-Doet-Het – Taken verdelen voor groepen.',
 })))
 
 useJsonLd(computed(() => {
@@ -41,7 +41,7 @@ useJsonLd(computed(() => {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: group.value.name,
-    description: `Taakverdeling voor ${group.value.name} via Wie Doet Het`,
+    description: `Taakverdeling voor ${group.value.name} via Wie-Doet-Het`,
     numberOfItems: tasks.value?.length ?? 0,
     itemListElement: (tasks.value ?? []).map((task, i) => ({
       '@type': 'ListItem',

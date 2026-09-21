@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/admin/mail-templates/no_tasks",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"subject\":\"Bijna klaar: voeg taken toe aan {{groupName}}\",\"bodyHtml\":\"<p>Hoi {{firstName}},</p><p>Je groep {{groupName}} heeft nog geen taken. <a href=\\\"{{groupUrl}}\\\">Voeg de eerste taak toe</a>.</p>\"}",
+  "pathParameters": {
+    "templateId": "no_tasks"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "path": "/admin/mail-templates/no_tasks",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

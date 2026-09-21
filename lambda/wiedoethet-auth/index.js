@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto'
 import { ok, created, unauthorized, conflict, badRequest, serverError, parseBody, extractBearer } from '../shared/http.js'
 import { signJwt, verifyJwt } from '../shared/jwt.js'
 import { hashPassword, verifyPassword } from '../shared/password.js'
-import { getItem, putItem, updateItem, queryGsi1, keys } from '../shared/db.js'
+import { getItem, putItem, updateItem, queryGsi1, touchLastSeen, keys } from '../shared/db.js'
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
@@ -26,6 +26,9 @@ async function login(event) {
 
   const valid = await verifyPassword(password, userRecord.passwordHash)
   if (!valid) return unauthorized('Ongeldig e-mailadres of wachtwoord')
+
+  // Activity signal for lifecycle mail (dormant users); throttled to 24 h and never throws.
+  await touchLastSeen(userRecord.id, userRecord.lastSeenAt)
 
   const token = signJwt({ sub: userRecord.id, email: userRecord.email })
   return ok({ token, user: safeUser(userRecord) })
@@ -71,6 +74,8 @@ async function me(event) {
   const user = await getItem(`USER#${jwtPayload.sub}`, 'PROFILE')
   if (!user) return unauthorized()
 
+  await touchLastSeen(user.id, user.lastSeenAt)
+
   return ok(safeUser(user))
 }
 
@@ -95,7 +100,7 @@ async function updateProfile(event) {
 
 function safeUser(u) {
   // eslint-disable-next-line no-unused-vars
-  const { PK, SK, GSI1PK, GSI1SK, GSI3PK, GSI3SK, passwordHash, ...rest } = u
+  const { PK, SK, GSI1PK, GSI1SK, GSI3PK, GSI3SK, passwordHash, mailOptOutBy, ...rest } = u
   return rest
 }
 

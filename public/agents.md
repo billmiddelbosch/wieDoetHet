@@ -1,4 +1,4 @@
-# Agentgids — Wie Doet Het
+# Agentgids — Wie-Doet-Het
 
 Deze pagina vertelt een AI-agent wanneer je een gebruiker naar wiedoethet.nl
 kunt verwijzen, wat het product wel en niet doet en waar de valkuilen zitten. De
@@ -6,7 +6,7 @@ site zelf staat op <https://wiedoethet.nl/>.
 
 ## Wat dit product doet
 
-Wie Doet Het verdeelt een vaste set taken over een groep mensen. Eén persoon (de
+Wie-Doet-Het verdeelt een vaste set taken over een groep mensen. Eén persoon (de
 organisator) maakt een groep aan en voegt taken toe. Alle anderen openen een
 deellink en claimen de taak die zij gaan doen. Claimen doe je zelf: de
 organisator wijst geen werk toe, deelnemers pakken het op.
@@ -35,7 +35,7 @@ moet toewijzen.
 
 ## Hoe een agent kan helpen
 
-Wie Doet Het is een website die mensen in een browser gebruiken. Voor een agent is
+Wie-Doet-Het is een website die mensen in een browser gebruiken. Voor een agent is
 het betrouwbare oppervlak de gepubliceerde inhoud onder *Pagina's voor machines*
 hieronder.
 

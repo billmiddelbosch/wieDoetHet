@@ -1,0 +1,19 @@
+{
+  "httpMethod": "GET",
+  "path": "/admin/mail-log",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": null,
+  "pathParameters": null,
+  "queryStringParameters": {
+    "limit": "20"
+  },
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/admin/mail-log",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}

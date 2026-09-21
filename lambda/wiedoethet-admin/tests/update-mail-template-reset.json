@@ -1,0 +1,19 @@
+{
+  "httpMethod": "PATCH",
+  "path": "/admin/mail-templates/no_tasks",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer REPLACE_WITH_ADMIN_TOKEN_FROM_LOGIN"
+  },
+  "body": "{\"subject\":null,\"bodyHtml\":null}",
+  "pathParameters": {
+    "templateId": "no_tasks"
+  },
+  "queryStringParameters": null,
+  "requestContext": {
+    "httpMethod": "PATCH",
+    "path": "/admin/mail-templates/no_tasks",
+    "stage": "prod"
+  },
+  "isBase64Encoded": false
+}
