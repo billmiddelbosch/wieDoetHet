@@ -380,14 +380,14 @@ describe('dormant win-backs', () => {
 })
 
 describe('who never gets lifecycle mail', () => {
-  it('skips opted-out users and admins', async () => {
+  it('skips opted-out users but sends to admins', async () => {
     const db = createFakeDb()
     db.enableTemplate('no_tasks')
     oldUser(db, 'opted-out', { mailOptOut: true })
     oldUser(db, 'admin', { role: 'admin' })
     oldUser(db, 'normal')
     for (const id of ['opted-out', 'admin', 'normal']) db.addGroup({ id: `g-${id}`, initiatorId: id, createdAt: hoursAgo(TUE_10, 30) })
-    expect(recipients((await run(db, TUE_10)).sent)).toEqual(['normal@example.com'])
+    expect(recipients((await run(db, TUE_10)).sent).sort()).toEqual(['admin@example.com', 'normal@example.com'])
   })
 })
 
