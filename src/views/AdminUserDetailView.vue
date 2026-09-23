@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminUsers } from '@/composables/useAdminUsers'
 import { useAdminStore } from '@/stores/admin'
@@ -117,7 +117,15 @@ function shareUrl(shareToken) {
       </BaseCard>
 
       <BaseCard padding="md" class="mb-6">
-        <h2 class="font-semibold text-[var(--text-primary)] mb-3">{{ t('admin.userDetail.mailPrefsTitle') }}</h2>
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h2 class="font-semibold text-[var(--text-primary)]">{{ t('admin.userDetail.mailPrefsTitle') }}</h2>
+          <RouterLink
+            :to="{ name: 'admin-mail-log', query: { q: currentUser.email } }"
+            class="text-sm font-medium text-brand-500 hover:underline whitespace-nowrap"
+          >
+            {{ t('admin.userDetail.viewMailLog') }} &rarr;
+          </RouterLink>
+        </div>
         <BaseAlert v-if="optOutFailed" variant="danger" class="mb-3">
           {{ t('admin.userDetail.optOutError') }}
         </BaseAlert>

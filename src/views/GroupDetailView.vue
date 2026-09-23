@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGroupStore } from '@/stores/group'
 import { useAuthStore } from '@/stores/auth'
@@ -162,6 +162,16 @@ async function onAnonSubmit(anonName) {
       />
 
       <div class="max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
+        <BaseAlert v-if="!authStore.isAuthenticated" variant="info">
+          {{ t('groups.loginHint') }}
+          <RouterLink
+            :to="{ name: 'login', query: { redirect: route.fullPath } }"
+            class="font-semibold underline"
+          >
+            {{ t('nav.login') }}
+          </RouterLink>
+        </BaseAlert>
+
         <BaseAlert v-if="claimError" variant="danger" dismissible @dismiss="claimError = ''">
           {{ claimError }}
         </BaseAlert>

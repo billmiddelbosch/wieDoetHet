@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
@@ -9,6 +9,7 @@ import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const route = useRoute()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 
@@ -105,7 +106,7 @@ function logout() {
 
         <!-- Guest nav -->
         <template v-else>
-          <RouterLink to="/login">
+          <RouterLink :to="{ name: 'login', query: { redirect: route.fullPath } }">
             <BaseButton variant="ghost" size="sm">{{ t('nav.login') }}</BaseButton>
           </RouterLink>
           <RouterLink to="/register">
