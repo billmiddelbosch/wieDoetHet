@@ -69,7 +69,7 @@ async function decide(ctx, template, candidate, picked) {
 
   const { user } = candidate
   if (!user?.email) return skip('no-email')
-  if (user.role === 'admin' || user.mailOptOut === true) return skip('excluded-user')
+  if (user.mailOptOut === true) return skip('excluded-user')
   if (picked.has(user.id)) return skip('already-picked')
 
   const rows = await getUserLog(ctx, user.id)

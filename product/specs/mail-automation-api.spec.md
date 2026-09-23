@@ -34,7 +34,7 @@ Send a small set of automatic **lifecycle emails** to registered users to stimul
 | A3 | Two dormant templates (`dormant_30`, `dormant_60`), then **sunset** (no third attempt). Satisfies "stop after two unanswered win-back attempts". | D5 |
 | A4 | `maxPerUser` = 1 for every template except `day_after_event` (once **per group**, deduped by group id). Lifetime, not per year. | Simplest safe default. |
 | A5 | Manual `POST /admin/mail` **also skips opted-out users** and reports `skippedOptOut`. | An opt-out that only applies to some mail is not an opt-out. |
-| A6 | Admin accounts (`role: 'admin'`) never receive lifecycle mail. | Internal/test accounts. |
+| A6 | ~~Admin accounts (`role: 'admin'`) never receive lifecycle mail.~~ **Removed:** admins are ordinary users for lifecycle purposes and only `mailOptOut` excludes a user. | Internal/test accounts previously excluded by default; opt-out now covers that case explicitly. |
 | A7 | One send slot per weekday at **10:00 Europe/Amsterdam**. | § Send Timing. A second 20:00 slot is a later A/B test, not v1. |
 | A8 | A "Testmail naar mezelf" endpoint exists (sends the rendered template to the calling admin only, not logged). | Templates default to disabled; the admin needs a way to see the final mail (with footer) before enabling. Cheap to drop if unwanted. |
 
@@ -102,7 +102,7 @@ A new Lambda, **not** behind API Gateway. Invoked by **EventBridge Scheduler** o
        for each candidate of template.candidates(ctx):         // see § Templates
            eligibleAt <= now                                   else skip
            maxAgeHours == null || now - eligibleAt <= maxAge   else skip (expired)
-           user = candidate.user; skip if user.role==='admin' || user.mailOptOut === true
+           user = candidate.user; skip if user.mailOptOut === true
            skip if user already picked in THIS run             // one mail per user per run
            skip if log row exists and is not retryable         // exactly-once (see § Idempotency)
            skip if per-user lifetime count(templateId) >= maxPerUser
@@ -436,7 +436,7 @@ Legal note (not legal advice — owner to confirm): mailing your own registered 
 - [x] Enabling `dormant_*` on a database with many legacy dormant users sends at most 50 per run.
 - [x] Conditions are evaluated at send time: a user who created a group between trigger and send gets nothing.
 - [x] At most one lifecycle mail per user per run; ≥ 72 h between any two (except A1).
-- [x] Opted-out users and admins never receive a lifecycle mail; opted-out users are also skipped by `POST /admin/mail` (`skippedOptOut` reported).
+- [x] Opted-out users never receive a lifecycle mail (admins are not excluded); opted-out users are also skipped by `POST /admin/mail` (`skippedOptOut` reported).
 
 **Exactly-once / resilience**
 - [x] Two concurrent runs never send the same (user, template, scope) twice (conditional put).
