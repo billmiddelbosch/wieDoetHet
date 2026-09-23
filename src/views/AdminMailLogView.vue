@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminMailLog } from '@/composables/useAdminMailLog'
 import { useHead } from '@/composables/useHead'
@@ -12,6 +13,7 @@ import BaseAlert from '@/components/ui/BaseAlert.vue'
 import AdminAutomationTabs from '@/components/molecules/AdminAutomationTabs.vue'
 
 const { t, locale } = useI18n()
+const route = useRoute()
 
 useHead({
   title: t('seo.adminMailLog.title'),
@@ -45,10 +47,12 @@ const TEMPLATE_IDS = [
 const STATUSES = ['sent', 'failed', 'sending']
 const STATUS_VARIANT = { sent: 'success', failed: 'danger', sending: 'warning' }
 
-const q = ref('')
+// Arriving from a user's admin page pre-fills the search (e.g. ?q=foo@bar.com).
+const initialQ = typeof route.query.q === 'string' ? route.query.q : ''
+const q = ref(initialQ)
 let debounceTimer = null
 
-onMounted(() => fetchLog())
+onMounted(() => (initialQ ? setFilters({ q: initialQ }) : fetchLog()))
 onUnmounted(() => clearTimeout(debounceTimer))
 
 // Same 300 ms debounce as the users search.

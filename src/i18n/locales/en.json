@@ -134,6 +134,7 @@
       "all": "All participants can see who grabbed what.",
       "initiator": "Only you can view the scorecard."
     },
+    "loginHint": "Are you the organiser of this group? Log in to add tasks.",
     "by": "by",
     "unknownInitiator": "Unknown",
     "temporary": "Temporary",
@@ -294,6 +295,7 @@
       "groupsTitle": "Groups initiated",
       "notFound": "User not found.",
       "mailPrefsTitle": "Email preferences",
+      "viewMailLog": "View mail log",
       "mailPrefsSubscribed": "This user receives emails.",
       "mailPrefsOptedOut": "This user has been opted out of email since {date}.",
       "optOutLabel": "Opted out of email",

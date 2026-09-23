@@ -9,7 +9,8 @@
         "ses:SendRawEmail"
       ],
       "Resource": [
-        "arn:aws:ses:eu-west-2:344050431068:identity/*"
+        "arn:aws:ses:eu-west-2:344050431068:identity/*",
+        "arn:aws:ses:eu-west-2:344050431068:configuration-set/my-first-configuration-set"
       ]
     }
   ]

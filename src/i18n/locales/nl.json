@@ -134,6 +134,7 @@
       "all": "Alle deelnemers kunnen zien wie wat heeft gepakt.",
       "initiator": "Alleen jij kunt de scorekaart bekijken."
     },
+    "loginHint": "Ben jij de organisator van deze groep? Log in om taken toe te voegen.",
     "by": "door",
     "unknownInitiator": "Onbekend",
     "temporary": "Tijdelijk",
@@ -294,6 +295,7 @@
       "groupsTitle": "Gestarte groepen",
       "notFound": "Gebruiker niet gevonden.",
       "mailPrefsTitle": "E-mailvoorkeuren",
+      "viewMailLog": "Bekijk verzendlog",
       "mailPrefsSubscribed": "Deze gebruiker ontvangt e-mails.",
       "mailPrefsOptedOut": "Deze gebruiker is afgemeld voor e-mail sinds {date}.",
       "optOutLabel": "Afgemeld voor e-mail",
