@@ -95,6 +95,16 @@ const router = createRouter({
           name: 'admin-group-detail',
           component: () => import('@/views/AdminGroupDetailView.vue'),
         },
+        {
+          path: 'automation',
+          name: 'admin-automation',
+          component: () => import('@/views/AdminAutomationView.vue'),
+        },
+        {
+          path: 'automation/log',
+          name: 'admin-mail-log',
+          component: () => import('@/views/AdminMailLogView.vue'),
+        },
       ],
     },
     {

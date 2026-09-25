@@ -9,12 +9,15 @@ const tabs = [
   { to: '/admin', name: 'admin-dashboard', label: () => t('admin.subnav.dashboard') },
   { to: '/admin/users', name: 'admin-users', label: () => t('admin.subnav.users') },
   { to: '/admin/groups', name: 'admin-groups', label: () => t('admin.subnav.groups') },
+  { to: '/admin/automation', name: 'admin-automation', label: () => t('admin.subnav.automation') },
 ]
 
 function isActive(tabName) {
   if (tabName === 'admin-dashboard') return route.name === 'admin-dashboard'
   if (tabName === 'admin-users') return route.name === 'admin-users' || route.name === 'admin-user-detail'
   if (tabName === 'admin-groups') return route.name === 'admin-groups' || route.name === 'admin-group-detail'
+  if (tabName === 'admin-automation')
+    return route.name === 'admin-automation' || route.name === 'admin-mail-log'
   return false
 }
 </script>

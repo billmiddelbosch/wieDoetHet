@@ -12,9 +12,9 @@
  * Lambda permission only if missing — safe to re-run), then deploys the
  * stage.
  *
- * Currently only handles /admin/mail (POST), the route this was built for.
- * If another new /admin/* route is added later, extend ROUTES below rather
- * than hand-wiring it in the console again.
+ * Handles the admin routes added since the console-wired ones (/admin/mail,
+ * the mail-automation routes). If another new /admin/* route is added later,
+ * extend ROUTES below rather than hand-wiring it in the console again.
  *
  * Usage:
  *   node scripts/deploy-admin.js [stage]   (default stage: development)
@@ -41,16 +41,55 @@ const CORS_ALLOW_HEADERS = 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Am
 
 // Routes this Lambda owns that API Gateway needs to know about. Extend this
 // list (and nothing else in this file) when adding a new /admin/* route.
+// Missing ancestor resources are created on the way down. An existing resource
+// is matched on its path with every {param} normalised, so the routes below
+// reuse e.g. an existing /admin/users/{id} whatever its parameter is called.
 const ROUTES = [
   {
-    parentPath: '/admin',
-    pathPart: 'mail',
     fullPath: '/admin/mail',
     method: 'POST',
     permissionSid: 'admin-mail-post',
     methodResponses: ['200', '400', '401'],
   },
+  {
+    fullPath: '/admin/mail-templates',
+    method: 'GET',
+    permissionSid: 'admin-mail-templates-get',
+    methodResponses: ['200', '401', '403'],
+  },
+  {
+    fullPath: '/admin/mail-master',
+    method: 'PATCH',
+    permissionSid: 'admin-mail-master-patch',
+    methodResponses: ['200', '400', '401', '403'],
+  },
+  {
+    fullPath: '/admin/mail-templates/{templateId}',
+    method: 'PATCH',
+    permissionSid: 'admin-mail-templates-patch',
+    methodResponses: ['200', '400', '401', '403', '404'],
+  },
+  {
+    fullPath: '/admin/mail-templates/{templateId}/test',
+    method: 'POST',
+    permissionSid: 'admin-mail-templates-test-post',
+    methodResponses: ['200', '401', '403', '404', '502'],
+  },
+  {
+    fullPath: '/admin/mail-log',
+    method: 'GET',
+    permissionSid: 'admin-mail-log-get',
+    methodResponses: ['200', '400', '401', '403'],
+  },
+  {
+    fullPath: '/admin/users/{userId}/mail-opt-out',
+    method: 'PATCH',
+    permissionSid: 'admin-users-mail-opt-out-patch',
+    methodResponses: ['200', '400', '401', '403', '404'],
+  },
 ]
+
+const normalisePath = (path) => path.replace(/\{[^}]+\}/g, '{}')
 
 function aws(args) {
   return execFileSync('aws', args, {
@@ -87,20 +126,33 @@ function getResources() {
   return awsJson(['apigateway', 'get-resources', '--rest-api-id', REST_API_ID, '--region', REGION, '--query', 'items[]'])
 }
 
+// Walks route.fullPath from the API root, creating whichever segments are
+// missing, and returns the id of the final resource. `resources` is updated in
+// place so later routes see what earlier ones created.
 function ensureResource(resources, route) {
-  const existing = resources.find((r) => r.path === route.fullPath)
-  if (existing) {
-    console.log(`${route.fullPath} resource already exists (${existing.id}) — skipping create`)
-    return existing.id
+  const root = resources.find((r) => r.path === '/')
+  if (!root) throw new Error('API root resource not found')
+
+  let parent = root
+  let path = ''
+  for (const segment of route.fullPath.split('/').filter(Boolean)) {
+    path += `/${segment}`
+    const existing = resources.find((r) => normalisePath(r.path) === normalisePath(path))
+    if (existing) {
+      parent = existing
+      continue
+    }
+    const created = awsJson([
+      'apigateway', 'create-resource', '--rest-api-id', REST_API_ID, '--region', REGION,
+      '--parent-id', parent.id, '--path-part', segment,
+    ])
+    console.log(`Created ${path} resource (${created.id})`)
+    parent = { id: created.id, path }
+    resources.push(parent)
   }
-  const parent = resources.find((r) => r.path === route.parentPath)
-  if (!parent) throw new Error(`Parent resource ${route.parentPath} not found — cannot create ${route.fullPath}`)
-  const created = awsJson([
-    'apigateway', 'create-resource', '--rest-api-id', REST_API_ID, '--region', REGION,
-    '--parent-id', parent.id, '--path-part', route.pathPart,
-  ])
-  console.log(`Created ${route.fullPath} resource (${created.id})`)
-  return created.id
+
+  console.log(`${route.fullPath} resource: ${parent.id} (${parent.path})`)
+  return parent.id
 }
 
 function hasMethod(resourceId, httpMethod) {
@@ -141,7 +193,8 @@ function ensureProxyMethod(resourceId, route) {
 }
 
 function ensureLambdaPermission(route) {
-  const sourceArn = `arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${REST_API_ID}/*/${route.method}${route.fullPath}`
+  // execute-api ARNs spell a path parameter as a wildcard
+  const sourceArn = `arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${REST_API_ID}/*/${route.method}${route.fullPath.replace(/\{[^}]+\}/g, '*')}`
   try {
     aws([
       'lambda', 'add-permission', '--region', REGION, '--function-name', FUNCTION_NAME,

@@ -1,6 +1,6 @@
 # Product Overview — wieDoetHet
 
-**Last Updated:** 2026-09-15 (added Admin Mail Users — the Admin Section's first non-read-only capability; see
+**Last Updated:** 2026-09-20 (added Mail automation — lifecycle mails, opt-out and the Admin → Automatisering panel; see § 8 below. Prior 2026-09-15 entry: added Admin Mail Users — the Admin Section's first non-read-only capability; see
 § 8 below. Prior 2026-08-20 entry: added Admin Section.)
 **Version:** 0.1.0 (MVP)
 
@@ -91,6 +91,25 @@ When groups need to divide tasks, coordination typically happens chaotically thr
   decision below.
 - Otherwise v1 remains **read-only** with respect to user/group *data* — no editing, deactivating, or deleting
   users/groups from the panel (Mail Users sends email, it does not touch stored records)
+- **Mail automation** (branch `feature/mailAutomation`, status: implementation complete, pending review and
+  first live run — nothing is deployed and everything ships switched off): a scheduled job sends lifecycle
+  mails to registered users to stimulate use and reduce churn. Mails go out on weekday mornings at 10:00
+  (Europe/Amsterdam) — the moments people read private mail most; the follow-ups only Tuesday–Thursday.
+  - v1 templates: **welcome** (day after registration, skipped when the user already made a group on day 1),
+    **no group** (48 h after registration), **group without tasks** / **tasks without claims** (4 days after
+    the first task), **day after the event**, and **dormant** at 30 and 60 days.
+  - Rules: conditions are re-checked at send time; one mail per user per run and at least 72 h between mails;
+    a mail stops as soon as the user acts; at most two unanswered win-back mails, then silence; admins and
+    opted-out users never get lifecycle mail.
+  - Every mail carries a footer that invites suggestions and explains the opt-out. Users simply reply to the
+    mail; an admin records the opt-out on the user (Admin → Users → user → *E-mailvoorkeuren*) and answers
+    suggestions manually. Opted-out users are also skipped by the manual Mail Users feature.
+  - Admin → **Automatisering**: per-template on/off switch, editable subject/body per template (with reset to
+    the default text and a test mail to yourself), a **master switch** (*Hoofdschakelaar*, off until an admin
+    turns it on, with a confirmation), and a sent-mail log (template, recipient, status, attempts).
+    An emergency stop (`LIFECYCLE_MAIL_ENABLED=false` on the Lambda) and a per-run send cap sit outside the panel.
+  - Deferred to a later version: "event approaching" and "everything claimed" mails.
+  - Specs: `product/specs/mail-automation.spec.md` (UI + rules), `product/specs/mail-automation-api.spec.md` (backend).
 
 ---
 

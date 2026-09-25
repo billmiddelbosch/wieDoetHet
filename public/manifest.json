@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Wie Doet Het",
-  "short_name": "Wie Doet Het",
+  "name": "Wie-Doet-Het",
+  "short_name": "Wie-Doet-Het",
   "description": "Maak een takenlijst, deel de link en laat iedereen zelf kiezen wat zij doen.",
   "start_url": "/",
   "scope": "/",

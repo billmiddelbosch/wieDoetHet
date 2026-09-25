@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { useHead } from '@/composables/useHead'
@@ -14,6 +14,7 @@ useHead({
   title: t('seo.login.title'),
   description: t('seo.login.description'),
 })
+const route = useRoute()
 const router = useRouter()
 const { login } = useAuth()
 
@@ -38,7 +39,7 @@ async function submit() {
   serverError.value = ''
   try {
     await login(email.value, password.value)
-    router.push('/dashboard')
+    router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard')
   } catch (err) {
     serverError.value = err?.response?.data?.message ?? t('auth.loginFailed')
   } finally {

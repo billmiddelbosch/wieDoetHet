@@ -33,9 +33,9 @@ describe('useHead', () => {
   })
 
   it('sets document.title', async () => {
-    makeWrapper(() => useHead({ title: 'Test Page – Wie Doet Het', description: 'Test desc' }))
+    makeWrapper(() => useHead({ title: 'Test Page – Wie-Doet-Het', description: 'Test desc' }))
     await nextTick()
-    expect(document.title).toBe('Test Page – Wie Doet Het')
+    expect(document.title).toBe('Test Page – Wie-Doet-Het')
   })
 
   it('sets meta description', async () => {

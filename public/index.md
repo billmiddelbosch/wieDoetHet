@@ -1,4 +1,4 @@
-# Wie Doet Het — verdeel taken over je groep
+# Wie-Doet-Het — verdeel taken over je groep
 
 Gratis webapp om taken te verdelen over een groep. Maak een takenlijst, deel de
 link via WhatsApp en laat iedereen zelf kiezen wat zij doen. Deelnemers hebben
@@ -12,7 +12,7 @@ Canonieke pagina: <https://wiedoethet.nl/>
 2. **Voeg taken toe.** Beschrijf elke taak en stel optioneel een maximum aantal deelnemers in.
 3. **Deel de link.** Stuur de link via WhatsApp. Iedereen klikt, pakt een taak — klaar!
 
-## Waarom Wie Doet Het
+## Waarom Wie-Doet-Het
 
 - **Geen account nodig.** Deelnemers kunnen taken claimen met alleen een naam. Geen registratie vereist.
 - **WhatsApp-vriendelijk.** Deel de link direct vanuit de app via WhatsApp. Eén tik en iedereen is binnen.
@@ -23,19 +23,19 @@ Canonieke pagina: <https://wiedoethet.nl/>
 
 ### Hoe verdeel ik taken over een groep?
 
-Maak een groep aan op Wie Doet Het, voeg je taken toe en deel de link via WhatsApp.
+Maak een groep aan op Wie-Doet-Het, voeg je taken toe en deel de link via WhatsApp.
 Deelnemers klikken op de taak die zij willen doen. Jij ziet direct wie wat heeft
 opgepakt.
 
 ### Welke app kan taken verdelen?
 
-Wie Doet Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep.
+Wie-Doet-Het is een gratis app waarmee je eenvoudig taken verdeelt over een groep.
 Ideaal voor sport, school, feesten en vrijwilligerswerk. Deelnemers hebben geen
 account nodig.
 
-### Is Wie Doet Het gratis?
+### Is Wie-Doet-Het gratis?
 
-Ja, Wie Doet Het is volledig gratis te gebruiken. Maak een account aan als
+Ja, Wie-Doet-Het is volledig gratis te gebruiken. Maak een account aan als
 organisator en nodig deelnemers uit via een deellink — zij hoeven zich nergens
 voor aan te melden.
 

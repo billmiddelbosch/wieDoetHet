@@ -31,8 +31,8 @@ Web App Manifest that satisfies browser installability requirements.
 
 ```json
 {
-  "name": "Wie Doet Het",
-  "short_name": "Wie Doet Het",
+  "name": "Wie-Doet-Het",
+  "short_name": "Wie-Doet-Het",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

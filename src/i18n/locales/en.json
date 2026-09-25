@@ -134,6 +134,7 @@
       "all": "All participants can see who grabbed what.",
       "initiator": "Only you can view the scorecard."
     },
+    "loginHint": "Are you the organiser of this group? Log in to add tasks.",
     "by": "by",
     "unknownInitiator": "Unknown",
     "temporary": "Temporary",
@@ -171,66 +172,72 @@
   },
   "seo": {
     "landing": {
-      "title": "Wie Doet Het – Task assignment for groups",
+      "title": "Wie-Doet-Het – Task assignment for groups",
       "description": "Assign tasks to your group via WhatsApp. Create a task list, share the link and see who picks what. Free, no account needed for participants."
     },
     "login": {
-      "title": "Log in – Wie Doet Het",
-      "description": "Log in to your Wie Doet Het account to manage your groups and tasks."
+      "title": "Log in – Wie-Doet-Het",
+      "description": "Log in to your Wie-Doet-Het account to manage your groups and tasks."
     },
     "register": {
-      "title": "Create account – Wie Doet Het",
+      "title": "Create account – Wie-Doet-Het",
       "description": "Create a free account and start assigning tasks to your group."
     },
     "dashboard": {
-      "title": "My groups – Wie Doet Het"
+      "title": "My groups – Wie-Doet-Het"
     },
     "profile": {
-      "title": "My profile – Wie Doet Het"
+      "title": "My profile – Wie-Doet-Het"
     },
     "groupSettings": {
-      "title": "Group settings – Wie Doet Het"
+      "title": "Group settings – Wie-Doet-Het"
     },
     "shareRedirect": {
-      "title": "Loading group – Wie Doet Het",
-      "description": "Task assignment via Wie Doet Het. Share the link and see who does what."
+      "title": "Loading group – Wie-Doet-Het",
+      "description": "Task assignment via Wie-Doet-Het. Share the link and see who does what."
     },
     "adminDashboard": {
-      "title": "Admin dashboard – Wie Doet Het"
+      "title": "Admin dashboard – Wie-Doet-Het"
     },
     "adminUsers": {
-      "title": "Admin – Users – Wie Doet Het"
+      "title": "Admin – Users – Wie-Doet-Het"
     },
     "adminUserDetail": {
-      "title": "Admin – User detail – Wie Doet Het"
+      "title": "Admin – User detail – Wie-Doet-Het"
     },
     "adminGroups": {
-      "title": "Admin – Groups – Wie Doet Het"
+      "title": "Admin – Groups – Wie-Doet-Het"
     },
     "adminGroupDetail": {
-      "title": "Admin – Group detail – Wie Doet Het"
+      "title": "Admin – Group detail – Wie-Doet-Het"
     },
     "about": {
-      "title": "About Wie Doet Het – Assign tasks without the hassle",
-      "description": "Wie Doet Het is a free web app for assigning tasks across a group of people, without everyone needing an account."
+      "title": "About Wie-Doet-Het – Assign tasks without the hassle",
+      "description": "Wie-Doet-Het is a free web app for assigning tasks across a group of people, without everyone needing an account."
     },
     "contact": {
-      "title": "Contact – Wie Doet Het",
-      "description": "Where to go with questions about a task list, a bug, or deleting your data at Wie Doet Het."
+      "title": "Contact – Wie-Doet-Het",
+      "description": "Where to go with questions about a task list, a bug, or deleting your data at Wie-Doet-Het."
     },
     "privacy": {
-      "title": "Privacy – Wie Doet Het",
-      "description": "Which data Wie Doet Het stores about organisers and participants, why, and how to get rid of it."
+      "title": "Privacy – Wie-Doet-Het",
+      "description": "Which data Wie-Doet-Het stores about organisers and participants, why, and how to get rid of it."
+    },
+    "adminAutomation": {
+      "title": "Mail automation"
+    },
+    "adminMailLog": {
+      "title": "Sent log"
     }
   },
   "faq": {
     "title": "Frequently asked questions",
     "q1": "How do I assign tasks to a group?",
-    "a1": "Create a group on Wie Doet Het, add your tasks and share the link via WhatsApp. Participants click on the task they want to do. You can instantly see who picked what.",
+    "a1": "Create a group on Wie-Doet-Het, add your tasks and share the link via WhatsApp. Participants click on the task they want to do. You can instantly see who picked what.",
     "q2": "Which app can distribute tasks?",
-    "a2": "Wie Doet Het is a free app that lets you easily divide tasks among a group. Ideal for sports, school, parties and volunteering. Participants don't need an account.",
-    "q3": "Is Wie Doet Het free?",
-    "a3": "Yes, Wie Doet Het is completely free to use. Create an account as an organiser and invite participants via a share link — they don't need to sign up anywhere.",
+    "a2": "Wie-Doet-Het is a free app that lets you easily divide tasks among a group. Ideal for sports, school, parties and volunteering. Participants don't need an account.",
+    "q3": "Is Wie-Doet-Het free?",
+    "a3": "Yes, Wie-Doet-Het is completely free to use. Create an account as an organiser and invite participants via a share link — they don't need to sign up anywhere.",
     "q4": "Can I divide tasks via WhatsApp?",
     "a4": "After creating a task list you generate a share link that you paste directly into your WhatsApp group. Participants open the link and claim their task without an extra app or account."
   },
@@ -238,7 +245,7 @@
     "title": "Scorecard",
     "refresh": "Refresh",
     "notVisible": "The scorecard is not visible to you. The initiator has restricted access.",
-    "ogDescription": "View the task assignments for {name}. {count} tasks · Wie Doet Het"
+    "ogDescription": "View the task assignments for {name}. {count} tasks · Wie-Doet-Het"
   },
   "profile": {
     "title": "My profile",
@@ -256,7 +263,8 @@
     "subnav": {
       "dashboard": "Overview",
       "users": "Users",
-      "groups": "Groups"
+      "groups": "Groups",
+      "automation": "Automation"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -279,12 +287,23 @@
       "columnGroupCount": "Groups",
       "columnLastActivity": "Last activity",
       "emptyTitle": "No users found",
-      "emptyDesc": "Try a different search term."
+      "emptyDesc": "Try a different search term.",
+      "optedOut": "Opted out"
     },
     "userDetail": {
       "back": "Back to users",
       "groupsTitle": "Groups initiated",
-      "notFound": "User not found."
+      "notFound": "User not found.",
+      "mailPrefsTitle": "Email preferences",
+      "viewMailLog": "View mail log",
+      "mailPrefsSubscribed": "This user receives emails.",
+      "mailPrefsOptedOut": "This user has been opted out of email since {date}.",
+      "optOutLabel": "Opted out of email",
+      "optOutDescription": "No longer receives automatic mails or admin mails.",
+      "resubscribeTitle": "Allow emails again?",
+      "resubscribeMessage": "This user will receive automatic mails and admin mails again. Only do this if the user asked for it themselves.",
+      "resubscribeConfirm": "Yes, allow",
+      "optOutError": "Saving failed."
     },
     "groups": {
       "title": "Groups",
@@ -329,7 +348,109 @@
       "bodyPlaceholder": "Write your message here...",
       "bodyRequired": "Message is required.",
       "sendCta": "Send",
-      "resultSummary": "{sent} sent, {failed} failed."
+      "resultSummary": "{sent} sent, {failed} failed.",
+      "skippedOptOut": "{n} skipped (opted out)"
+    },
+    "automation": {
+      "title": "Mail automation",
+      "tabTemplates": "Templates",
+      "tabLog": "Sent log",
+      "neverRan": "The automation has never run.",
+      "masterOff": "The master switch is off — no mails are sent, not even for enabled templates.",
+      "master": {
+        "title": "Master switch",
+        "label": "Send mails",
+        "on": "The master switch is on — enabled templates are sent at the next run.",
+        "updatedAt": "Last changed: {at}",
+        "killSwitch": "The emergency stop on the server (LIFECYCLE_MAIL_ENABLED=false) is active: no mails are sent, even with this switch on.",
+        "confirmTitle": "Turn the master switch on?",
+        "confirmMessage": "From the next run (Mon–Fri at 10:00) mails will be sent for the enabled templates. Currently enabled: {count}. Are you sure?",
+        "confirmLabel": "Turn on"
+      },
+      "lastRun": "Last run: {at} — {sent} sent, {failed} failed.",
+      "loadError": "Failed to load templates.",
+      "enabled": "Enabled",
+      "edit": "Edit",
+      "customised": "Custom text",
+      "default": "Default text",
+      "timing": {
+        "timely": "Mon–Fri at 10:00",
+        "normal": "Tue–Thu at 10:00"
+      },
+      "toggleError": "Could not update.",
+      "templates": {
+        "welcome": {
+          "name": "Welcome",
+          "description": "Welcome mail with the first steps.",
+          "trigger": "The day after registration, only if there is no group yet"
+        },
+        "no_group": {
+          "name": "No group yet",
+          "description": "A nudge to create the first group.",
+          "trigger": "48 hours after registration, if there is no group yet"
+        },
+        "no_tasks": {
+          "name": "Group without tasks",
+          "description": "Reminder to add tasks to a new group.",
+          "trigger": "24 hours after creating a group without tasks"
+        },
+        "no_claims": {
+          "name": "Tasks without claims",
+          "description": "Tip to share the link when nobody has picked a task.",
+          "trigger": "4 days after the first task, if nobody has claimed a task"
+        },
+        "day_after_event": {
+          "name": "Day after the event",
+          "description": "Look back and an invitation to create a new group.",
+          "trigger": "The day after a group’s event date"
+        },
+        "dormant_30": {
+          "name": "Inactive (30 days)",
+          "description": "First win-back mail.",
+          "trigger": "30 days without activity"
+        },
+        "dormant_60": {
+          "name": "Inactive (60 days)",
+          "description": "Second and final win-back mail.",
+          "trigger": "60 days without activity, after the 30-day mail"
+        }
+      },
+      "editModal": {
+        "title": "Edit template",
+        "subject": "Subject",
+        "body": "Text",
+        "variables": "Available fields:",
+        "footerNote": "The footer inviting suggestions and explaining how to opt out is automatically added below every mail.",
+        "save": "Save",
+        "reset": "Reset to default text",
+        "test": "Send test mail to myself",
+        "testSent": "Test mail sent to {email}.",
+        "subjectRequired": "Subject is required.",
+        "bodyRequired": "Text is required.",
+        "saveError": "Saving failed."
+      }
+    },
+    "mailLog": {
+      "title": "Sent log",
+      "filterTemplate": "Template",
+      "filterStatus": "Status",
+      "allTemplates": "All templates",
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search by email address...",
+      "columnSentAt": "Sent at",
+      "columnRecipient": "Recipient",
+      "columnTemplate": "Template",
+      "columnSubject": "Subject",
+      "columnStatus": "Status",
+      "columnAttempts": "Attempts",
+      "status": {
+        "sent": "Sent",
+        "failed": "Failed",
+        "sending": "Sending"
+      },
+      "empty": "No mails sent yet",
+      "noResults": "No results",
+      "loadError": "Failed to load the sent log."
     }
   },
   "footer": {
@@ -338,8 +459,8 @@
     "privacy": "Privacy"
   },
   "about": {
-    "title": "About Wie Doet Het",
-    "intro": "Wie Doet Het is a free web app for assigning tasks across a group of people, without everyone needing an account.",
+    "title": "About Wie-Doet-Het",
+    "intro": "Wie-Doet-Het is a free web app for assigning tasks across a group of people, without everyone needing an account.",
     "sections": [
       {
         "title": "The problem",
@@ -348,7 +469,7 @@
         ]
       },
       {
-        "title": "How Wie Doet Het solves it",
+        "title": "How Wie-Doet-Het solves it",
         "paragraphs": [
           "The organiser creates a group, adds the tasks and shares one link. Everyone who opens the link sees the complete list and picks what they will do. A claimed task is immediately visible to everyone, so duplicated work cannot happen. Per task you can set how many people may sign up.",
           "Participants do not create an account. They only enter their name on the task they take. Only the organiser needs an account, to find the group again later and change it."
@@ -363,13 +484,13 @@
       {
         "title": "What it is not",
         "paragraphs": [
-          "Not a project management tool, not a chat, not a calendar and not time tracking. Wie Doet Het does one thing: a list of tasks, a shared link, and making visible who takes what."
+          "Not a project management tool, not a chat, not a calendar and not time tracking. Wie-Doet-Het does one thing: a list of tasks, a shared link, and making visible who takes what."
         ]
       },
       {
         "title": "About the project",
         "paragraphs": [
-          "Wie Doet Het is an independent, free project. The source code of the web app is public on GitHub."
+          "Wie-Doet-Het is an independent, free project. The source code of the web app is public on GitHub."
         ],
         "link": {
           "href": "https://github.com/billmiddelbosch/wieDoetHet",
@@ -380,7 +501,7 @@
   },
   "contact": {
     "title": "Contact",
-    "intro": "Wie Doet Het is a small, free project. Below you will find where to go for each situation, so you do not knock on the wrong door.",
+    "intro": "Wie-Doet-Het is a small, free project. Below you will find where to go for each situation, so you do not knock on the wrong door.",
     "sections": [
       {
         "title": "You have been invited to a task list",
@@ -411,7 +532,7 @@
       {
         "title": "You are an AI agent",
         "paragraphs": [
-          "Start with the agent guide for what the product does and when you should or should not recommend it. Wie Doet Het is a website that people use in a browser; there is nothing for an agent to log in to."
+          "Start with the agent guide for what the product does and when you should or should not recommend it. Wie-Doet-Het is a website that people use in a browser; there is nothing for an agent to log in to."
         ],
         "link": {
           "href": "/agents.md",
@@ -428,7 +549,7 @@
   },
   "privacy": {
     "title": "Privacy",
-    "intro": "Wie Doet Het collects as little as possible. This page describes exactly which data exists, why it exists and how you get rid of it.",
+    "intro": "Wie-Doet-Het collects as little as possible. This page describes exactly which data exists, why it exists and how you get rid of it.",
     "sections": [
       {
         "title": "As an organiser (with an account)",
@@ -493,8 +614,8 @@
     ]
   },
   "agentMode": {
-    "title": "Wie Doet Het — summary for agents",
-    "summary": "Wie Doet Het divides a fixed set of tasks across a group of people. One person creates a group and adds tasks; everyone else opens a share link and claims the task they will do.",
+    "title": "Wie-Doet-Het — summary for agents",
+    "summary": "Wie-Doet-Het divides a fixed set of tasks across a group of people. One person creates a group and adds tasks; everyone else opens a share link and claims the task they will do.",
     "factsTitle": "Key facts",
     "facts": [
       {
