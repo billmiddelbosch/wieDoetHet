@@ -3,7 +3,7 @@
 **Status:** BUILT on `feature/mailAutomation` (2026-09-20). Verified with `npx vitest run lambda/` (67 tests, mocked DynamoDB/SES, fixed clock incl. DST) and the Cypress suite with stubbed API. **Not deployed / not run against AWS.** Deployed so far (2026-09-21): admin Lambda code + the six admin routes on the `development` stage, `SES_REPLY_TO_EMAIL` = `SES_FROM_EMAIL` on `wiedoethet-admin`. Still open: run the GSI3 backfill, create the `wiedoethet-lifecycle` Lambda + EventBridge Scheduler (see `lambda/SES_SETUP.md` § 6).
 **Scope of this file:** backend only — the new scheduled `wiedoethet-lifecycle` Lambda, the new/extended `wiedoethet-admin` endpoints, DynamoDB items, shared modules, send-timing rules, the mail footer, opt-out, env vars, IAM, error handling. Frontend (admin panel screens, composables, i18n) is `product/specs/mail-automation.spec.md`. Entity shapes are mirrored in `product/data-model.md`.
 **Branch:** `feature/mailAutomation`
-**Last Updated:** 2026-09-20
+**Last Updated:** 2026-09-25 (welcome mail: sent 30 min after registration, unrestricted; new `immediate` tier + 5-minute schedule)
 
 ---
 
@@ -16,7 +16,7 @@ Send a small set of automatic **lifecycle emails** to registered users to stimul
 | # | Decision |
 |---|---|
 | D1 | Send at the moments people most check their mail — researched, see § Send Timing. Never a weekend. |
-| D2 | `welcome`: send the day **after** registration; **suppress** if the user already created a group. |
+| D2 | `welcome`: send **30 minutes after registration**, always — no group suppression, no send-hour / weekday rule, no minimum gap (revised 2026-09-25; originally "the day after registration, suppressed when the user already had a group"). The mail warmly welcomes the user, explains what Wie-Doet-Het can do and invites them to put the app on their phone's home screen. Only the safety switches still apply (master switch, kill switch, template `enabled`, `mailOptOut`, no e-mail address, exactly-once, per-run cap). |
 | D3 | `no_group`: trigger = registration **+ 48 hours**. |
 | D4 | `no_claims`: trigger = **4 days** (not 2) after tasks were added. |
 | D5 | General rules: conditions are evaluated **at send time**; **one mail per user per period**; **stop when the user acts**; **stop after two unanswered win-back attempts**. |
@@ -29,14 +29,15 @@ Send a small set of automatic **lifecycle emails** to registered users to stimul
 
 | # | Assumption | Why |
 |---|---|---|
-| A1 | `no_group` is **exempt from the 72 h minimum gap after `welcome`** (they land ~24–48 h apart because D2 and D3 are specified that way). No other pair is exempt. | D2 + D3 as stated collide with any sane frequency cap. |
+| A1 | `welcome` ignores the 72 h minimum gap itself (`ignoreMinGap`), and `no_group`, `no_tasks`, `no_claims` and `day_after_event` are **exempt from the gap after `welcome`** (`gapExemptAfter: ['welcome']`). No other pair is exempt. | The welcome goes out 30 min after registration, so every early funnel mail would otherwise be held back 72 h by it. |
 | A2 | "Combined #3/#4" is implemented as **one shared funnel evaluator, two templates** (`no_tasks`, `no_claims`) — the triggers (24 h vs 4 days) and the message differ. A group is in exactly one funnel stage at a time. | Different trigger + different call-to-action. |
 | A3 | Two dormant templates (`dormant_30`, `dormant_60`), then **sunset** (no third attempt). Satisfies "stop after two unanswered win-back attempts". | D5 |
 | A4 | `maxPerUser` = 1 for every template except `day_after_event` (once **per group**, deduped by group id). Lifetime, not per year. | Simplest safe default. |
 | A5 | Manual `POST /admin/mail` **also skips opted-out users** and reports `skippedOptOut`. | An opt-out that only applies to some mail is not an opt-out. |
 | A6 | ~~Admin accounts (`role: 'admin'`) never receive lifecycle mail.~~ **Removed:** admins are ordinary users for lifecycle purposes and only `mailOptOut` excludes a user. | Internal/test accounts previously excluded by default; opt-out now covers that case explicitly. |
-| A7 | One send slot per weekday at **10:00 Europe/Amsterdam**. | § Send Timing. A second 20:00 slot is a later A/B test, not v1. |
+| A7 | One send slot per weekday at **10:00 Europe/Amsterdam** for every template except `welcome`, which uses the separate `immediate` tier (A9). | § Send Timing. A second 20:00 slot is a later A/B test, not v1. |
 | A8 | A "Testmail naar mezelf" endpoint exists (sends the rendered template to the calling admin only, not logged). | Templates default to disabled; the admin needs a way to see the final mail (with footer) before enabling. Cheap to drop if unwanted. |
+| A9 | The `welcome` mail is the only `immediate`-tier template. It is driven by a **second EventBridge schedule** (`rate(5 minutes)`, payload `{"tier":"immediate"}`), which skips the 10:00 / weekend guards and does **not** write `LASTRUN`. The daily run also includes the `immediate` tier as a fallback. "Without restrictions" (2026-09-25) is read as: not held back by group suppression, send hour, weekday or the 72 h gap — the safety switches in D2 stay. | A 30-minute delay cannot be honoured by a once-a-day slot. |
 
 ---
 
@@ -53,8 +54,9 @@ The instruction was to always send at the days/times people check email most. Co
 | Rule | Value |
 |---|---|
 | Send slot | **10:00 Europe/Amsterdam** (DST-correct — the scheduler carries the timezone, the code never hard-codes a UTC offset) |
-| Allowed days | **Mon–Fri only**. No weekends, ever. |
-| Urgency tier `timely` | Mon–Fri — for mails whose value decays quickly (`welcome`, `no_tasks`, `day_after_event`). A trigger that falls on a weekend goes out the next Monday 10:00. |
+| Allowed days | **Mon–Fri only**. No weekends, ever — **except the `immediate` tier** (`welcome`), which is sent at any hour on any day, at most ~5 minutes after it becomes due. |
+| Urgency tier `immediate` | Any hour, any day — only for `welcome`. Evaluated by both the 5-minute `immediate` schedule and (as a fallback) the daily run. Skips the send-hour and weekend guards and the 72 h minimum gap. |
+| Urgency tier `timely` | Mon–Fri — for mails whose value decays quickly (`no_tasks`, `day_after_event`). A trigger that falls on a weekend goes out the next Monday 10:00. |
 | Urgency tier `normal` | **Tue / Wed / Thu only** — for nudges that are not time-critical (`no_group`, `no_claims`, `dormant_*`). A trigger that falls on Fri/Sat/Sun/Mon goes out the next Tue–Thu 10:00. |
 | Expiry | Every template has `maxAgeHours` measured from its trigger moment (`eligibleAt`). A mail that could not be sent in that window (weekend, cap, outage) is **dropped, not sent late**. `null` = never expires (only `dormant_*`, where the condition itself stays true). |
 | Cap | At most `LIFECYCLE_MAX_SENDS_PER_RUN` (default **50**) mails per run, concurrency 5. Over-cap candidates simply wait for the next slot (until they expire). |
@@ -74,13 +76,15 @@ A new Lambda, **not** behind API Gateway. Invoked by **EventBridge Scheduler** o
 | Runtime | Node.js 24, ESM source, esbuild → CJS bundle (`bundle:lifecycle`, added to the aggregate `bundle` script) like the other four functions |
 | Deploy | `lambda/scripts/deploy-lifecycle.js` modelled on `deploy-admin.js` (manual zip, no IaC — same "Deployment Reality" as the rest of the repo) |
 | Timeout / memory | 5 min / 256 MB |
-| Trigger | EventBridge Scheduler: `cron(0 10 ? * MON-FRI *)`, **timezone `Europe/Amsterdam`**, flexible window **off** |
+| Trigger (daily) | EventBridge Scheduler `wiedoethet-lifecycle-weekdays`: `cron(0 10 ? * MON-FRI *)`, **timezone `Europe/Amsterdam`**, flexible window **off**, payload `{}` |
+| Trigger (welcome) | EventBridge Scheduler `wiedoethet-lifecycle-welcome`: `rate(5 minutes)`, flexible window **off**, payload `{"tier":"immediate"}` (~288 invocations/day, each a few DynamoDB queries). Both schedules are created by `setup-lifecycle.js` |
 | Retries | Scheduler retry policy: max 0 (the Lambda has its own idempotency + retry-on-next-run; an automatic immediate retry could double-send) |
 
 ### Event shape
 
 ```js
-{}                          // scheduled run (normal)
+{}                          // daily scheduled run (Mon–Fri 10:00): all tiers that are active today, incl. the `immediate` tier as a fallback
+{ tier: 'immediate' }       // 5-minute run: evaluates ONLY the `immediate` tier. Skips the 10:00 and weekend guards, does NOT write LASTRUN. Still honours the master switch, kill switch, dryRun and the cap.
 { dryRun: true }            // evaluate everything, write nothing, send nothing, log what WOULD be sent. Allowed at any time. Use for pre-launch verification.
 { force: true }             // bypass the "inside the 10:00 hour" guard for a real run (manual recovery). Does NOT bypass the weekday rules or the master switch.
 ```
@@ -91,13 +95,15 @@ A new Lambda, **not** behind API Gateway. Invoked by **EventBridge Scheduler** o
 1. killSwitch = process.env.LIFECYCLE_MAIL_ENABLED === 'false'        // emergency override, exactly 'false'
    master = killSwitch ? null : getItem(MAILSTATE#lifecycle / MASTER)  // toggled from the admin panel
    masterEnabled = !killSwitch && master?.enabled === true             // absent / unreadable ⇒ off (fail closed)
-   write MAILSTATE#lifecycle / LASTRUN { at, masterEnabled, killSwitch, dryRun }    // always — the admin panel shows it
+   write MAILSTATE#lifecycle / LASTRUN { at, masterEnabled, killSwitch, dryRun }    // always for the daily run — the admin panel shows it; NOT for { tier: 'immediate' }
    if !masterEnabled and !dryRun → return { skipped: 'master-switch-off' }
 2. localNow = Europe/Amsterdam wall-clock (Intl.DateTimeFormat, no offset math)
+   (guards below are skipped entirely for { tier: 'immediate' })
    if !force and !dryRun and localNow.hour !== 10 → return { skipped: 'outside-send-window' }
    if localNow is Sat/Sun → return { skipped: 'weekend' }
 3. templates = getAllTemplateConfigs()                 // 7 CONFIG items, missing item = { enabled:false }
-   activeTiers = Tue/Wed/Thu ? {timely, normal} : {timely}
+   activeTiers = { tier: 'immediate' } event ? {immediate}
+               : Tue/Wed/Thu ? {immediate, timely, normal} : {immediate, timely}
    for each template in PRIORITY ORDER, if enabled && tier ∈ activeTiers:
        for each candidate of template.candidates(ctx):         // see § Templates
            eligibleAt <= now                                   else skip
@@ -106,18 +112,18 @@ A new Lambda, **not** behind API Gateway. Invoked by **EventBridge Scheduler** o
            skip if user already picked in THIS run             // one mail per user per run
            skip if log row exists and is not retryable         // exactly-once (see § Idempotency)
            skip if per-user lifetime count(templateId) >= maxPerUser
-           skip if minimum gap violated                        // any lifecycle mail sent/sending in last 72h, except template.gapExemptAfter
+           skip if minimum gap violated                        // any lifecycle mail sent/sending in last 72h, except template.gapExemptAfter; never for template.ignoreMinGap (welcome)
            skip if !(await template.stillApplies(ctx, candidate))   // send-time re-check (D5)
            push to sendList
            stop when sendList.length >= LIFECYCLE_MAX_SENDS_PER_RUN
 4. for each item of sendList (concurrency 5): renderAndSend(item)   // see § Idempotency
-5. update MAILSTATE#lifecycle / LASTRUN { evaluated, sent, failed, skippedByCap }
+5. update MAILSTATE#lifecycle / LASTRUN { evaluated, sent, failed, skippedByCap }   // not for { tier: 'immediate' }
    return the same summary (CloudWatch log line, one JSON object)
 ```
 
 `PRIORITY ORDER`: `welcome`, `no_group`, `no_tasks`, `no_claims`, `day_after_event`, `dormant_30`, `dormant_60`. It only matters for the "one mail per user per run" rule: the earlier template wins that slot.
 
-**Minimum gap:** 72 hours between any two lifecycle mails to the same user. Manual admin mails do not count (they are not logged as lifecycle mail).
+**Minimum gap:** 72 hours between any two lifecycle mails to the same user. Manual admin mails do not count (they are not logged as lifecycle mail). `welcome` (`ignoreMinGap`) is never held back by it, and `no_group`, `no_tasks`, `no_claims` and `day_after_event` do not count a preceding `welcome` (`gapExemptAfter`).
 
 ### Templates
 
@@ -125,8 +131,8 @@ Definitions live in **`lambda/shared/lifecycle-templates.js`** (code, not Dynamo
 
 ```js
 {
-  id, scope: 'user' | 'group', tier: 'timely' | 'normal',
-  maxAgeHours, maxPerUser, gapExemptAfter: string[],
+  id, scope: 'user' | 'group', tier: 'immediate' | 'timely' | 'normal',
+  maxAgeHours, maxPerUser, gapExemptAfter: string[], ignoreMinGap?: boolean,
   variables: string[],              // placeholders allowed in subject/body, see § Placeholders
   defaultSubject, defaultBodyHtml,  // the "text proposal" (Dutch) — see § Default texts
 }
@@ -135,11 +141,11 @@ Definitions live in **`lambda/shared/lifecycle-templates.js`** (code, not Dynamo
 
 | id | scope | tier | trigger `eligibleAt` | `maxAgeHours` | `maxPerUser` | Send-time condition (`stillApplies`) |
 |---|---|---|---|---|---|---|
-| `welcome` | user | timely | **start of the calendar day after registration** (Amsterdam local midnight following `createdAt`'s local date) | 96 | 1 | User has **zero groups** at send time. (D2's "created a group on day 1" is a subset of this: any group before the send moment suppresses the welcome.) |
+| `welcome` | user | immediate | `createdAt` **+ 30 min** | 168 (from `eligibleAt`) | 1 | **None — always due** (`stillApplies` is always true; D2). `ignoreMinGap: true`. |
 | `no_group` | user | normal | `createdAt` **+ 48 h** | 168 | 1 | User has **zero groups**. `gapExemptAfter: ['welcome']` (A1). |
-| `no_tasks` | group | timely | `group.createdAt` **+ 24 h** | 96 | 1 | Group still exists, has **zero tasks**, and `eventDate` is null or not in the past. |
-| `no_claims` | group | normal | **earliest task `createdAt`** in the group **+ 96 h** (4 days, D4) | 168 | 1 | Group has **≥ 1 task and zero claims** across all its tasks, and `eventDate` is null or not in the past. |
-| `day_after_event` | group | timely | **start of the day after `eventDate`** (Amsterdam local midnight) | 96 | once per group | Group has **≥ 1 claim** (a real event, not an empty shell). Skipped when `eventDate` is null. |
+| `no_tasks` | group | timely | `group.createdAt` **+ 24 h** | 96 | 1 | Group still exists, has **zero tasks**, and `eventDate` is null or not in the past. `gapExemptAfter: ['welcome']`. |
+| `no_claims` | group | normal | **earliest task `createdAt`** in the group **+ 96 h** (4 days, D4) | 168 | 1 | Group has **≥ 1 task and zero claims** across all its tasks, and `eventDate` is null or not in the past. `gapExemptAfter: ['welcome']`. |
+| `day_after_event` | group | timely | **start of the day after `eventDate`** (Amsterdam local midnight) | 96 | once per group | Group has **≥ 1 claim** (a real event, not an empty shell). Skipped when `eventDate` is null. `gapExemptAfter: ['welcome']`. |
 | `dormant_30` | user | normal | `max(lastActivityAt + 30 d, template.enabledAt)` | `null` | 1 | `lastActivityAt` is still ≤ now − 30 d (no activity since the trigger was computed). |
 | `dormant_60` | user | normal | `max(lastActivityAt + 60 d, template.enabledAt)` | `null` | 1 | `dormant_30` was **sent** to this user AND `lastActivityAt` ≤ now − 60 d AND no activity since `dormant_30.sentAt`. |
 
@@ -262,7 +268,7 @@ Returns all seven templates in `PRIORITY ORDER` (built from the code definitions
   items: [{
     id: 'welcome',
     scope: 'user' | 'group',
-    tier: 'timely' | 'normal',            // frontend maps this to "Ma–vr" / "Di–do"
+    tier: 'immediate' | 'timely' | 'normal', // frontend maps this to "Direct, op elk moment" / "Ma–vr" / "Di–do"
     enabled: boolean,
     subject: string,                      // effective subject (override ?? default)
     bodyHtml: string,                     // effective body    (override ?? default)
@@ -367,7 +373,7 @@ Impacts to verify at build time:
 ## IAM Permissions
 
 - **`wiedoethet-lifecycle` execution role:** the shared `lambda/iam-policy-dynamodb.json` (already grants `GetItem/PutItem/UpdateItem/Query` on the table and GSI1–3 — verify no change needed) + `lambda/iam-policy-ses.json` (`ses:SendEmail`, already region/identity-scoped) + the standard basic-execution/CloudWatch Logs policy.
-- **EventBridge Scheduler:** a scheduler execution role permitted `lambda:InvokeFunction` on `wiedoethet-lifecycle` (created by `lambda/scripts/setup-lifecycle.js`, run once via `npm run setup:lifecycle`; documented in `lambda/SES_SETUP.md`'s "Lifecycle mail" section).
+- **EventBridge Scheduler:** a scheduler execution role permitted `lambda:InvokeFunction` on `wiedoethet-lifecycle`, plus two schedules — `wiedoethet-lifecycle-weekdays` (daily, 10:00 Mon–Fri) and `wiedoethet-lifecycle-welcome` (`rate(5 minutes)`, `{"tier":"immediate"}`). All created by `lambda/scripts/setup-lifecycle.js`, run via `npm run setup:lifecycle` (idempotent; `--schedule-disabled` creates them paused); documented in `lambda/SES_SETUP.md`'s "Lifecycle mail" section.
 - **SES:** if the account is still in the SES sandbox, recipients must be verified — production access is a prerequisite for real users (see `SES_SETUP.md`). The `Reply-To` mailbox does **not** need SES verification (it is a normal inbox), but the **From** identity's domain should have SPF/DKIM/DMARC aligned (re-verify the DMARC policy before the first send).
 
 ## Error Handling
@@ -422,14 +428,15 @@ Legal note (not legal advice — owner to confirm): mailing your own registered 
 
 **Timing & scheduling**
 - [x] The Lambda sends nothing when the master switch item is absent, `enabled: false` or unreadable, or when `LIFECYCLE_MAIL_ENABLED` is exactly `'false'`, and records `LASTRUN.masterEnabled = false` (and `killSwitch`).
-- [x] The Lambda sends nothing on Saturday/Sunday, and nothing outside the 10:00 Amsterdam hour unless `force`/`dryRun`.
+- [x] The daily run (`{}`) sends nothing on Saturday/Sunday, and nothing outside the 10:00 Amsterdam hour unless `force`/`dryRun`.
 - [x] `normal`-tier templates send only Tue/Wed/Thu; `timely`-tier Mon–Fri. Verified with a fixed clock across a DST boundary (last Sunday of March/October).
+- [x] An `{ tier: 'immediate' }` run evaluates only the `immediate` tier, sends at any hour and on any day (also Saturday 03:00), never writes `LASTRUN`, and still sends nothing while the master switch is off / the kill switch is set.
 - [x] A trigger that falls on a weekend is delivered the next allowed slot; one older than `maxAgeHours` is dropped.
 - [x] A run never sends more than `LIFECYCLE_MAX_SENDS_PER_RUN`.
 
 **Rules**
-- [x] `welcome`: sent on the day after registration, **not** sent when the user already has a group.
-- [x] `no_group`: eligible exactly 48 h after registration; not sent once the user has a group; exempt from the 72 h gap only after `welcome`.
+- [x] `welcome`: eligible exactly 30 min after registration and sent within ~5 min after that, at any hour and on any day; **always** sent — also when the user already has a group or tasks, and regardless of any earlier lifecycle mail (72 h gap does not apply); dropped only when more than 168 h overdue; exactly once; still skipped for opted-out users, users without an address, and while the master/kill switch is off.
+- [x] `no_group`: eligible exactly 48 h after registration; not sent once the user has a group; exempt from the 72 h gap after `welcome` (as are `no_tasks`, `no_claims` and `day_after_event`).
 - [x] `no_tasks` / `no_claims`: a group in stage `no_tasks` never gets `no_claims` and vice versa; `no_claims` triggers 96 h after the first task; neither fires after the event date has passed or once the group is `done`.
 - [x] `day_after_event`: once per group, only when the group had ≥ 1 claim.
 - [x] `dormant_30` then `dormant_60`, each at most once per user; `dormant_60` only after a sent `dormant_30` with no activity since; **no further lifecycle mail after `dormant_60`**.
@@ -463,7 +470,9 @@ Legal note (not legal advice — owner to confirm): mailing your own registered 
 - **`maxPerUser` is lifetime**: a user who becomes active after `dormant_60`, goes quiet again a year later, gets no third win-back.
 - **Stuck `sending` rows** are visible but not auto-resolved (at-most-once by design).
 - **Bounces/complaints** are not processed (no SNS feedback loop). SES will suppress repeatedly bouncing addresses account-wide, but the app doesn't learn about it. Recommended follow-up.
-- **Holidays** (Dutch public holidays) are not excluded — Mon–Fri only.
+- **Holidays** (Dutch public holidays) are not excluded — Mon–Fri only (the `immediate` `welcome` mail is the deliberate exception).
+- **`LASTRUN` only describes the daily run.** The 5-minute `immediate` runs do not write it (they would bury it), so the admin panel's "Laatste run" does not reflect welcome mails; those show up in the sent-mail log.
+- **`welcome` may arrive at night or on a weekend**, at most ~5 minutes after the 30-minute mark — by decision (D2, 2026-09-25).
 - **Per-template send counts** are not on the templates page; the log is the source.
 
 ---
@@ -474,13 +483,25 @@ Tone: warm, short, informal "je". Every body opens (after the greeting) with a o
 
 **`welcome`** — subject: `Welkom bij Wie-Doet-Het, {{firstName}}!`
 > Hoi {{firstName}},
-> Je hebt een account aangemaakt bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.
-> Zo begin je:
-> 1. Maak een groep aan (een etentje, verjaardag, klusdag…)
-> 2. Zet de taken erin
-> 3. Deel de link via WhatsApp — deelnemers hebben geen account nodig
+> Wat fijn dat je er bent! Welkom bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Geen eindeloze appjes meer over wie wat meeneemt: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.
+>
+> **Wat kun je met Wie-Doet-Het?**
+> - Een etentje, verjaardag, klusdag of vakantie regelen: maak een groep aan en zet de taken erin
+> - Deel de link via WhatsApp: deelnemers kiezen zelf een taak en hebben daarvoor geen account nodig
+> - Zie in één oogopslag wie wat doet en wat er nog open staat
+>
+> Begin gerust klein: een paar taken is genoeg, je kunt er altijd meer toevoegen.
 >
 > [Maak je eerste groep]({{createGroupUrl}})
+>
+> **Tip: zet Wie-Doet-Het als app op je telefoon**
+> Je hoeft niets te downloaden uit een appstore. Open Wie-Doet-Het in de browser van je telefoon en zet het op je beginscherm. Dan staat het er als een gewone app, altijd binnen handbereik:
+> - **iPhone (Safari):** tik op het deel-icoon (het vierkantje met een pijl omhoog) en kies "Zet op beginscherm"
+> - **Android (Chrome):** tik op het menu (de drie puntjes rechtsboven) en kies "App installeren" of "Toevoegen aan startscherm"
+>
+> Open Wie-Doet-Het op je telefoon: {{appUrl}}
+>
+> Veel plezier met organiseren!
 
 **`no_group`** — subject: `Zullen we samen je eerste groep maken?`
 > Hoi {{firstName}}, je hebt een account bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep, maar je hebt nog geen groep gemaakt. Dat kost twee minuten: geef je groep een naam, voeg een paar taken toe en deel de link. Begin gerust klein, je kunt altijd taken toevoegen.

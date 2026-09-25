@@ -312,7 +312,7 @@ code definition merged with the `MailTemplateConfig` item. Name/description/trig
 {
   id: string,
   scope: 'user' | 'group',
-  tier: 'timely' | 'normal',   // timely = Mon–Fri 10:00, normal = Tue–Thu 10:00 (Europe/Amsterdam)
+  tier: 'immediate' | 'timely' | 'normal',   // immediate = any time (welcome), timely = Mon–Fri 10:00, normal = Tue–Thu 10:00 (Europe/Amsterdam)
   enabled: boolean,
   subject: string,             // effective (override ?? default)
   bodyHtml: string,            // effective (override ?? default)
