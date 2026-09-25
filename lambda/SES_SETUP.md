@@ -166,9 +166,18 @@ Set by the script on creation (a re-run only adds missing keys). Turning mail on
 
 The script creates a dedicated role `wiedoethet-lifecycle-role` (it does not share `wiedoethet-admin-role`): `AWSLambdaBasicExecutionRole` for CloudWatch Logs, plus the inline policies `WdhDynamoDBTableAccess` (`lambda/iam-policy-dynamodb.json`: Get/Put/Update/Delete/Query on both tables and Query on their indexes) and `WdhSesSendAccess` (`lambda/iam-policy-ses.json`, section 4; send only, not `AmazonSESFullAccess`).
 
-### 6.5 Schedule (EventBridge Scheduler)
+### 6.5 Schedules (EventBridge Scheduler)
 
-Created by the script as `wiedoethet-lifecycle-weekdays` (default schedule group), with a separate role `wiedoethet-lifecycle-scheduler-role` that Scheduler assumes and that may only `lambda:InvokeFunction` on `wiedoethet-lifecycle`:
+The script creates **two** schedules (default schedule group), with a separate role `wiedoethet-lifecycle-scheduler-role` that Scheduler assumes and that may only `lambda:InvokeFunction` on `wiedoethet-lifecycle`:
+
+| Schedule | Expression | Payload | Purpose |
+|---|---|---|---|
+| `wiedoethet-lifecycle-weekdays` | `cron(0 10 ? * MON-FRI *)`, Europe/Amsterdam | `{}` | The daily run for all templates (see below) |
+| `wiedoethet-lifecycle-welcome` | `rate(5 minutes)` | `{"tier":"immediate"}` | Sends the welcome mail 30 minutes after registration, at any hour on any day. Evaluates only the `immediate` tier, skips the 10:00 and weekend guards and does **not** write the `LASTRUN` item (so the admin's "Laatste run" only shows daily runs; welcome mails are visible in the Verzendlog). About 288 invocations a day, each a few DynamoDB queries |
+
+Both still honour the master switch, `LIFECYCLE_MAIL_ENABLED=false`, the template switches and `LIFECYCLE_MAX_SENDS_PER_RUN`. `npm run setup:lifecycle -- --schedule-disabled` creates them paused. To stop only the welcome mail: disable the `wiedoethet-lifecycle-welcome` schedule **and** switch the `welcome` template off (the daily run also picks up an enabled welcome as a fallback).
+
+Settings of the daily schedule `wiedoethet-lifecycle-weekdays`:
 
 | Setting | Value |
 |---|---|
@@ -181,13 +190,13 @@ Created by the script as `wiedoethet-lifecycle-weekdays` (default schedule group
 | Retry policy | Retry 0 times — a run is idempotent, the next weekday's run picks up what is left |
 | Execution role | `wiedoethet-lifecycle-scheduler-role` (trust: `scheduler.amazonaws.com`, restricted to this account) |
 
-Why 10:00 on weekdays: people read private mail most on weekday mornings, and Tuesday–Thursday are the strongest days. So `welcome` may go out Monday–Friday, while the other templates (`no_group`, `no_tasks`, `no_claims`, `day_after_event`, `dormant_*`) only go out Tuesday–Thursday. Never at weekends.
+Why 10:00 on weekdays: people read private mail most on weekday mornings, and Tuesday–Thursday are the strongest days. So `no_tasks` and `day_after_event` may go out Monday–Friday, while `no_group`, `no_claims` and `dormant_*` only go out Tuesday–Thursday. Never at weekends. The exception is `welcome` (tier `immediate`): a welcome loses its value if it arrives a day late, so it is sent 30 minutes after registration, at any time, by the 5-minute schedule above.
 
 ### 6.6 First run — verify before enabling
 
 1. Invoke the function from the console with `lambda/wiedoethet-lifecycle/tests/dry-run.json` (`{"dryRun": true}`). It evaluates every **enabled** template, sends and logs nothing, and returns/logs the `wouldSend` list plus counts. Templates are disabled by default — enable one in Admin → Automation first, or the list will be empty.
 2. In Admin → Automation use **Send test mail** on each template you are about to enable; it goes to the calling admin only and is not logged.
-3. Turn on the master switch (Admin → Automatisering → *Hoofdschakelaar*, with a confirmation), enable **one** template, and watch Admin → Automation → Verzendlog after the next 10:00 run. `lambda/wiedoethet-lifecycle/tests/force.json` (`{"force": true}`) runs it immediately (skips only the 10:00-hour guard; the weekend check still applies).
+3. Turn on the master switch (Admin → Automatisering → *Hoofdschakelaar*, with a confirmation), enable **one** template, and watch Admin → Automation → Verzendlog after the next 10:00 run. `lambda/wiedoethet-lifecycle/tests/force.json` (`{"force": true}`) runs it immediately (skips only the 10:00-hour guard; the weekend check still applies). `tests/immediate.json` (`{"tier": "immediate"}`) is what the 5-minute welcome schedule sends; `tests/immediate-dry-run.json` does the same without sending or logging anything.
 4. Enable the remaining templates one by one.
 
 To stop everything at once switch the master switch off in the admin panel (takes effect at the next run), set `LIFECYCLE_MAIL_ENABLED=false` on the function (hard stop that does not depend on the database), or disable the schedule. To stop a single mail, switch its template off in the admin panel.
@@ -215,7 +224,7 @@ Lifecycle mails go to registered users who never ticked a marketing box. Under t
 - [ ] Re-import `openapi.yaml` into API Gateway to pick up the new `POST /admin/mail` route
 - [x] Fill in the reply address in `public/contact.md`
 - [ ] Run the GSI3 backfill (`lambda/scripts/backfill-gsi3.js`) per table before enabling any lifecycle template
-- [ ] `cd lambda && npm run setup:lifecycle -- --plan`, then `npm run setup:lifecycle` — creates the lifecycle role, function, env vars, Scheduler role and schedule (section 6.2; `--table wdh-main` for production)
+- [ ] `cd lambda && npm run setup:lifecycle -- --plan`, then `npm run setup:lifecycle` — creates the lifecycle role, function, env vars, Scheduler role and both schedules (section 6.2; `--table wdh-main` for production)
 - [ ] Dry-run (`tests/dry-run.json`), send test mails from Admin → Automation, then turn on the master switch in Admin → Automatisering and enable templates one at a time
 - [ ] CloudWatch alarms: lifecycle Errors, SES bounce/complaint rate
 - [ ] `cd lambda && npm run deploy:admin` — deploys the admin code and wires the seven new admin routes (mail templates, mail log, opt-out, master switch `PATCH /admin/mail-master`) on the `development` stage; use `node scripts/deploy-admin.js production` for production

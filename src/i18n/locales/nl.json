@@ -364,7 +364,7 @@
         "updatedAt": "Laatst gewijzigd: {at}",
         "killSwitch": "De noodstop op de server (LIFECYCLE_MAIL_ENABLED=false) staat aan: er worden geen mails verstuurd, ook niet met deze schakelaar aan.",
         "confirmTitle": "Hoofdschakelaar inschakelen?",
-        "confirmMessage": "Vanaf de eerstvolgende run (ma–vr om 10:00) worden er mails verstuurd voor de ingeschakelde templates. Nu ingeschakeld: {count}. Weet je het zeker?",
+        "confirmMessage": "Vanaf nu worden er mails verstuurd voor de ingeschakelde templates: de welkomstmail 30 minuten na registratie, de overige mails bij de eerstvolgende run (ma–vr om 10:00). Nu ingeschakeld: {count}. Weet je het zeker?",
         "confirmLabel": "Inschakelen"
       },
       "lastRun": "Laatste run: {at} — {sent} verstuurd, {failed} mislukt.",
@@ -374,6 +374,7 @@
       "customised": "Aangepaste tekst",
       "default": "Standaardtekst",
       "timing": {
+        "immediate": "Direct, op elk moment",
         "timely": "Ma–vr om 10:00",
         "normal": "Di–do om 10:00"
       },
@@ -381,8 +382,8 @@
       "templates": {
         "welcome": {
           "name": "Welkom",
-          "description": "Welkomstmail met de eerste stappen.",
-          "trigger": "Dag na registratie, alleen als er nog geen groep is"
+          "description": "Warm welkom met uitleg over Wie-Doet-Het en een uitnodiging om de app op je telefoon te zetten.",
+          "trigger": "30 minuten na registratie, altijd"
         },
         "no_group": {
           "name": "Nog geen groep",

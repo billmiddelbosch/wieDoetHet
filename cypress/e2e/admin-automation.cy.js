@@ -58,7 +58,7 @@ const TEMPLATE_DEFS = [
     id: 'welcome',
     name: 'Welkom',
     scope: 'user',
-    tier: 'timely',
+    tier: 'immediate',
     variables: ['firstName', 'appUrl', 'createGroupUrl'],
   },
   {
@@ -320,7 +320,7 @@ describe('Admin mail automation', () => {
         })
 
         // Trigger sentences (per-template i18n copy)
-        card('Welkom').should('contain', 'Dag na registratie, alleen als er nog geen groep is')
+        card('Welkom').should('contain', '30 minuten na registratie, altijd')
         card('Nog geen groep').should('contain', '48 uur na registratie, als er nog geen groep is')
         card('Groep zonder taken').should(
           'contain',
@@ -337,8 +337,8 @@ describe('Admin mail automation', () => {
           '60 dagen zonder activiteit, na de 30-dagenmail'
         )
 
-        // Timing tier chips: timely = Mon–Fri, normal = Tue–Thu
-        card('Welkom').should('contain', 'Ma–vr om 10:00')
+        // Timing tier chips: immediate = any time, timely = Mon–Fri, normal = Tue–Thu
+        card('Welkom').should('contain', 'Direct, op elk moment')
         card('Groep zonder taken').should('contain', 'Ma–vr om 10:00')
         card('Dag na het evenement').should('contain', 'Ma–vr om 10:00')
         card('Nog geen groep').should('contain', 'Di–do om 10:00')

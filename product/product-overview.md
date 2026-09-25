@@ -94,8 +94,10 @@ When groups need to divide tasks, coordination typically happens chaotically thr
 - **Mail automation** (branch `feature/mailAutomation`, status: implementation complete, pending review and
   first live run — nothing is deployed and everything ships switched off): a scheduled job sends lifecycle
   mails to registered users to stimulate use and reduce churn. Mails go out on weekday mornings at 10:00
-  (Europe/Amsterdam) — the moments people read private mail most; the follow-ups only Tuesday–Thursday.
-  - v1 templates: **welcome** (day after registration, skipped when the user already made a group on day 1),
+  (Europe/Amsterdam) — the moments people read private mail most; the follow-ups only Tuesday–Thursday. The one
+  exception is the welcome mail, which goes out at any time, 30 minutes after registration.
+  - v1 templates: **welcome** (30 minutes after registration, always — a warm welcome, what you can do with the
+    app and an invitation to install it on your phone),
     **no group** (48 h after registration), **group without tasks** / **tasks without claims** (4 days after
     the first task), **day after the event**, and **dormant** at 30 and 60 days.
   - Rules: conditions are re-checked at send time; one mail per user per run and at least 72 h between mails;

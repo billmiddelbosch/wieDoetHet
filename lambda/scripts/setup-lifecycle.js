@@ -1,7 +1,8 @@
 /**
  * One-time (and safely re-runnable) AWS setup for the lifecycle mail automation:
  * IAM role, the wiedoethet-lifecycle Lambda, the EventBridge Scheduler role and
- * the weekday schedule. See lambda/SES_SETUP.md ("Lifecycle mail").
+ * the two schedules (weekday 10:00 run + the 5-minute welcome run).
+ * See lambda/SES_SETUP.md ("Lifecycle mail").
  *
  * Idempotent: every resource is looked up first and only created when missing.
  * Existing resources are never overwritten (a config difference is reported as
@@ -49,9 +50,25 @@ const BASIC_EXECUTION_POLICY_ARN = 'arn:aws:iam::aws:policy/service-role/AWSLamb
 const SCHEDULER_ROLE = 'wiedoethet-lifecycle-scheduler-role'
 const SCHEDULER_ROLE_ARN = `arn:aws:iam::${ACCOUNT_ID}:role/${SCHEDULER_ROLE}`
 
-const SCHEDULE_NAME = 'wiedoethet-lifecycle-weekdays'
-const SCHEDULE_EXPRESSION = 'cron(0 10 ? * MON-FRI *)'
-const SCHEDULE_TIMEZONE = 'Europe/Amsterdam'
+// Two schedules, one function: the daily 10:00 run (timely + normal tiers) and a frequent
+// run that only handles the immediate tier (the welcome mail, 30 minutes after registration).
+// A rate() expression has no wall clock, so it carries no timezone.
+const SCHEDULES = [
+  {
+    name: 'wiedoethet-lifecycle-weekdays',
+    expression: 'cron(0 10 ? * MON-FRI *)',
+    timezone: 'Europe/Amsterdam',
+    input: '{}',
+    description: 'Weekday lifecycle mail run (idempotent; inert until the master switch is turned on in Admin -> Automatisering)',
+  },
+  {
+    name: 'wiedoethet-lifecycle-welcome',
+    expression: 'rate(5 minutes)',
+    timezone: null,
+    input: '{"tier":"immediate"}',
+    description: 'Frequent lifecycle run for the immediate tier: welcome mail 30 minutes after registration (idempotent; inert until the master switch is on)',
+  },
+]
 
 const ROOT = resolve(import.meta.dirname, '..')
 const DIST_INDEX = resolve(ROOT, 'dist/wiedoethet-lifecycle/index.js')
@@ -291,7 +308,7 @@ async function ensureLambda(adminSes, currentConfig, table) {
         'lambda', 'create-function', '--function-name', FUNCTION_NAME,
         '--runtime', RUNTIME, '--handler', HANDLER, '--role', LAMBDA_ROLE_ARN,
         '--timeout', String(TIMEOUT_SECONDS), '--memory-size', String(MEMORY_MB),
-        '--description', 'Lifecycle mail automation (EventBridge Scheduler, weekdays 10:00)',
+        '--description', 'Lifecycle mail automation (EventBridge Scheduler: weekdays 10:00 + every 5 minutes for the welcome mail)',
         '--zip-file', `fileb://${ZIP_PATH.replaceAll('\\', '/')}`,
         '--environment', fileArg('env.json', { Variables: merged }),
       ]),
@@ -335,42 +352,43 @@ async function ensureLambda(adminSes, currentConfig, table) {
   note(`updated environment (added: ${added.join(', ') || '-'}; changed: ${changedKeys.join(', ') || '-'})`)
 }
 
-async function ensureSchedule() {
-  const schedule = awsOrNull(['scheduler', 'get-schedule', '--name', SCHEDULE_NAME], /ResourceNotFoundException/)
+async function ensureSchedule({ name, expression, timezone, input, description }) {
+  const schedule = awsOrNull(['scheduler', 'get-schedule', '--name', name], /ResourceNotFoundException/)
   if (schedule) {
-    existing.push(`Schedule ${SCHEDULE_NAME}`)
+    existing.push(`Schedule ${name}`)
     note(`schedule exists: ${schedule.State}, ${schedule.ScheduleExpression} (${schedule.ScheduleExpressionTimezone})`)
-    if (schedule.ScheduleExpression !== SCHEDULE_EXPRESSION || schedule.ScheduleExpressionTimezone !== SCHEDULE_TIMEZONE) {
-      warn(`schedule differs from ${SCHEDULE_EXPRESSION} (${SCHEDULE_TIMEZONE}) — left untouched`)
+    if (schedule.ScheduleExpression !== expression || (timezone && schedule.ScheduleExpressionTimezone !== timezone)) {
+      warn(`schedule ${name} differs from ${expression}${timezone ? ` (${timezone})` : ''} — left untouched`)
     }
-    if (schedule.Target?.Arn !== FUNCTION_ARN) warn(`schedule targets ${schedule.Target?.Arn}, expected ${FUNCTION_ARN}`)
+    if (schedule.Target?.Arn !== FUNCTION_ARN) warn(`schedule ${name} targets ${schedule.Target?.Arn}, expected ${FUNCTION_ARN}`)
+    if (schedule.Target?.Input !== input) warn(`schedule ${name} sends payload ${schedule.Target?.Input}, expected ${input} — left untouched`)
     return
   }
   const state = SCHEDULE_ENABLED ? 'ENABLED' : 'DISABLED'
   if (PLAN) {
-    created.push(`Schedule ${SCHEDULE_NAME} (planned)`)
-    note(`would create schedule ${SCHEDULE_NAME}: ${SCHEDULE_EXPRESSION} (${SCHEDULE_TIMEZONE}), ${state}, payload {}, no retries`)
+    created.push(`Schedule ${name} (planned)`)
+    note(`would create schedule ${name}: ${expression}${timezone ? ` (${timezone})` : ''}, ${state}, payload ${input}, no retries`)
     return
   }
   const target = {
     Arn: FUNCTION_ARN,
     RoleArn: SCHEDULER_ROLE_ARN,
-    Input: '{}',
+    Input: input,
     RetryPolicy: { MaximumRetryAttempts: 0 },
   }
   await retryOn(/must allow AWS EventBridge Scheduler to assume/i, 'scheduler role', () =>
     aws([
-      'scheduler', 'create-schedule', '--name', SCHEDULE_NAME,
-      '--description', 'Weekday lifecycle mail run (idempotent; inert until the master switch is turned on in Admin -> Automatisering)',
-      '--schedule-expression', SCHEDULE_EXPRESSION,
-      '--schedule-expression-timezone', SCHEDULE_TIMEZONE,
+      'scheduler', 'create-schedule', '--name', name,
+      '--description', description,
+      '--schedule-expression', expression,
+      ...(timezone ? ['--schedule-expression-timezone', timezone] : []),
       '--flexible-time-window', 'Mode=OFF',
       '--state', state,
-      '--target', fileArg('schedule-target.json', target),
+      '--target', fileArg(`${name}-target.json`, target),
     ]),
   )
-  created.push(`Schedule ${SCHEDULE_NAME} (${state})`)
-  note(`created schedule ${SCHEDULE_NAME} (${state})`)
+  created.push(`Schedule ${name} (${state})`)
+  note(`created schedule ${name} (${state})`)
 }
 
 function smokeTest() {
@@ -469,8 +487,10 @@ async function main() {
     },
   })
 
-  step(`Schedule ${SCHEDULE_NAME}`)
-  await ensureSchedule()
+  for (const schedule of SCHEDULES) {
+    step(`Schedule ${schedule.name}`)
+    await ensureSchedule(schedule)
+  }
 
   if (!PLAN) {
     step('Smoke test (dryRun, sends nothing)')
