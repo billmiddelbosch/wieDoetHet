@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('../../shared/ses.js', () => ({ sendMail: vi.fn() }))
 import { runLifecycle } from '../index.js'
 import { EVALUATORS, createContext } from '../evaluators.js'
+import { getTemplate } from '../../shared/lifecycle-templates.js'
 import { createFakeDb, ENV, makeDeps, TUE_10, MON_10, WED_10, SAT_10, hoursAgo, daysAgo } from './helpers.js'
 
 const THU_10 = TUE_10 + 2 * 24 * 3600 * 1000
@@ -135,30 +136,128 @@ describe('guards', () => {
 })
 
 describe('welcome', () => {
-  it('is due from the start of the day after registration, not before', async () => {
+  const IMMEDIATE = { tier: 'immediate' }
+  const minutesAgo = (from, minutes) => new Date(from - minutes * 60 * 1000).toISOString()
+
+  it('is due 30 minutes after registration, not before', async () => {
     const db = createFakeDb()
     db.enableTemplate('welcome')
-    db.addUser({ id: 'early', createdAt: '2026-09-21T14:00:00.000Z' }) // Mon 16:00 local → due Tue 00:00
-    db.addUser({ id: 'same-day', createdAt: '2026-09-22T06:00:00.000Z' }) // Tue 08:00 local → due Wed 00:00
-    expect(recipients((await run(db, TUE_10)).sent)).toEqual(['early@example.com'])
-    expect(recipients((await run(db, WED_10)).sent)).toEqual(['same-day@example.com'])
+    db.addUser({ id: 'due', createdAt: minutesAgo(TUE_10, 31) })
+    db.addUser({ id: 'exactly', createdAt: minutesAgo(TUE_10, 30) })
+    db.addUser({ id: 'too-fresh', createdAt: minutesAgo(TUE_10, 29) })
+    expect(recipients((await run(db, TUE_10, IMMEDIATE)).sent)).toEqual(['due@example.com', 'exactly@example.com'])
+    // Five minutes later (the next scheduled run) the fresh account is due as well.
+    expect(recipients((await run(db, TUE_10 + 5 * 60 * 1000, IMMEDIATE)).sent)).toEqual(['too-fresh@example.com'])
   })
 
-  it('is suppressed when the user already created a group', async () => {
+  it('is sent at any hour and on any day when triggered by the immediate schedule', async () => {
     const db = createFakeDb()
     db.enableTemplate('welcome')
-    db.addUser({ id: 'with-group', createdAt: '2026-09-21T14:00:00.000Z' })
-    db.addGroup({ id: 'g1', initiatorId: 'with-group', createdAt: '2026-09-21T15:00:00.000Z' })
-    db.addUser({ id: 'no-group', createdAt: '2026-09-21T14:00:00.000Z' })
-    expect(recipients((await run(db, TUE_10)).sent)).toEqual(['no-group@example.com'])
+    const night = SAT_10 - 7 * 3600 * 1000 // Sat 03:00 local
+    db.addUser({ id: 'night-owl', createdAt: minutesAgo(night, 45) })
+    const { summary, sent } = await run(db, night, IMMEDIATE)
+    expect(summary).toMatchObject({ tier: 'immediate', sent: 1 })
+    expect(recipients(sent)).toEqual(['night-owl@example.com'])
   })
 
-  it('is dropped instead of sent late (96 h after it became due)', async () => {
+  it('is also picked up by the daily run when the immediate run missed it', async () => {
     const db = createFakeDb()
     db.enableTemplate('welcome')
-    db.addUser({ id: 'expired', createdAt: '2026-09-16T08:00:00.000Z' }) // due Wed 22:00Z, expired Sun 22:00Z
-    db.addUser({ id: 'fresh', createdAt: '2026-09-17T08:00:00.000Z' }) // due Thu 22:00Z, expires Mon 22:00Z
-    expect(recipients((await run(db, MON_10)).sent)).toEqual(['fresh@example.com'])
+    db.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 20) })
+    expect(recipients((await run(db, TUE_10)).sent)).toEqual(['u1@example.com'])
+  })
+
+  it('is always sent, also when the user already created a group or a task', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'with-group', createdAt: hoursAgo(TUE_10, 3) })
+    db.addGroup({ id: 'g1', initiatorId: 'with-group', createdAt: hoursAgo(TUE_10, 2) })
+    db.addTask('g1', 't1')
+    db.addUser({ id: 'no-group', createdAt: hoursAgo(TUE_10, 3) })
+    expect(recipients((await run(db, TUE_10, IMMEDIATE)).sent)).toEqual(['no-group@example.com', 'with-group@example.com'])
+  })
+
+  it('is not held back by the 72 h gap after another lifecycle mail', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 1) })
+    db.addLog({ userId: 'u1', templateId: 'dormant_30', status: 'sent', createdAt: hoursAgo(TUE_10, 2) })
+    expect(recipients((await run(db, TUE_10, IMMEDIATE)).sent)).toEqual(['u1@example.com'])
+  })
+
+  it('is dropped instead of sent very late (168 h after it became due)', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'expired', createdAt: hoursAgo(TUE_10, 168 + 1) }) // due 168.5 h ago
+    db.addUser({ id: 'fresh', createdAt: hoursAgo(TUE_10, 168) }) // due 167.5 h ago
+    expect(recipients((await run(db, TUE_10, IMMEDIATE)).sent)).toEqual(['fresh@example.com'])
+  })
+
+  it('is sent exactly once', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 1) })
+    expect((await run(db, TUE_10, IMMEDIATE)).sent).toHaveLength(1)
+    expect((await run(db, TUE_10 + 5 * 60 * 1000, IMMEDIATE)).sent).toHaveLength(0)
+    expect((await run(db, WED_10)).sent).toHaveLength(0)
+    expect(db.logRows()).toHaveLength(1)
+  })
+
+  it('still respects the master switch, the kill switch, an opt-out and a missing e-mail address', async () => {
+    const off = createFakeDb()
+    off.setMaster(false)
+    off.enableTemplate('welcome')
+    off.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 1) })
+    const masterOff = await run(off, TUE_10, IMMEDIATE)
+    expect(masterOff.summary.skipped).toBe('master-switch-off')
+    expect(masterOff.sent).toHaveLength(0)
+    expect(off.logRows()).toHaveLength(0)
+
+    const killed = createFakeDb()
+    killed.enableTemplate('welcome')
+    killed.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 1) })
+    const kill = await run(killed, TUE_10, IMMEDIATE, { env: { ...ENV, LIFECYCLE_MAIL_ENABLED: 'false' } })
+    expect(kill.summary.skipped).toBe('master-switch-off')
+    expect(kill.sent).toHaveLength(0)
+
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'opted-out', createdAt: hoursAgo(TUE_10, 1), mailOptOut: true })
+    db.addUser({ id: 'no-email', createdAt: hoursAgo(TUE_10, 1), email: '' })
+    db.addUser({ id: 'ok', createdAt: hoursAgo(TUE_10, 1) })
+    expect(recipients((await run(db, TUE_10, IMMEDIATE)).sent)).toEqual(['ok@example.com'])
+  })
+
+  it('an immediate run never touches the LASTRUN record of the daily run', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 1) })
+    await run(db, TUE_10, IMMEDIATE)
+    expect(db.lastRun()).toBeNull()
+
+    await run(db, WED_10) // the daily run writes it
+    const daily = db.lastRun()
+    expect(daily).toMatchObject({ dryRun: false })
+    await run(db, WED_10 + 5 * 60 * 1000, IMMEDIATE)
+    expect(db.lastRun()).toEqual(daily)
+  })
+
+  it('an immediate run only evaluates immediate templates', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.enableTemplate('no_group')
+    db.addUser({ id: 'u1', createdAt: hoursAgo(TUE_10, 60) }) // no group after 60 h: no_group is due
+    db.addLog({ userId: 'u1', templateId: 'welcome', status: 'sent', createdAt: hoursAgo(TUE_10, 59) })
+    expect((await run(db, TUE_10, IMMEDIATE)).sent).toHaveLength(0) // no_group is a normal-tier mail
+    const daily = await run(db, TUE_10) // it waits for the daily run, and welcome does not delay it by 72 h
+    expect(daily.sent).toHaveLength(1)
+    expect(daily.sent[0].subject).toBe('Zullen we samen je eerste groep maken?')
+  })
+
+  it('does not delay the follow-up mails (no_tasks, no_claims, day_after_event) after a welcome', async () => {
+    for (const id of ['no_group', 'no_tasks', 'no_claims', 'day_after_event']) {
+      expect(getTemplate(id).gapExemptAfter, id).toContain('welcome')
+    }
   })
 
   it('renders the first name, the footer and the create-group link', async () => {
@@ -171,6 +270,20 @@ describe('welcome', () => {
     expect(sent[0].html).toContain('/groups/new')
     expect(sent[0].html).toMatch(/afmelden/i)
     expect(sent[0].html).toContain(ENV.SES_REPLY_TO_EMAIL)
+  })
+
+  it('explains what you can do and invites the user to install the app on their phone', async () => {
+    const db = createFakeDb()
+    db.enableTemplate('welcome')
+    db.addUser({ id: 'u1', name: 'Anna de Vries', createdAt: hoursAgo(TUE_10, 1) })
+    const { sent } = await run(db, TUE_10, IMMEDIATE)
+    const html = sent[0].html
+    expect(html).toContain('Wat fijn dat je er bent')
+    expect(html).toContain('Wat kun je met Wie-Doet-Het?')
+    expect(html).toContain('zet Wie-Doet-Het als app op je telefoon')
+    expect(html).toContain('iPhone (Safari)')
+    expect(html).toContain('Android (Chrome)')
+    expect(html).not.toContain('{{') // every variable, including appUrl and createGroupUrl, is filled in
   })
 
   it('falls back to "daar" without a name and uses an admin-edited text', async () => {

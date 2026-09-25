@@ -12,7 +12,7 @@
  * so the whole file is unit-testable with an in-memory fake.
  */
 
-import { addDays, localDate, localMidnightUtc, startOfNextLocalDay, DAY_MS, HOUR_MS } from './time.js'
+import { addDays, localDate, localMidnightUtc, DAY_MS, HOUR_MS } from './time.js'
 
 export const FUNNEL_LOOKBACK_DAYS = 30
 export const EVENT_LOOKBACK_DAYS = 180
@@ -183,16 +183,19 @@ const enabledAtMs = (ctx, templateId) => ms(ctx.configs?.[templateId]?.enabledAt
 
 // ─── Evaluators ──────────────────────────────────────────────────────────────
 
+const WELCOME_DELAY_MS = 30 * 60 * 1000
+
 const welcome = {
   async *candidates(ctx) {
-    // eligibleAt is at most ~24 h after createdAt; expiry is 96 h after eligibleAt.
-    for await (const user of recentUsers(ctx, 96 * HOUR_MS + 24 * HOUR_MS)) {
+    // eligibleAt = createdAt + 30 min; expiry is 168 h after eligibleAt (maxAgeHours).
+    for await (const user of recentUsers(ctx, 168 * HOUR_MS + WELCOME_DELAY_MS)) {
       const createdAt = ms(user.createdAt)
       if (createdAt === null) continue
-      yield { user, eligibleAt: startOfNextLocalDay(createdAt), scopeId: '-' }
+      yield { user, eligibleAt: createdAt + WELCOME_DELAY_MS, scopeId: '-' }
     }
   },
-  stillApplies: (ctx, { user }) => hasNoGroups(ctx, user),
+  // A welcome is always due: it does not depend on what the user did since registering.
+  stillApplies: () => true,
 }
 
 const noGroup = {

@@ -364,7 +364,7 @@
         "updatedAt": "Last changed: {at}",
         "killSwitch": "The emergency stop on the server (LIFECYCLE_MAIL_ENABLED=false) is active: no mails are sent, even with this switch on.",
         "confirmTitle": "Turn the master switch on?",
-        "confirmMessage": "From the next run (Mon–Fri at 10:00) mails will be sent for the enabled templates. Currently enabled: {count}. Are you sure?",
+        "confirmMessage": "From now on mails will be sent for the enabled templates: the welcome mail 30 minutes after registration, the other mails at the next run (Mon–Fri at 10:00). Currently enabled: {count}. Are you sure?",
         "confirmLabel": "Turn on"
       },
       "lastRun": "Last run: {at} — {sent} sent, {failed} failed.",
@@ -374,6 +374,7 @@
       "customised": "Custom text",
       "default": "Default text",
       "timing": {
+        "immediate": "Immediately, at any time",
         "timely": "Mon–Fri at 10:00",
         "normal": "Tue–Thu at 10:00"
       },
@@ -381,8 +382,8 @@
       "templates": {
         "welcome": {
           "name": "Welcome",
-          "description": "Welcome mail with the first steps.",
-          "trigger": "The day after registration, only if there is no group yet"
+          "description": "A warm welcome explaining Wie-Doet-Het, with an invitation to add the app to your phone.",
+          "trigger": "30 minutes after registration, always"
         },
         "no_group": {
           "name": "No group yet",

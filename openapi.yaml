@@ -494,9 +494,11 @@ components:
         tier:
           type: string
           enum:
+            - immediate
             - timely
             - normal
           description: >-
+            immediate = any hour on any day (a few minutes after the trigger),
             timely = Monday-Friday 10:00, normal = Tuesday-Thursday 10:00
             (Europe/Amsterdam).
         enabled:
