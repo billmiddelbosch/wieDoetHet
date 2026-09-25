@@ -19,7 +19,7 @@ Everything the recipient sees in the mail (footer with suggestion invitation and
 
 ### Product rules the UI must make visible (summary of the API spec, for the reader of this file)
 
-- Mails go out on **weekdays at 10:00 (Amsterdam)**; "timely" templates Mon–Fri, "normal" templates Tue–Thu only. The template card shows which.
+- Mails go out on **weekdays at 10:00 (Amsterdam)**; "timely" templates Mon–Fri, "normal" templates Tue–Thu only. The exception is the welcome mail ("immediate" tier): 30 minutes after registration, at any time. The template card shows which.
 - Every template is **disabled by default**; there is also a **master switch** ("Hoofdschakelaar"), **off until an admin turns it on** and toggled from this screen. The UI shows the switch state and when the automation has never run — otherwise an admin would toggle templates on and wonder why nothing happens.
 - Opted-out users receive no automatic mail **and** are skipped by the manual "E-mail versturen" flow.
 
@@ -121,7 +121,7 @@ Props: `template` (API object), `saving` (boolean). Emits: `toggle(enabled)`, `e
 Renders an `<article>` containing:
 - `<h3>` template name (i18n `admin.automation.templates.{id}.name`)
 - description (`…description`) and trigger sentence (`…trigger`), both i18n
-- timing chip: tier `timely` → **"Ma–vr om 10:00"**, `normal` → **"Di–do om 10:00"**
+- timing chip: tier `immediate` → **"Direct, op elk moment"**, `timely` → **"Ma–vr om 10:00"**, `normal` → **"Di–do om 10:00"**
 - `BaseBadge`: **"Aangepaste tekst"** (`brand`) when `isCustomised`, else **"Standaardtekst"** (`neutral`)
 - `BaseToggle` labelled **"Ingeschakeld"** (`button[role=switch]`, `aria-checked` reflects `enabled`); disabled while `saving`
 - **"Bewerken"** button
@@ -198,13 +198,14 @@ admin.automation.enabled                    "Ingeschakeld"
 admin.automation.edit                       "Bewerken"
 admin.automation.customised                 "Aangepaste tekst"
 admin.automation.default                    "Standaardtekst"
+admin.automation.timing.immediate           "Direct, op elk moment"
 admin.automation.timing.timely              "Ma–vr om 10:00"
 admin.automation.timing.normal              "Di–do om 10:00"
 admin.automation.toggleError                "Wijzigen mislukt."
 
 admin.automation.templates.welcome.name           "Welkom"
-admin.automation.templates.welcome.description    "Welkomstmail met de eerste stappen."
-admin.automation.templates.welcome.trigger        "Dag na registratie, alleen als er nog geen groep is"
+admin.automation.templates.welcome.description    "Warm welkom met uitleg over Wie-Doet-Het en een uitnodiging om de app op je telefoon te zetten."
+admin.automation.templates.welcome.trigger        "30 minuten na registratie, altijd"
 admin.automation.templates.no_group.name          "Nog geen groep"
 admin.automation.templates.no_group.description   "Duwtje om de eerste groep aan te maken."
 admin.automation.templates.no_group.trigger       "48 uur na registratie, als er nog geen groep is"

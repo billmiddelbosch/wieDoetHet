@@ -26,27 +26,37 @@ const link = (label, url) => `<p><a href="${url}"><strong>${label} →</strong><
  * Definitions in PRIORITY ORDER. The order only matters for "one mail per user
  * per run": the earlier template wins that user's slot.
  *
- *   tier 'timely' → Mon–Fri 10:00 (Europe/Amsterdam); 'normal' → Tue/Wed/Thu only.
+ *   tier 'immediate' → any day, any hour, picked up within minutes by the frequent
+ *                      schedule (no 10:00 window, no weekday rule); 'timely' → Mon–Fri
+ *                      10:00 (Europe/Amsterdam); 'normal' → Tue/Wed/Thu only.
  *   maxAgeHours   → drop instead of sending late; null = never expires.
  *   maxPerUser    → lifetime cap; null = once per scope (per group) instead.
  *   gapExemptAfter→ template ids after which the 72 h minimum gap does not apply.
+ *   ignoreMinGap  → true = the 72 h minimum gap never blocks this template.
  */
 export const LIFECYCLE_TEMPLATES = [
   {
     id: 'welcome',
     scope: 'user',
-    tier: 'timely',
-    maxAgeHours: 96,
+    tier: 'immediate',
+    maxAgeHours: 168,
     maxPerUser: 1,
     gapExemptAfter: [],
+    ignoreMinGap: true,
     variables: USER_VARIABLES,
     defaultSubject: 'Welkom bij Wie-Doet-Het, {{firstName}}!',
     defaultBodyHtml: [
       '<p>Hoi {{firstName}},</p>',
-      '<p>Je hebt een account aangemaakt bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Zonder eindeloos appen: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.</p>',
-      '<p>Zo begin je:</p>',
-      '<ol><li><p>Maak een groep aan (een etentje, verjaardag, klusdag…)</p></li><li><p>Zet de taken erin</p></li><li><p>Deel de link via WhatsApp — deelnemers hebben geen account nodig</p></li></ol>',
+      '<p>Wat fijn dat je er bent! Welkom bij Wie-Doet-Het, de gratis app om taken te verdelen binnen een groep. Geen eindeloze appjes meer over wie wat meeneemt: jij maakt een lijst, iedereen kiest zelf wat hij of zij doet.</p>',
+      '<p><strong>Wat kun je met Wie-Doet-Het?</strong></p>',
+      '<ul><li><p>Een etentje, verjaardag, klusdag of vakantie regelen: maak een groep aan en zet de taken erin</p></li><li><p>Deel de link via WhatsApp: deelnemers kiezen zelf een taak en hebben daarvoor geen account nodig</p></li><li><p>Zie in één oogopslag wie wat doet en wat er nog open staat</p></li></ul>',
+      '<p>Begin gerust klein: een paar taken is genoeg, je kunt er altijd meer toevoegen.</p>',
       link('Maak je eerste groep', '{{createGroupUrl}}'),
+      '<p><strong>Tip: zet Wie-Doet-Het als app op je telefoon</strong></p>',
+      '<p>Je hoeft niets te downloaden uit een appstore. Open Wie-Doet-Het in de browser van je telefoon en zet het op je beginscherm. Dan staat het er als een gewone app, altijd binnen handbereik:</p>',
+      '<ul><li><p><strong>iPhone (Safari):</strong> tik op het deel-icoon (het vierkantje met een pijl omhoog) en kies "Zet op beginscherm"</p></li><li><p><strong>Android (Chrome):</strong> tik op het menu (de drie puntjes rechtsboven) en kies "App installeren" of "Toevoegen aan startscherm"</p></li></ul>',
+      '<p>Open Wie-Doet-Het op je telefoon: <a href="{{appUrl}}">{{appUrl}}</a></p>',
+      '<p>Veel plezier met organiseren!</p>',
     ].join(''),
   },
   {
@@ -70,7 +80,7 @@ export const LIFECYCLE_TEMPLATES = [
     tier: 'timely',
     maxAgeHours: 96,
     maxPerUser: 1,
-    gapExemptAfter: [],
+    gapExemptAfter: ['welcome'],
     variables: GROUP_VARIABLES,
     defaultSubject: 'Bijna klaar: voeg taken toe aan {{groupName}}',
     defaultBodyHtml: [
@@ -85,7 +95,7 @@ export const LIFECYCLE_TEMPLATES = [
     tier: 'normal',
     maxAgeHours: 168,
     maxPerUser: 1,
-    gapExemptAfter: [],
+    gapExemptAfter: ['welcome'],
     variables: GROUP_VARIABLES,
     defaultSubject: 'Nog niemand heeft een taak gekozen in {{groupName}}',
     defaultBodyHtml: [
@@ -100,7 +110,7 @@ export const LIFECYCLE_TEMPLATES = [
     tier: 'timely',
     maxAgeHours: 96,
     maxPerUser: null,
-    gapExemptAfter: [],
+    gapExemptAfter: ['welcome'],
     variables: GROUP_VARIABLES,
     defaultSubject: 'Hoe was {{groupName}}?',
     defaultBodyHtml: [

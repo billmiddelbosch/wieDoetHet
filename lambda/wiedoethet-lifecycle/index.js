@@ -8,9 +8,14 @@
  * Function name: wiedoethet-lifecycle
  * Runtime: nodejs24.x
  * Handler: index.handler
- * Trigger: cron(0 10 ? * MON-FRI *), timezone Europe/Amsterdam, retries 0
+ * Triggers (both retries 0):
+ *   wiedoethet-lifecycle-weekdays  cron(0 10 ? * MON-FRI *), Europe/Amsterdam, input {}
+ *   wiedoethet-lifecycle-welcome   rate(5 minutes), input {"tier":"immediate"}
  *
- * Event: {} (scheduled) | { dryRun: true } (evaluate, send/log nothing) |
+ * Event: {} (daily run: timely + normal tiers, plus immediate as a fallback) |
+ *        { tier: 'immediate' } (frequent run: only the immediate tier, any hour, any
+ *          day; leaves LASTRUN alone) |
+ *        { dryRun: true } (evaluate, send/log nothing) |
  *        { force: true } (skip only the "must be the 10:00 hour" guard)
  *
  * Full contract: product/specs/mail-automation-api.spec.md
@@ -33,6 +38,7 @@ const MAX_ATTEMPTS = 3
 const ERROR_MESSAGE_MAX = 500
 const NORMAL_TIER_WEEKDAYS = [2, 3, 4] // Tue, Wed, Thu
 const WEEKEND = [0, 6]
+const IMMEDIATE_TIER = 'immediate'
 
 const realDb = { getItem, putItem, putItemIfAbsent, updateItem, updateItemIf, queryByPk, queryGsi1, queryGsi2, queryGsi3 }
 
@@ -88,12 +94,14 @@ async function decide(ctx, template, candidate, picked) {
   }
 
   const gapCutoff = now - MIN_GAP_MS
-  const gapViolated = rows.some((row) => {
-    if (row === own) return false
-    if (row.status !== 'sent' && row.status !== 'sending') return false
-    if (template.gapExemptAfter.includes(row.templateId)) return false
-    return (ms(row.sentAt ?? row.createdAt) ?? 0) > gapCutoff
-  })
+  const gapViolated =
+    !template.ignoreMinGap &&
+    rows.some((row) => {
+      if (row === own) return false
+      if (row.status !== 'sent' && row.status !== 'sending') return false
+      if (template.gapExemptAfter.includes(row.templateId)) return false
+      return (ms(row.sentAt ?? row.createdAt) ?? 0) > gapCutoff
+    })
   if (gapViolated) return skip('min-gap')
 
   if (!(await EVALUATORS[template.id].stillApplies(ctx, candidate))) return skip('no-longer-applies')
@@ -191,13 +199,17 @@ async function mapLimit(items, limit, fn) {
 // ─── The run ─────────────────────────────────────────────────────────────────
 
 /**
- * @param {{ dryRun?: boolean, force?: boolean }} event
+ * @param {{ dryRun?: boolean, force?: boolean, tier?: 'immediate' }} event
  * @param {{ db: object, sendMail: Function, now: number, env: Record<string, string|undefined> }} deps
  */
 export async function runLifecycle(event, deps) {
   const { db, now, env } = deps
   const dryRun = event?.dryRun === true
   const force = event?.force === true
+  // The frequent run handles only the immediate tier and is not tied to the daily
+  // 10:00 / weekday rules. It never writes LASTRUN: that item describes the daily run
+  // (the admin panel shows it) and a run every five minutes would bury it.
+  const immediateOnly = event?.tier === IMMEDIATE_TIER
   const at = new Date(now).toISOString()
 
   // 1. Master switch. It lives in the table (toggled from the admin panel) and
@@ -215,10 +227,12 @@ export async function runLifecycle(event, deps) {
     }
   }
   const masterEnabled = !killSwitch && masterItem?.enabled === true
-  try {
-    await db.putItem({ ...keys.mailState(), at, masterEnabled, killSwitch, dryRun })
-  } catch (err) {
-    log('WARN', 'lifecycle-lastrun-write-failed', { message: err?.message })
+  if (!immediateOnly) {
+    try {
+      await db.putItem({ ...keys.mailState(), at, masterEnabled, killSwitch, dryRun })
+    } catch (err) {
+      log('WARN', 'lifecycle-lastrun-write-failed', { message: err?.message })
+    }
   }
   if (!masterEnabled && !dryRun) {
     const summary = { event: 'lifecycle-run', at, skipped: 'master-switch-off' }
@@ -233,22 +247,28 @@ export async function runLifecycle(event, deps) {
 
   // 2. Send window (Amsterdam wall clock — the platform handles DST).
   const local = localParts(now)
-  if (!force && !dryRun && local.hour !== SEND_HOUR) {
-    const summary = { event: 'lifecycle-run', at, skipped: 'outside-send-window' }
-    log('INFO', 'lifecycle-run', summary)
-    return summary
-  }
-  if (WEEKEND.includes(local.weekday)) {
-    const summary = { event: 'lifecycle-run', at, skipped: 'weekend' }
-    log('INFO', 'lifecycle-run', summary)
-    return summary
+  if (!immediateOnly) {
+    if (!force && !dryRun && local.hour !== SEND_HOUR) {
+      const summary = { event: 'lifecycle-run', at, skipped: 'outside-send-window' }
+      log('INFO', 'lifecycle-run', summary)
+      return summary
+    }
+    if (WEEKEND.includes(local.weekday)) {
+      const summary = { event: 'lifecycle-run', at, skipped: 'weekend' }
+      log('INFO', 'lifecycle-run', summary)
+      return summary
+    }
   }
 
   // 3. Templates + candidates.
   const configItems = await Promise.all(LIFECYCLE_TEMPLATES.map((def) => db.getItem(keys.mailTemplate(def.id).PK, 'CONFIG')))
   const templates = LIFECYCLE_TEMPLATES.map((def, index) => mergeTemplateConfig(def, configItems[index]))
   const configs = Object.fromEntries(templates.map((t) => [t.id, { enabledAt: t.enabledAt }]))
-  const activeTiers = new Set(NORMAL_TIER_WEEKDAYS.includes(local.weekday) ? ['timely', 'normal'] : ['timely'])
+  const activeTiers = new Set(
+    immediateOnly
+      ? [IMMEDIATE_TIER]
+      : [IMMEDIATE_TIER, 'timely', ...(NORMAL_TIER_WEEKDAYS.includes(local.weekday) ? ['normal'] : [])],
+  )
 
   const ctx = createContext({
     now,
@@ -301,12 +321,14 @@ export async function runLifecycle(event, deps) {
   }
 
   // 5. Record + report.
-  try {
-    await db.updateItem(keys.mailState().PK, keys.mailState().SK, { evaluated, sent, failed, skippedByCap })
-  } catch (err) {
-    log('WARN', 'lifecycle-lastrun-write-failed', { message: err?.message })
+  if (!immediateOnly) {
+    try {
+      await db.updateItem(keys.mailState().PK, keys.mailState().SK, { evaluated, sent, failed, skippedByCap })
+    } catch (err) {
+      log('WARN', 'lifecycle-lastrun-write-failed', { message: err?.message })
+    }
   }
-  const summary = { event: 'lifecycle-run', at, dryRun, force, evaluated, sent, failed, skippedByCap, byTemplate }
+  const summary = { event: 'lifecycle-run', at, tier: immediateOnly ? IMMEDIATE_TIER : 'daily', dryRun, force, evaluated, sent, failed, skippedByCap, byTemplate }
   if (dryRun) {
     summary.wouldSend = sendList.map(({ template, candidate }) => ({
       templateId: template.id,

@@ -83,7 +83,7 @@ describe('GET /admin/mail-templates', () => {
     expect(status).toBe(200)
     expect(json.items.map((t) => t.id)).toEqual(['welcome', 'no_group', 'no_tasks', 'no_claims', 'day_after_event', 'dormant_30', 'dormant_60'])
     expect(json.items.every((t) => t.enabled === false && t.isCustomised === false)).toBe(true)
-    expect(json.items[0]).toMatchObject({ scope: 'user', tier: 'timely', subject: json.items[0].defaultSubject })
+    expect(json.items[0]).toMatchObject({ scope: 'user', tier: 'immediate', subject: json.items[0].defaultSubject })
     expect(json.items[2].variables).toContain('groupName')
     expect(json.lastRun).toBeNull()
     expect(json.master).toEqual({ enabled: false, updatedAt: null, updatedBy: null })
